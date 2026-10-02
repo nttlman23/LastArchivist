@@ -15,7 +15,10 @@ func after_each() -> void:
 
 func test_run_roundtrip() -> void:
 	var run := RunState.create(db, -8070450532247928832)
-	run.battle_index = 1
+	run.battles_won = 1
+	run.resources[RunState.INK] = 7
+	MapActions.travel(run, run.map.next_of(MapState.START)[0])
+	MapActions.complete(run)
 	run.codex.cards[0].durability = 1
 	run.codex.cards[1].level = 2
 	run.codex.add(db, &"last_king")
@@ -26,7 +29,9 @@ func test_run_roundtrip() -> void:
 	var loaded := SaveService.load_run(PATH)
 	assert_not_null(loaded)
 	assert_eq(loaded.run_seed, run.run_seed)
-	assert_eq(loaded.battle_index, 1)
+	assert_eq(loaded.battles_won, 1)
+	assert_eq(loaded.resources[RunState.INK], 7)
+	assert_eq(loaded.map.to_dict(), run.map.to_dict())
 	assert_eq(loaded.codex.to_array(), run.codex.to_array())
 	assert_eq(loaded.hero.to_dict(), run.hero.to_dict())
 	assert_eq(loaded.codex.cards[1].level, 2)
@@ -49,9 +54,9 @@ func test_wrong_version_rejected() -> void:
 	assert_null(RunState.from_dict(d))
 
 
-func test_v1_save_rejected() -> void:
+func test_old_save_rejected() -> void:
 	var d := RunState.create(db, 1).to_dict()
-	d["version"] = 1
+	d["version"] = 2
 	assert_null(RunState.from_dict(d))
 
 

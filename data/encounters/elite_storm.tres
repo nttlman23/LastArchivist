@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"elite_storm"
+name_key = "ENC_ELITE_STORM"
+unit_ids = Array[StringName]([&"storm_wyrm_echo", &"rift_ram", &"shard_archer"])
+counts = Array[int]([2, 2, 10])
+obstacles = Array[Vector2i]([Vector2i(5, 4), Vector2i(3, 2), Vector2i(7, 6)])
+tier = 2
+elite = true
+boss = false

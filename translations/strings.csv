@@ -56,7 +56,7 @@ REWARD_SKIP,Пропустить
 REWARD_DISCARD,"Кодекс полон (%d). Выберите карту, которую забыть:"
 REWARD_CANCEL,Отмена
 RUN_WON_TITLE,Экспедиция завершена
-RUN_WON_TEXT,Хранитель склепа повержен. Воспоминания сохранены.
+RUN_WON_TEXT,Хранитель Разлома повержен. Воспоминания экспедиции сохранены.
 RUN_LOST_TITLE,Архивариус пал
 RUN_LOST_TEXT,Память этой экспедиции растворилась в разломе.
 RUN_TO_MENU,В главное меню
@@ -184,3 +184,134 @@ FORM_CONFIRM,«%s» → %s. Карта исчезнет из Кодекса в �
 FORM_APPLY,Подтвердить
 MENU_MUSIC,Музыка
 MENU_SFX,Звуки
+UNIT_RIFT_WARDEN,Хранитель Разлома
+ABIL_RIFT_TEAR,Разрыв
+ABIL_RIFT_TEAR_DESC,Вместо хода: клетка в 4 клетках — 45 урона всем вражеским стекам на ней и вокруг неё.
+ENC_T1_PRIESTS,Пепельный обряд
+ENC_T1_WALL,Стрелковая галерея
+ENC_T1_RAM,Разведка тарана
+ENC_T2_STORM,Грозовой перевал
+ENC_T2_BASTION,Бастион жрецов
+ENC_T3_HORDE,Пепельная орда
+ENC_T3_SIEGE,Осадный лагерь
+ENC_ELITE_STORM,Элита: буря и таран
+ENC_ELITE_FORTRESS,Элита: крепость
+ENC_RIFT,Разлом
+PREP_TITLE_BATTLE,Бой ур. %d: %s
+PREP_TITLE_ELITE,Элитный бой: %s
+PREP_TITLE_RIFT,%s: Хранитель Разлома
+PREP_RIFT_WARNING,Каждые 3 раунда разлом помечает ваш сильнейший отряд и стирает его в начале следующего раунда — вместе с картой.
+PREP_TO_MAP,К карте
+MEMORY_RESOURCES,Добыто: %s
+RES_INK,Чернила
+RES_PARCHMENT,Пергамент
+RES_AETHER,Эфир
+MAP_TITLE,Экспедиция
+MAP_LAYER,Слой %d из %d
+MAP_CODEX,Кодекс
+MAP_PENDING,"Вы уже на этом острове — вернитесь, чтобы закончить его."
+MAP_RESUME,Вернуться на остров
+MAP_HINT,"Выберите остров: доступные пульсируют золотым, пунктирное кольцо — перелёт за Эфир. Клик показывает подробности."
+MAP_TRAVEL,Лететь
+MAP_FLIGHT,Перелёт (%d Эфира)
+MAP_SCOUT,Разведать (%d Эфир)
+MAP_VISITED,Остров уже пройден.
+MAP_UNREACHABLE,Сюда пока не добраться.
+MAP_TIER,Уровень боя: %d
+MAP_REWARD,Награда: %s
+MAP_CODEX_TITLE,Кодекс Памяти (%d/%d)
+MAP_CODEX_CLOSE,Закрыть
+NODE_BATTLE,Бой
+NODE_BATTLE_DESC,Стычка с порождениями пепла. Победа приносит ресурсы и новое воспоминание.
+NODE_ELITE,Элитный бой
+NODE_ELITE_DESC,"Сильный противник. Больше ресурсов, среди наград — геройская карта."
+NODE_EVENT,Событие
+NODE_EVENT_DESC,"Неизвестность: выбор с последствиями. Разведка откроет, что ждёт."
+NODE_SHOP,Архив-лавка
+NODE_SHOP_DESC,"Покупка воспоминаний за Пергамент, ремонт за Чернила, перезаряд заклинаний за Эфир."
+NODE_HAVEN,Тихая гавань
+NODE_HAVEN_DESC,"Передышка: починить все карты, переписать одну или восстановить заклинания."
+NODE_RIFT,Разлом
+NODE_RIFT_DESC,Хранитель Разлома. Победа завершает экспедицию.
+EVENT_PICK_CARD,Выберите воспоминание
+EVENT_TO_BATTLE,В бой!
+SHOP_TITLE,Архив-лавка
+SHOP_CARDS,Воспоминания на продажу
+SHOP_PRICE,Цена: %d Пергамента
+SHOP_REPAIR,Ремонт: +1 прочности за %d Чернила
+SHOP_RECHARGE,Перезаряд: +1 заряд за %d Эфир
+SHOP_REWORK,Переработка (один раз): %d Пергамента
+SHOP_LEAVE,Уйти
+REASON_SOLD,куплено
+REASON_CODEX_FULL,Кодекс полон
+REASON_NO_PARCHMENT,мало Пергамента
+REASON_FULL_DURABILITY,прочность полная
+REASON_NO_INK,мало Чернил
+REASON_NO_AETHER,мало Эфира
+REASON_NO_SPELLS,нет заклинаний
+REASON_REWORK_USED,переработка уже была
+REASON_NO_CARDS,нет карт отрядов
+HAVEN_TITLE,Тихая гавань
+HAVEN_TEXT,Ветер стих. Есть время для одного дела.
+HAVEN_REPAIR,Починить: +1 прочности всем картам (%d)
+HAVEN_REWRITE,Переписать: одно превращение карты бесплатно
+HAVEN_MEDITATE,Медитировать: +1 заряд всем заклинаниям (%d)
+RUN_STATS,Слой %d из %d · побед в боях: %d · карт в Кодексе: %d · %s
+RIFT_MARK_FLOAT,Помечен разломом
+RIFT_ERASE_FLOAT,Стёрт!
+LOG_RIFT_MARK,Разлом помечает %s
+LOG_RIFT_ERASE,Разлом стирает %s
+LOG_ALL_ERASED,Разлом стёр всю армию
+STATUS_RIFT_MARKED,Помечен разломом: будет стёрт в начале следующего раунда — вместе с картой. Победите раньше!
+EVT_RUINED_SCRIPTORIUM_TITLE,Обрушенный скрипторий
+EVT_RUINED_SCRIPTORIUM_TEXT,Среди обломков полки ещё хранят чистые листы. Где-то в темноте шуршит пепел.
+EVT_RUINED_SCRIPTORIUM_A,"Обыскать полки (+3 Пергамента, риск боя)"
+EVT_RUINED_SCRIPTORIUM_A_RES,Вы набрали листов и ушли незамеченными.
+EVT_RUINED_SCRIPTORIUM_A_FAIL,"Листы ваши, но пепел поднимается — стражи скриптория пробудились!"
+EVT_RUINED_SCRIPTORIUM_B,Уйти
+EVT_RUINED_SCRIPTORIUM_B_RES,Вы оставили руины в покое.
+EVT_INK_SPRING_TITLE,Чернильный родник
+EVT_INK_SPRING_TEXT,"Из трещины в скале сочатся густые чернила, пахнущие старыми книгами."
+EVT_INK_SPRING_A,Наполнить флаконы (+2 Чернила)
+EVT_INK_SPRING_A_RES,Флаконы полны.
+EVT_INK_SPRING_B,Окунуть воспоминание (+2 прочности выбранной карте)
+EVT_INK_SPRING_B_RES,Строки воспоминания проступили чётче.
+EVT_LEGION_ECHO_TITLE,Эхо павшего легиона
+EVT_LEGION_ECHO_TEXT,Призрачные щиты встают у края острова и ждут приказа.
+EVT_LEGION_ECHO_A,Принять клятву (Легион с прочностью 1)
+EVT_LEGION_ECHO_A_RES,Легион встаёт в строй — ненадолго.
+EVT_LEGION_ECHO_B,Развеять (+2 Эфира)
+EVT_LEGION_ECHO_B_RES,Эхо рассыпается искрами эфира.
+EVT_MEMORY_MERCHANT_TITLE,Торговец воспоминаниями
+EVT_MEMORY_MERCHANT_TEXT,Безликий торговец раскладывает чужие сны. «Отдай одно — получишь другое».
+EVT_MEMORY_MERCHANT_A,Продать воспоминание (+4 Пергамента)
+EVT_MEMORY_MERCHANT_A_RES,Торговец прячет вашу память в рукав.
+EVT_MEMORY_MERCHANT_B,Обменять на два хрупких (прочность 1)
+EVT_MEMORY_MERCHANT_B_RES,"Два чужих воспоминания — шаткие, но ваши."
+EVT_MEMORY_MERCHANT_C,Уйти
+EVT_MEMORY_MERCHANT_C_RES,Торговец растворяется в тумане.
+EVT_RIFT_WHISPER_TITLE,Шёпот разлома
+EVT_RIFT_WHISPER_TEXT,Из трещины в небе доносится шёпот: знание в обмен на память.
+EVT_RIFT_WHISPER_A,"Слушать (улучшение героя, самая прочная карта −2)"
+EVT_RIFT_WHISPER_A_RES,"Вы узнали больше, чем хотели. Одно воспоминание поблёкло."
+EVT_RIFT_WHISPER_B,Заткнуть уши
+EVT_RIFT_WHISPER_B_RES,Шёпот стихает.
+EVT_ABANDONED_ALTAR_TITLE,Заброшенный алтарь
+EVT_ABANDONED_ALTAR_TEXT,"Алтарь древних писцов покрыт трещинами, но всё ещё светится."
+EVT_ABANDONED_ALTAR_A,Возлить 2 Чернила (+1 заряд всем заклинаниям)
+EVT_ABANDONED_ALTAR_A_RES,Заклинания наливаются силой.
+EVT_ABANDONED_ALTAR_B,"Осквернить (+3 Эфира, 2 карты −1 прочности)"
+EVT_ABANDONED_ALTAR_B_RES,Эфир ваш — но алтарь мстит памяти.
+EVT_CAPTIVE_KING_TITLE,Пленённый Король
+EVT_CAPTIVE_KING_TEXT,В цепях из пепла томится образ Последнего Короля. Стража не дремлет.
+EVT_CAPTIVE_KING_A,"Освободить (бой ур. 2, награда — «Последний Король»)"
+EVT_CAPTIVE_KING_A_RES,Стража заметила вас. К оружию!
+EVT_CAPTIVE_KING_B,Пройти мимо
+EVT_CAPTIVE_KING_B_RES,Король провожает вас взглядом.
+EVT_STORM_BRIDGE_TITLE,Буря над мостом
+EVT_STORM_BRIDGE_TEXT,Мост к следующему острову раскачивает гроза.
+EVT_STORM_BRIDGE_A,Переждать (−1 Эфир)
+EVT_STORM_BRIDGE_A_RES,"Буря утихла, но потребовала эфира на защиту."
+EVT_STORM_BRIDGE_B,Прорваться (риск)
+EVT_STORM_BRIDGE_B_RES,Вы проскочили и подобрали сорванные ветром листы.
+EVT_STORM_BRIDGE_B_FAIL,Молнии хлестнули по строю — два воспоминания пострадали.

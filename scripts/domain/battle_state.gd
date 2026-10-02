@@ -35,6 +35,12 @@ var hero_spells: Array[Dictionary] = []
 var last_ability: Dictionary[int, StringName] = {}
 ## Перезарядки способностей из реестра: бой симулируется без DefsDB.
 var ability_cooldowns: Dictionary[StringName, int] = {}
+## Бой с разломом: действует правило «Стирание» (SPEC_SPRINT3 6.2).
+var rift := false
+## Индексы карт Кодекса, чьи стеки стёрты разломом.
+var erased_cards: Array[int] = []
+## Хранитель Разлома (первый стек встречи-босса); его гибель — победа.
+var boss_uid := -1
 
 
 ## Собирает бой из встречи и выбранных карт Кодекса.
@@ -46,6 +52,7 @@ static func create(db: DefsDB, encounter: EncounterDef, codex: CodexState, selec
 		s.ability_cooldowns[id] = db.abilities[id].cooldown
 	for h in encounter.obstacles:
 		s.obstacles[h] = true
+	s.rift = encounter.boss
 	var upgrades: Array[StringName] = []
 	if hero:
 		upgrades = hero.active_upgrades(db, codex)
@@ -61,7 +68,10 @@ static func create(db: DefsDB, encounter: EncounterDef, codex: CodexState, selec
 		HeroState.apply_upgrades(db, upgrades, u)
 	var enemy_col := s.grid.width - 1
 	for i in mini(encounter.unit_ids.size(), MAX_STACKS):
-		s.add_unit(db.unit(encounter.unit_ids[i]), UnitState.Side.ENEMY, encounter.counts[i], Vector2i(enemy_col, START_ROWS[i]))
+		var e := s.add_unit(db.unit(encounter.unit_ids[i]), UnitState.Side.ENEMY, encounter.counts[i], Vector2i(enemy_col, START_ROWS[i]))
+		if encounter.boss and i == 0:
+			s.boss_uid = e.uid
+			e.is_boss = true
 	return s
 
 
@@ -182,6 +192,7 @@ func to_dict() -> Dictionary:
 		"rng_seed": str(rng.seed), "rng_state": str(rng.state), "next_uid": _next_uid,
 		"hero_actions_left": hero_actions_left, "hero_orders": Array(hero_orders).map(func(x: StringName) -> String: return String(x)),
 		"hero_spells": spells, "last_ability": last, "ability_cooldowns": cds,
+		"rift": rift, "erased_cards": erased_cards.duplicate(), "boss_uid": boss_uid,
 	}
 
 
@@ -217,4 +228,8 @@ static func from_dict(d: Dictionary) -> BattleState:
 	var cds: Dictionary = d["ability_cooldowns"]
 	for id: String in cds:
 		s.ability_cooldowns[StringName(id)] = int(cds[id])
+	s.rift = bool(d["rift"])
+	s.boss_uid = int(d["boss_uid"])
+	for i in d["erased_cards"]:
+		s.erased_cards.append(int(i))
 	return s

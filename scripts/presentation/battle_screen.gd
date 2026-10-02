@@ -39,9 +39,10 @@ var _end_panel: PanelContainer
 func _ready() -> void:
 	db = Game.defs
 	if Game.run == null:
-		# Запуск сцены напрямую из редактора — тестовый забег.
+		# Запуск сцены напрямую из редактора — тестовый забег, первый бой карты.
 		Game.run = RunState.create(db, 1)
 		Game.selected = [0, 1, 2, 3]
+		MapActions.travel(Game.run, Game.run.map.next_of(MapState.START)[0])
 	var run := Game.run
 	var encounter := db.encounter(run.current_encounter_id(db))
 	state = BattleState.create(db, encounter, run.codex, Game.selected, run.battle_seed(), run.hero)
@@ -132,7 +133,7 @@ func _build_hud() -> void:
 	row.add_child(_wait_btn)
 	_defend_btn = _small_button(tr("BATTLE_DEFEND"), _on_defend, 170)
 	row.add_child(_defend_btn)
-	row.add_child(_small_button(tr("BATTLE_RETREAT"), Game.abandon_battle, 170))
+	row.add_child(_small_button(tr("BATTLE_RETREAT"), Game.abandon_node, 170))
 
 	var hero_row := HBoxContainer.new()
 	hero_row.add_theme_constant_override("separation", 10)
@@ -563,6 +564,10 @@ func _harmed_by(action: BattleAction) -> Dictionary[int, bool]:
 
 func _event_label(e: BattleEvent) -> String:
 	match e.type:
+		BattleEvent.RIFT_MARKED:
+			return tr("RIFT_MARK_FLOAT")
+		BattleEvent.ERASED:
+			return tr("RIFT_ERASE_FLOAT")
 		BattleEvent.ABILITY_USED:
 			return tr(db.ability(e.data["ability"]).name_key)
 		BattleEvent.HERO_ACTED:
@@ -606,6 +611,10 @@ func _log_events(events: Array[BattleEvent]) -> void:
 				line = "[color=#c0a0ff]%s[/color]" % line
 			BattleEvent.OBSTACLE_ADDED:
 				line = tr("LOG_WALL") % int(e.data["rounds"])
+			BattleEvent.RIFT_MARKED:
+				line = "[color=#c080ff]%s[/color]" % (tr("LOG_RIFT_MARK") % _name(e.data["uid"]))
+			BattleEvent.ERASED:
+				line = "[color=#c080ff]%s[/color]" % (tr("LOG_RIFT_ERASE") % _name(e.data["uid"]))
 			BattleEvent.DIED:
 				line = tr("LOG_DIED") % _name(e.data["uid"])
 			BattleEvent.WAITED:
@@ -615,6 +624,8 @@ func _log_events(events: Array[BattleEvent]) -> void:
 			BattleEvent.BATTLE_ENDED:
 				if e.data.get("reason", "") == "rounds":
 					line = tr("LOG_TIMEOUT")
+				elif e.data.get("reason", "") == "erased":
+					line = tr("LOG_ALL_ERASED")
 		if line != "":
 			_log_lines.append(line)
 	while _log_lines.size() > LOG_LINES:
@@ -641,7 +652,7 @@ func _show_end() -> void:
 	var title := UiKit.label(tr("BATTLE_WON") if won else tr("BATTLE_LOST"), 56, UiKit.ACCENT if won else UiKit.DANGER)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
-	box.add_child(UiKit.button(tr("BATTLE_CONTINUE"), func() -> void: Game.finish_battle(state.outcome, state.spell_charges()), 360))
+	box.add_child(UiKit.button(tr("BATTLE_CONTINUE"), func() -> void: Game.finish_battle(state.outcome, state.spell_charges(), state.erased_cards), 360))
 	add_child(_end_panel)
 	_end_panel.custom_minimum_size = Vector2(520, 240)
 	_end_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER, Control.PRESET_MODE_MINSIZE)

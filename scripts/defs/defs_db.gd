@@ -11,8 +11,7 @@ var abilities: Dictionary[StringName, AbilityDef] = {}
 var spells: Dictionary[StringName, SpellDef] = {}
 var orders: Dictionary[StringName, OrderDef] = {}
 var upgrades: Dictionary[StringName, UpgradeDef] = {}
-## Порядок боёв забега.
-var encounter_chain: Array[StringName] = [&"crypt_1", &"crypt_2", &"crypt_3", &"crypt_4", &"crypt_5"]
+var events: Dictionary[StringName, EventDef] = {}
 var starting_codex: Array[StringName] = [&"salt_legion", &"salt_legion", &"ash_chroniclers", &"ghoul_pack"]
 ## Приказы, доступные всегда.
 var base_orders: Array[StringName] = [&"order_advance", &"order_close_ranks"]
@@ -34,6 +33,8 @@ static func load_default() -> DefsDB:
 		db.orders[res.id] = res as OrderDef
 	for res in _load_dir("upgrades"):
 		db.upgrades[res.id] = res as UpgradeDef
+	for res in _load_dir("events"):
+		db.events[res.id] = res as EventDef
 	return db
 
 
@@ -70,6 +71,37 @@ func order(id: StringName) -> OrderDef:
 func upgrade(id: StringName) -> UpgradeDef:
 	assert(upgrades.has(id), "Unknown upgrade: %s" % id)
 	return upgrades[id]
+
+
+func event(id: StringName) -> EventDef:
+	assert(events.has(id), "Unknown event: %s" % id)
+	return events[id]
+
+
+## Шаблоны встреч уровня tier (элитные — отдельно), отсортированные по id.
+func encounter_pool(tier: int, elite: bool) -> Array[StringName]:
+	var ids: Array[StringName] = []
+	for id in encounters:
+		var e := encounters[id]
+		if not e.boss and e.elite == elite and (elite or e.tier == tier):
+			ids.append(id)
+	ids.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
+	return ids
+
+
+func boss_encounter() -> StringName:
+	for id in encounters:
+		if encounters[id].boss:
+			return id
+	assert(false, "Нет встречи-босса")
+	return &""
+
+
+func event_ids() -> Array[StringName]:
+	var ids: Array[StringName] = []
+	ids.assign(events.keys())
+	ids.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
+	return ids
 
 
 func memory_ids() -> Array[StringName]:

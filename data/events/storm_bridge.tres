@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/event_def.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/defs/event_option_def.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/defs/event_effect.gd" id="3"]
+
+[sub_resource type="Resource" id="e0_0"]
+script = ExtResource("3")
+kind = 0
+resource = &"aether"
+amount = -1
+
+[sub_resource type="Resource" id="o0"]
+script = ExtResource("2")
+label_key = "EVT_STORM_BRIDGE_A"
+result_key = "EVT_STORM_BRIDGE_A_RES"
+effects = [SubResource("e0_0")]
+
+[sub_resource type="Resource" id="e1_0"]
+script = ExtResource("3")
+kind = 0
+resource = &"parchment"
+amount = 2
+
+[sub_resource type="Resource" id="f1_0"]
+script = ExtResource("3")
+kind = 2
+count = 2
+amount = -1
+
+[sub_resource type="Resource" id="o1"]
+script = ExtResource("2")
+label_key = "EVT_STORM_BRIDGE_B"
+result_key = "EVT_STORM_BRIDGE_B_RES"
+fail_result_key = "EVT_STORM_BRIDGE_B_FAIL"
+chance = 0.5
+effects = [SubResource("e1_0")]
+fail_effects = [SubResource("f1_0")]
+
+[resource]
+script = ExtResource("1")
+id = &"storm_bridge"
+title_key = "EVT_STORM_BRIDGE_TITLE"
+text_key = "EVT_STORM_BRIDGE_TEXT"
+options = [SubResource("o0"), SubResource("o1")]

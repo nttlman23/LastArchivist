@@ -12,6 +12,7 @@ const COVER := &"cover"
 const ECHO := &"echo"
 const RESTORE := &"restore"
 const RAM := &"ram"
+const RIFT_TEAR := &"rift_tear"
 
 const DEFAULT_COOLDOWN := 2
 const DEVOUR_HEAL := 0.5
@@ -25,6 +26,8 @@ const RAM_MIN := 2
 const RAM_MAX := 4
 const RAM_BONUS := 1.25
 const RAM_BLOCKED_BONUS := 1.5
+const TEAR_RANGE := 4
+const TEAR_DAMAGE := 35
 
 # Веса оценки для AI (в единицах ожидаемых ОЗ, как в AiController).
 const ALLY_HIT_WEIGHT := 1.5
@@ -48,7 +51,7 @@ static func target_kind(id: StringName) -> Targeting.Kind:
 			return Targeting.Kind.ENEMY
 		RESTORE:
 			return Targeting.Kind.ALLY
-		COVER:
+		COVER, RIFT_TEAR:
 			return Targeting.Kind.HEX
 	return Targeting.Kind.NONE
 
@@ -70,7 +73,8 @@ static func options(state: BattleState, u: UnitState) -> Array[BattleAction]:
 			for a in state.alive(u.side):
 				candidates.append(BattleAction.ability(u.ability_id, a.uid))
 		Targeting.Kind.HEX:
-			for h in state.grid.neighbors(u.hex):
+			var hexes := state.grid.neighbors(u.hex) if id == COVER else state.grid.all_hexes()
+			for h in hexes:
 				candidates.append(BattleAction.ability(u.ability_id, -1, h))
 	for a in candidates:
 		if validate(state, u, a):
@@ -101,6 +105,8 @@ static func validate(state: BattleState, u: UnitState, action: BattleAction) -> 
 			return target != null and target.is_alive() and target.side == u.side and _missing_hp(target) > 0
 		RAM:
 			return _is_enemy(u, target) and not ram_path(state, u, target).is_empty()
+		RIFT_TEAR:
+			return state.grid.in_bounds(action.dest) and HexGrid.distance(u.hex, action.dest) <= TEAR_RANGE
 	return false
 
 
@@ -161,8 +167,23 @@ static func apply(state: BattleState, u: UnitState, action: BattleAction, events
 					events.append(BattleEvent.new(BattleEvent.PUSHED, {"uid": target.uid, "from": from, "to": push}))
 				else:
 					BattleResolver.try_retaliate(state, target, u, events)
+		RIFT_TEAR:
+			for v in tear_victims(state, u, action.dest):
+				BattleResolver.deal_damage(v, TEAR_DAMAGE, RIFT_TEAR, events)
 	u.ability_cd = state.ability_cooldowns.get(u.ability_id, DEFAULT_COOLDOWN)
 	state.last_ability[u.side] = id
+
+
+## Враги стека на клетке и вокруг неё — по ним бьёт «Разрыв» (свои не задеваются).
+static func tear_victims(state: BattleState, u: UnitState, hex: Vector2i) -> Array[UnitState]:
+	var result: Array[UnitState] = []
+	for o in state.neighbors_of(hex):
+		if o.side != u.side:
+			result.append(o)
+	var center := state.unit_at(hex)
+	if center and center.side != u.side:
+		result.append(center)
+	return result
 
 
 ## Ближайший живой стек (любой стороны) в CHAIN_HOP_RANGE от клетки, не из списка; при равенстве — меньший uid.
@@ -265,6 +286,11 @@ static func ai_score(state: BattleState, u: UnitState, action: BattleAction) -> 
 					score += PUSH_SHOOTER_BONUS
 			elif not target.retaliated and dealt < target.total_hp():
 				score -= AiController.RETALIATION_WEIGHT * AiController.retaliation_estimate(target, u, dealt)
+			return score
+		RIFT_TEAR:
+			var score := 0.0
+			for v in tear_victims(state, u, action.dest):
+				score += AiController.value(TEAR_DAMAGE, v)
 			return score
 	return 0.0
 

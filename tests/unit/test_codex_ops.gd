@@ -93,7 +93,7 @@ func test_hero_card_rules() -> void:
 func test_hero_card_decays_every_victory() -> void:
 	run.codex.add(db, &"last_king")
 	var selected: Array[int] = [0]
-	run.decay_after_battle(db, selected)
+	run.after_battle(db, selected)
 	assert_eq(run.codex.cards[4].durability, 2, "Король угасает, хоть и не был в бою")
 	assert_eq(run.codex.cards[1].durability, 4, "невыбранная карта отряда не угасает")
 

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"t1_priests"
+name_key = "ENC_T1_PRIESTS"
+unit_ids = Array[StringName]([&"ash_ghoul", &"ash_priest"])
+counts = Array[int]([16, 3])
+obstacles = Array[Vector2i]([Vector2i(5, 3), Vector2i(5, 5)])
+tier = 1
+elite = false
+boss = false

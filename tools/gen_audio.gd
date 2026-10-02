@@ -26,7 +26,7 @@ func _init() -> void:
 		"impact": _sfx_impact(), "death": _sfx_death(), "ability": _sfx_ability(), "spell": _sfx_spell(),
 		"order": _sfx_order(), "heal": _sfx_heal(), "wall": _sfx_wall(), "push": _sfx_push(),
 		"turn": _sfx_turn(), "card": _sfx_card(), "transform": _sfx_transform(),
-		"victory": _sfx_victory(), "defeat": _sfx_defeat(),
+		"victory": _sfx_victory(), "defeat": _sfx_defeat(), "erase": _sfx_erase(),
 	}
 	for id: String in sfx:
 		_save(OUT_SFX.path_join(id + ".wav"), sfx[id], false)
@@ -208,6 +208,16 @@ func _sfx_transform() -> PackedFloat32Array:
 	for i in 5:
 		_bell(buf, 0.5 + i * 0.08, _hz(74 + [0, 3, 7, 10, 12][i]), 0.12)
 	_echo(buf, 0.21, 0.3)
+	return buf
+
+
+## Стирание разломом: обратное «всасывание» — нарастающий шум и падающий тон.
+func _sfx_erase() -> PackedFloat32Array:
+	var buf := _buffer(1.4)
+	_noise(buf, 0, 1.1, 0.5, 0.0, 0.3, true)
+	_sweep(buf, 0.1, 1.1, 700, 40, 0.3)
+	for n in [61, 62, 67]:
+		_bell(buf, 0.0, _hz(n), 0.05)
 	return buf
 
 

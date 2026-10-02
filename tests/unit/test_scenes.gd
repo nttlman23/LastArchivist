@@ -12,6 +12,8 @@ const SCENES := [
 func before_each() -> void:
 	Game.run = RunState.create(Game.defs, 3)
 	Game.selected = [0, 1, 2, 3]
+	# Бой и подготовка открываются для начатого острова; на 1-м слое — всегда бои.
+	MapActions.travel(Game.run, Game.run.map.next_of(MapState.START)[0])
 
 
 func after_all() -> void:

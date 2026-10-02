@@ -17,6 +17,8 @@ const PUSHED := &"pushed"                   # {uid, from, to}
 const OBSTACLE_ADDED := &"obstacle_added"   # {hex, rounds}
 const OBSTACLE_EXPIRED := &"obstacle_expired"  # {hex}
 const STATUS_CHANGED := &"status_changed"   # {uid, status, on}
+const RIFT_MARKED := &"rift_marked"         # {uid} — будет стёрт в начале следующего раунда
+const ERASED := &"erased"                   # {uid} — стёрт разломом
 const DAMAGED := &"damaged"                 # {uid, damage, killed, source} — урон без атаки (заклинания, рикошеты)
 
 var type: StringName

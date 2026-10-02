@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/event_def.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/defs/event_option_def.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/defs/event_effect.gd" id="3"]
+
+[sub_resource type="Resource" id="e0_0"]
+script = ExtResource("3")
+kind = 7
+
+[sub_resource type="Resource" id="e0_1"]
+script = ExtResource("3")
+kind = 3
+amount = -2
+
+[sub_resource type="Resource" id="o0"]
+script = ExtResource("2")
+label_key = "EVT_RIFT_WHISPER_A"
+result_key = "EVT_RIFT_WHISPER_A_RES"
+effects = [SubResource("e0_0"), SubResource("e0_1")]
+
+[sub_resource type="Resource" id="o1"]
+script = ExtResource("2")
+label_key = "EVT_RIFT_WHISPER_B"
+result_key = "EVT_RIFT_WHISPER_B_RES"
+effects = []
+
+[resource]
+script = ExtResource("1")
+id = &"rift_whisper"
+title_key = "EVT_RIFT_WHISPER_TITLE"
+text_key = "EVT_RIFT_WHISPER_TEXT"
+options = [SubResource("o0"), SubResource("o1")]

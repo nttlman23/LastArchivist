@@ -1,92 +1,98 @@
 extends SceneTree
-## Балансная симуляция: забеги, где за игрока тоже играет AI.
-## За Архивариуса — HeroAi, после боя — случайное действие: новая карта или превращение.
+## Балансная симуляция экспедиций: за игрока — AI отрядов, HeroAi в бою и MapAi на карте.
 ## Запуск: godot --headless -s res://tools/sim_balance.gd -- [runs]
 
 const DEFAULT_RUNS := 200
+
+var db: DefsDB
+var stats := {}
 
 
 func _init() -> void:
 	var args := OS.get_cmdline_user_args()
 	var runs := int(args[0]) if args.size() > 0 else DEFAULT_RUNS
-	var db := DefsDB.load_default()
-	var chain := db.encounter_chain.size()
-	var reached: Array[int] = []
-	reached.resize(chain + 1)
-	var rounds_sum: Array[int] = []
-	rounds_sum.resize(chain)
-	var wins: Array[int] = []
-	wins.resize(chain)
-	var fought: Array[int] = []
-	fought.resize(chain)
-	var abilities_used := 0
-	var hero_actions := 0
-	var forms: Dictionary[String, int] = {}
-
+	db = DefsDB.load_default()
+	var won := 0
+	var layers_sum := 0
+	var res_sum := {RunState.INK: 0, RunState.PARCHMENT: 0, RunState.AETHER: 0}
+	var deaths := {}
 	for i in runs:
 		var run := RunState.create(db, i * 7919 + 1)
-		var choice_rng := RandomNumberGenerator.new()
-		choice_rng.seed = i
-		var cleared := 0
-		while true:
-			var selected: Array[int] = []
-			for c in run.codex.unit_indices(db).slice(0, BattleState.MAX_STACKS):
-				selected.append(c)
-			var s := BattleState.create(db, db.encounter(run.current_encounter_id(db)), run.codex, selected, run.battle_seed(), run.hero)
-			fought[run.battle_index] += 1
-			BattleResolver.begin(s)
-			while s.outcome == BattleState.Outcome.NONE:
-				var hero := HeroAi.choose(s) if s.can_hero_act() else null
-				var action := hero if hero else AiController.choose_action(s, s.active_uid)
-				if action.type == BattleAction.Type.ABILITY:
-					abilities_used += 1
-				if action.is_hero():
-					hero_actions += 1
-				BattleResolver.apply(s, action)
-			rounds_sum[run.battle_index] += s.round_number
-			if s.outcome != BattleState.Outcome.PLAYER_WON:
-				break
-			wins[run.battle_index] += 1
-			cleared += 1
-			run.apply_spell_charges(s.spell_charges())
-			if run.is_last_battle(db):
-				break
-			run.decay_after_battle(db, selected)
-			var form := _post_battle(db, run, choice_rng)
-			forms[form] = forms.get(form, 0) + 1
-			run.battle_index += 1
-			if not run.codex.has_unit_cards(db):
-				break
-		reached[cleared] += 1
-
-	print("Забегов: %d" % runs)
-	for b in chain:
-		print("Бой %d (%s): побед %d из %d (%.0f%%), средн. раундов %.1f" % [
-			b + 1, db.encounter_chain[b], wins[b], fought[b], 100.0 * wins[b] / maxi(1, fought[b]),
-			float(rounds_sum[b]) / maxi(1, fought[b])])
-	print("Полностью пройдено: %d (%.0f%%)" % [reached[-1], 100.0 * reached[-1] / runs])
-	print("Способностей за забег: %.1f, действий героя: %.1f" % [float(abilities_used) / runs, float(hero_actions) / runs])
-	print("Выбор после боя: %s" % forms)
+		var rng := RandomNumberGenerator.new()
+		rng.seed = i
+		var result := _play(run, rng)
+		if result == "won":
+			won += 1
+		else:
+			deaths[result] = deaths.get(result, 0) + 1
+		layers_sum += run.map.current_layer()
+		for id in res_sum:
+			res_sum[id] += run.resources[id]
+	print("Экспедиций: %d, пройдено полностью: %d (%.0f%%), средний слой %.1f" % [runs, won, 100.0 * won / runs, float(layers_sum) / runs])
+	print("Поражения: %s" % deaths)
+	for key in stats.keys():
+		var s: Array = stats[key]
+		print("  %-10s побед %d из %d (%.0f%%), средн. раундов %.1f" % [key, s[0], s[1], 100.0 * s[0] / maxi(1, s[1]), float(s[2]) / maxi(1, s[1])])
+	print("Остаток ресурсов в среднем: Ч %.1f · П %.1f · Э %.1f" % [float(res_sum[RunState.INK]) / runs, float(res_sum[RunState.PARCHMENT]) / runs, float(res_sum[RunState.AETHER]) / runs])
 	quit()
 
 
-## Случайно: взять карту (50%) или превратить случайную доступную карту.
-func _post_battle(db: DefsDB, run: RunState, rng: RandomNumberGenerator) -> String:
-	var offer := run.roll_rewards(db)
-	if rng.randf() < 0.5 and not run.codex.is_full():
-		run.codex.add(db, offer[rng.randi_range(0, offer.size() - 1)])
-		return "card"
-	var options: Array = []
-	for i in run.codex.cards.size():
-		for form in CodexOps.ALL_FORMS:
-			if CodexOps.can_apply(db, run, i, form):
-				options.append([i, form])
-	# Не превращаем последнюю карту отряда.
-	if options.is_empty() or run.codex.unit_indices(db).size() <= 2:
-		if not run.codex.is_full():
-			run.codex.add(db, offer[0])
-			return "card"
-		return "skip"
-	var pick: Array = options[rng.randi_range(0, options.size() - 1)]
-	CodexOps.apply(db, run, pick[0], pick[1])
-	return CodexOps.Form.keys()[pick[1]].to_lower()
+## Возвращает "won" или причину поражения.
+func _play(run: RunState, rng: RandomNumberGenerator) -> String:
+	while true:
+		var id := MapAi.choose_node(db, run, rng)
+		MapActions.travel(run, id)
+		var node := run.pending()
+		match node.type:
+			MapState.NodeType.BATTLE, MapState.NodeType.ELITE, MapState.NodeType.RIFT:
+				var key := "rift" if node.type == MapState.NodeType.RIFT else ("elite" if node.type == MapState.NodeType.ELITE else "tier%d" % db.encounter(node.content).tier)
+				if not _battle(run, rng, key, node.type == MapState.NodeType.ELITE):
+					return "бой:" + key
+				if node.type == MapState.NodeType.RIFT:
+					return "won"
+			MapState.NodeType.EVENT:
+				var r := MapAi.event(db, run, id, rng)
+				if r.battle_tier > 0:
+					run.pending_battle = EventResolver.battle_encounter(db, run, id, r.battle_tier)
+					run.pending_reward_card = r.battle_reward
+					if not _battle(run, rng, "event", false):
+						return "бой:event"
+			MapState.NodeType.SHOP:
+				MapAi.shop(db, run, ShopOps.open(db, run, id))
+			MapState.NodeType.HAVEN:
+				MapAi.haven(db, run)
+		MapActions.complete(run)
+		if not run.codex.has_unit_cards(db):
+			return "нет карт"
+	return "?"
+
+
+func _battle(run: RunState, rng: RandomNumberGenerator, key: String, elite: bool) -> bool:
+	var selected: Array[int] = []
+	for c in run.codex.unit_indices(db).slice(0, BattleState.MAX_STACKS):
+		selected.append(c)
+	var enc := db.encounter(run.current_encounter_id(db))
+	var s := BattleState.create(db, enc, run.codex, selected, run.battle_seed(), run.hero)
+	BattleResolver.begin(s)
+	while s.outcome == BattleState.Outcome.NONE:
+		var hero := HeroAi.choose(s) if s.can_hero_act() else null
+		BattleResolver.apply(s, hero if hero else AiController.choose_action(s, s.active_uid))
+	if not stats.has(key):
+		stats[key] = [0, 0, 0]
+	stats[key][1] += 1
+	stats[key][2] += s.round_number
+	if s.outcome != BattleState.Outcome.PLAYER_WON:
+		return false
+	stats[key][0] += 1
+	run.battles_won += 1
+	run.apply_spell_charges(s.spell_charges())
+	run.after_battle(db, selected, s.erased_cards)
+	if enc.boss:
+		return true
+	var rewards := MapActions.battle_rewards(enc)
+	for id in rewards:
+		run.gain(id, rewards[id])
+	if run.pending_reward_card != &"" and not run.codex.is_full():
+		run.codex.add(db, run.pending_reward_card)
+	MapAi.post_battle(db, run, rng, elite)
+	return true

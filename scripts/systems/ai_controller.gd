@@ -7,6 +7,8 @@ extends RefCounted
 const RANGED_TARGET_WEIGHT := 1.5
 const STACK_KILL_BONUS := 1000.0
 const RETALIATION_WEIGHT := 0.5
+## Урон по Хранителю Разлома ценнее: его гибель сразу выигрывает бой.
+const BOSS_WEIGHT := 3.0
 
 
 static func choose_action(state: BattleState, uid: int) -> BattleAction:
@@ -52,6 +54,8 @@ static func value(dealt: float, target: UnitState) -> float:
 	var score := minf(dealt, hp)
 	if target.is_ranged:
 		score *= RANGED_TARGET_WEIGHT
+	if target.is_boss:
+		score *= BOSS_WEIGHT
 	if dealt >= hp:
 		score += STACK_KILL_BONUS
 	return score

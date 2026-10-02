@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"rift"
+name_key = "ENC_RIFT"
+unit_ids = Array[StringName]([&"rift_warden", &"ash_ghoul", &"shard_archer", &"ash_priest"])
+counts = Array[int]([1, 10, 5, 2])
+obstacles = Array[Vector2i]([Vector2i(5, 0), Vector2i(5, 8), Vector2i(3, 4), Vector2i(7, 4)])
+tier = 3
+elite = false
+boss = true

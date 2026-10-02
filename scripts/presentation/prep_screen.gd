@@ -25,12 +25,21 @@ func _ready() -> void:
 	box.add_theme_constant_override("separation", 14)
 	margin.add_child(box)
 
-	box.add_child(UiKit.label(tr("PREP_TITLE") % [run.battle_index + 1, db.encounter_chain.size(), tr(encounter.name_key)], 40, UiKit.ACCENT))
+	var title: String
+	if encounter.boss:
+		title = tr("PREP_TITLE_RIFT") % tr(encounter.name_key)
+	elif encounter.elite:
+		title = tr("PREP_TITLE_ELITE") % tr(encounter.name_key)
+	else:
+		title = tr("PREP_TITLE_BATTLE") % [encounter.tier, tr(encounter.name_key)]
+	box.add_child(UiKit.label(title, 40, UiKit.DANGER if encounter.boss else UiKit.ACCENT))
+	if encounter.boss:
+		box.add_child(UiKit.label(tr("PREP_RIFT_WARNING"), 0, UiKit.DANGER))
 	var enemies: Array[String] = []
 	for i in encounter.unit_ids.size():
 		enemies.append("%d × %s" % [encounter.counts[i], UiKit.unit_name(db, encounter.unit_ids[i])])
 	box.add_child(UiKit.label("%s %s" % [tr("PREP_ENEMIES"), ", ".join(enemies)], 0, UiKit.ENEMY_COLOR))
-	box.add_child(_hero_summary(db, run))
+	box.add_child(UiKit.hero_summary(db, run))
 	box.add_child(UiKit.label(tr("PREP_HINT") % BattleState.MAX_STACKS, 0, UiKit.MUTED))
 
 	var scroll := ScrollContainer.new()
@@ -59,42 +68,13 @@ func _ready() -> void:
 	box.add_child(buttons)
 	_start = UiKit.button(tr("PREP_START"), _on_start)
 	buttons.add_child(_start)
-	buttons.add_child(UiKit.button(tr("PREP_TO_MENU"), Game.to_main_menu))
+	buttons.add_child(UiKit.button(tr("PREP_TO_MAP"), Game.abandon_node))
 
 	# По умолчанию — первые карты отрядов.
 	var units := run.codex.unit_indices(db)
 	for i in units.slice(0, BattleState.MAX_STACKS):
 		_buttons[i].button_pressed = true
 	_refresh()
-
-
-## Сводка Архивариуса: приказы, улучшения, заклинания с зарядами.
-func _hero_summary(db: DefsDB, run: RunState) -> PanelContainer:
-	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", UiKit.panel_style(UiKit.PANEL_COLOR))
-	var col := VBoxContainer.new()
-	panel.add_child(col)
-	col.add_child(UiKit.label(tr("PREP_HERO"), 22, UiKit.ACCENT))
-
-	var orders: Array[String] = []
-	for id in run.hero.available_orders(db, run.codex):
-		orders.append(tr(db.order(id).name_key))
-	col.add_child(UiKit.label(tr("PREP_ORDERS") % ", ".join(orders), 18))
-
-	var counts := {}
-	for id in run.hero.active_upgrades(db, run.codex):
-		counts[id] = counts.get(id, 0) + 1
-	var ups: Array[String] = []
-	for id: StringName in counts:
-		var text := tr(db.upgrade(id).name_key)
-		ups.append(text if counts[id] == 1 else "%s ×%d" % [text, counts[id]])
-	col.add_child(UiKit.label(tr("PREP_UPGRADES") % (", ".join(ups) if not ups.is_empty() else tr("PREP_NONE")), 18, UiKit.MUTED))
-
-	var spells: Array[String] = []
-	for slot in run.hero.spells:
-		spells.append("%s ×%d" % [tr(db.spell(slot.spell_id).name_key), slot.charges])
-	col.add_child(UiKit.label(tr("PREP_SPELLS") % (", ".join(spells) if not spells.is_empty() else tr("PREP_NONE")), 18, Color(0.75, 0.6, 1.0)))
-	return panel
 
 
 func _on_card_toggled(pressed: bool, index: int) -> void:

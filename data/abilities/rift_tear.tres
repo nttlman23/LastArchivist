@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="AbilityDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/ability_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"rift_tear"
+name_key = "ABIL_RIFT_TEAR"
+desc_key = "ABIL_RIFT_TEAR_DESC"
+cooldown = 2
+target = 3

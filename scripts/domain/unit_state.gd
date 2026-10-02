@@ -12,6 +12,7 @@ const STATUS_ADVANCE := &"advance"
 const STATUS_MARKED := &"marked"
 const STATUS_SHIELD_WALL := &"shield_wall"
 const STATUS_RUST_ARMOR := &"rust_armor"
+const STATUS_RIFT_MARKED := &"rift_marked"
 const ADVANCE_BONUS := 2
 
 var uid: int
@@ -38,6 +39,8 @@ var shots_left := 0
 var ability_id: StringName
 ## Раунды до готовности способности; 0 — готова.
 var ability_cd := 0
+## Хранитель Разлома: его гибель выигрывает бой.
+var is_boss := false
 
 var retaliated := false
 var waited := false
@@ -130,7 +133,7 @@ func to_dict() -> Dictionary:
 		"hex": [hex.x, hex.y], "count": count, "start_count": start_count, "top_hp": top_hp, "card_index": card_index,
 		"hp": hp, "attack": attack, "defense": defense, "dmg_min": dmg_min, "dmg_max": dmg_max,
 		"speed": speed, "initiative": initiative, "is_ranged": is_ranged, "is_flying": is_flying,
-		"shots_left": shots_left, "ability_id": String(ability_id), "ability_cd": ability_cd,
+		"shots_left": shots_left, "ability_id": String(ability_id), "ability_cd": ability_cd, "is_boss": is_boss,
 		"retaliated": retaliated, "waited": waited, "defending": defending, "statuses": st,
 	}
 
@@ -158,6 +161,7 @@ static func from_dict(d: Dictionary) -> UnitState:
 	u.shots_left = int(d["shots_left"])
 	u.ability_id = StringName(d["ability_id"])
 	u.ability_cd = int(d["ability_cd"])
+	u.is_boss = bool(d.get("is_boss", false))
 	u.retaliated = bool(d["retaliated"])
 	u.waited = bool(d["waited"])
 	u.defending = bool(d["defending"])

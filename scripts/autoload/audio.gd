@@ -24,6 +24,7 @@ const SFX := {
 	&"wall": ["res://audio/sfx/wall.wav", -7.0],
 	&"push": ["res://audio/sfx/push.wav", -7.0],
 	&"turn": ["res://audio/sfx/turn.wav", -14.0],
+	&"erase": ["res://audio/sfx/erase.wav", -4.0],
 	&"victory": ["res://audio/sfx/victory.wav", -4.0],
 	&"defeat": ["res://audio/sfx/defeat.wav", -4.0],
 }

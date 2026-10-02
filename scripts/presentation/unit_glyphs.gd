@@ -41,6 +41,10 @@ static func draw_unit(ci: CanvasItem, def_id: StringName, c: Vector2, r: float, 
 			_masks(ci, c, r, ink, body)
 		&"ash_priest":
 			_chalice(ci, c, r, ink)
+		&"rift_warden":
+			for i in 3:
+				ci.draw_arc(c, r * (0.25 + 0.22 * i), i * 1.1, i * 1.1 + PI * 1.5, 20, ink, maxf(2.0, r * 0.12))
+			ci.draw_circle(c, r * 0.12, ink)
 		&"rift_ram":
 			_poly(ci, c, r, [Vector2(-0.75, 0.55), Vector2(-0.35, -0.55), Vector2(0.15, -0.75), Vector2(0.8, -0.2), Vector2(0.25, -0.15), Vector2(0.1, 0.55)], ink)
 		_:

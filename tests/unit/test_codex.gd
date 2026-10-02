@@ -8,10 +8,11 @@ func before_all() -> void:
 
 
 func test_defs_loaded() -> void:
-	assert_eq(db.units.size(), 9)
+	assert_eq(db.units.size(), 10)
 	assert_eq(db.memories.size(), 8)
-	assert_eq(db.encounters.size(), 5)
-	assert_eq(db.abilities.size(), 9)
+	assert_eq(db.encounters.size(), 15)
+	assert_eq(db.abilities.size(), 10)
+	assert_eq(db.events.size(), 8)
 	assert_eq(db.spells.size(), 7)
 	assert_eq(db.orders.size(), 3)
 	assert_eq(db.upgrades.size(), 7)
@@ -28,8 +29,10 @@ func test_defs_loaded() -> void:
 		assert_true(db.orders.has(id))
 	for e: EncounterDef in db.encounters.values():
 		assert_eq(e.unit_ids.size(), e.counts.size())
-	for id in db.encounter_chain:
-		assert_true(db.encounters.has(id))
+	for tier in [1, 2, 3]:
+		assert_gt(db.encounter_pool(tier, false).size(), 2, "шаблоны уровня %d" % tier)
+	assert_eq(db.encounter_pool(0, true).size(), 3, "элитные")
+	assert_true(db.encounter(db.boss_encounter()).boss)
 
 
 func test_starting_codex() -> void:

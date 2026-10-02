@@ -102,6 +102,8 @@ static func abilities_of(db: DefsDB, u: UnitState, skip_basic: bool = false) -> 
 		list.append([UnitGlyphs.ICON_DEFEND, TranslationServer.translate("STATUS_DEFENDING"), true])
 	if u.waited:
 		list.append([UnitGlyphs.ICON_WAIT, TranslationServer.translate("STATUS_WAITED"), true])
+	if u.has_status(UnitState.STATUS_RIFT_MARKED):
+		list.append([UnitGlyphs.ICON_MARK, TranslationServer.translate("STATUS_RIFT_MARKED"), false])
 	if u.has_status(UnitState.STATUS_MARKED):
 		list.append([UnitGlyphs.ICON_MARK, TranslationServer.translate("STATUS_MARKED"), true])
 	if u.has_status(UnitState.STATUS_SHIELD_WALL):

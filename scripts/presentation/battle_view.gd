@@ -37,6 +37,7 @@ const AFFECTED_ENEMY := Color(0.95, 0.8, 0.4)
 const HEAL_COLOR := Color(0.45, 0.95, 0.5)
 const DAMAGE_COLOR := Color(1, 0.4, 0.35)
 const NAME_COLOR := Color(0.95, 0.85, 0.5)
+const RIFT_COLOR := Color(0.8, 0.5, 1.0)
 
 var state: BattleState
 var db: DefsDB
@@ -225,6 +226,8 @@ const EVENT_SOUNDS := {
 	BattleEvent.PUSHED: &"push",
 	BattleEvent.OBSTACLE_ADDED: &"wall",
 	BattleEvent.ABILITY_USED: &"ability",
+	BattleEvent.ERASED: &"erase",
+	BattleEvent.RIFT_MARKED: &"order",
 }
 
 
@@ -276,6 +279,15 @@ func play(events: Array[BattleEvent]) -> void:
 					await get_tree().create_timer(0.35).timeout
 			BattleEvent.OBSTACLE_ADDED, BattleEvent.OBSTACLE_EXPIRED:
 				_overlay.queue_redraw()
+			BattleEvent.RIFT_MARKED:
+				_float_text(int(e.data["uid"]), event_label.call(e), RIFT_COLOR, -26.0)
+				_units.queue_redraw()
+				await get_tree().create_timer(0.5).timeout
+			BattleEvent.ERASED:
+				var uid: int = e.data["uid"]
+				_float_text(uid, event_label.call(e), RIFT_COLOR, -26.0)
+				_flash[uid] = 0.4
+				await _tween_value(func(v: float) -> void: _alpha[uid] = v, 1.0, 0.0, FADE_TIME * 2.0, _units)
 	sync()
 
 
@@ -473,6 +485,9 @@ func _draw_unit(ci: CanvasItem, u: UnitState) -> void:
 		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_RETALIATION, c + Vector2(UNIT_RADIUS + 4, 8), badge_r, bg, Color(UiKit.ACCENT, alpha))
 	elif u.retaliated:
 		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_RETALIATION_USED, c + Vector2(UNIT_RADIUS + 4, 8), badge_r, bg, Color(UiKit.MUTED, alpha))
+	if u.has_status(UnitState.STATUS_RIFT_MARKED):
+		ci.draw_arc(c, UNIT_RADIUS + 9, 0, TAU, 32, Color(RIFT_COLOR, alpha), 3.0)
+		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_MARK, c + Vector2(0, UNIT_RADIUS + 24), badge_r, bg, Color(RIFT_COLOR, alpha))
 	if u.has_status(UnitState.STATUS_MARKED):
 		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_MARK, c + Vector2(0, -UNIT_RADIUS + 2), badge_r, bg, Color(DAMAGE_COLOR, alpha))
 	if u.has_status(UnitState.STATUS_RUST_ARMOR):

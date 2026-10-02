@@ -9,3 +9,6 @@ name_key = "ENC_CRYPT_2"
 unit_ids = Array[StringName]([&"ash_ghoul", &"shard_archer", &"ash_priest"])
 counts = Array[int]([14, 10, 4])
 obstacles = Array[Vector2i]([Vector2i(4, 4), Vector2i(6, 1), Vector2i(6, 7)])
+tier = 2
+elite = false
+boss = false

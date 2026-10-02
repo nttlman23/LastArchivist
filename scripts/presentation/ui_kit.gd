@@ -63,6 +63,18 @@ static func centered_column(parent: Control, separation: int = 16) -> VBoxContai
 	return box
 
 
+## «Чернила 2 · Пергамент 3 · Эфир 1»; signed — с плюсом («+2»), нули пропускаются.
+static func resources_text(res: Dictionary, signed: bool = false) -> String:
+	var parts: Array[String] = []
+	for id in RunState.RESOURCE_IDS:
+		var v: int = res.get(id, 0)
+		if signed and v == 0:
+			continue
+		var num := ("%+d" % v) if signed else str(v)
+		parts.append("%s %s" % [TranslationServer.translate("RES_" + String(id).to_upper()), num])
+	return " · ".join(parts)
+
+
 static func unit_name(db: DefsDB, def_id: StringName) -> String:
 	return TranslationServer.translate(db.unit(def_id).name_key)
 
@@ -164,3 +176,32 @@ static func _card_tooltip(db: DefsDB, mem: MemoryCardDef) -> String:
 		return ""
 	var ab := db.ability(def.ability_id)
 	return "%s: %s" % [TranslationServer.translate(ab.name_key), TranslationServer.translate(ab.desc_key)]
+
+
+## Сводка Архивариуса: приказы, улучшения, заклинания с зарядами.
+static func hero_summary(db: DefsDB, run: RunState) -> PanelContainer:
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", panel_style(PANEL_COLOR))
+	var col := VBoxContainer.new()
+	panel.add_child(col)
+	col.add_child(label(TranslationServer.translate("PREP_HERO"), 22, ACCENT))
+
+	var orders: Array[String] = []
+	for id in run.hero.available_orders(db, run.codex):
+		orders.append(TranslationServer.translate(db.order(id).name_key))
+	col.add_child(label(TranslationServer.translate("PREP_ORDERS") % ", ".join(orders), 18))
+
+	var counts := {}
+	for id in run.hero.active_upgrades(db, run.codex):
+		counts[id] = counts.get(id, 0) + 1
+	var ups: Array[String] = []
+	for id: StringName in counts:
+		var text := TranslationServer.translate(db.upgrade(id).name_key)
+		ups.append(text if counts[id] == 1 else "%s ×%d" % [text, counts[id]])
+	col.add_child(label(TranslationServer.translate("PREP_UPGRADES") % (", ".join(ups) if not ups.is_empty() else TranslationServer.translate("PREP_NONE")), 18, MUTED))
+
+	var spells: Array[String] = []
+	for slot in run.hero.spells:
+		spells.append("%s ×%d" % [TranslationServer.translate(db.spell(slot.spell_id).name_key), slot.charges])
+	col.add_child(label(TranslationServer.translate("PREP_SPELLS") % (", ".join(spells) if not spells.is_empty() else TranslationServer.translate("PREP_NONE")), 18, Color(0.75, 0.6, 1.0)))
+	return panel

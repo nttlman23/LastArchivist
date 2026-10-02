@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="UnitDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/unit_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"rift_warden"
+name_key = "UNIT_RIFT_WARDEN"
+hp = 160
+attack = 14
+defense = 10
+dmg_min = 20
+dmg_max = 30
+speed = 4
+initiative = 9
+is_ranged = false
+shots = 0
+is_flying = false
+ability_id = &"rift_tear"
+color = Color(0.35, 0.2, 0.45, 1)

@@ -10,6 +10,12 @@ static func start_round(state: BattleState) -> Array[BattleEvent]:
 		state.outcome = BattleState.Outcome.PLAYER_LOST
 		events.append(BattleEvent.new(BattleEvent.BATTLE_ENDED, {"outcome": state.outcome, "reason": "rounds"}))
 		return events
+	if state.rift:
+		RiftRule.on_round_start(state, events)
+		if state.alive(UnitState.Side.PLAYER).is_empty():
+			state.outcome = BattleState.Outcome.PLAYER_LOST
+			events.append(BattleEvent.new(BattleEvent.BATTLE_ENDED, {"outcome": state.outcome, "reason": "erased"}))
+			return events
 	var order := state.alive_all()
 	for u in order:
 		u.retaliated = false

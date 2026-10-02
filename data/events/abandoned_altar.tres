@@ -1,0 +1,50 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/event_def.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/defs/event_option_def.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/defs/event_effect.gd" id="3"]
+
+[sub_resource type="Resource" id="e0_0"]
+script = ExtResource("3")
+kind = 0
+resource = &"ink"
+amount = -2
+
+[sub_resource type="Resource" id="e0_1"]
+script = ExtResource("3")
+kind = 6
+amount = 1
+
+[sub_resource type="Resource" id="o0"]
+script = ExtResource("2")
+label_key = "EVT_ABANDONED_ALTAR_A"
+result_key = "EVT_ABANDONED_ALTAR_A_RES"
+requires_resource = &"ink"
+requires_amount = 2
+needs_spell = true
+effects = [SubResource("e0_0"), SubResource("e0_1")]
+
+[sub_resource type="Resource" id="e1_0"]
+script = ExtResource("3")
+kind = 0
+resource = &"aether"
+amount = 3
+
+[sub_resource type="Resource" id="e1_1"]
+script = ExtResource("3")
+kind = 2
+count = 2
+amount = -1
+
+[sub_resource type="Resource" id="o1"]
+script = ExtResource("2")
+label_key = "EVT_ABANDONED_ALTAR_B"
+result_key = "EVT_ABANDONED_ALTAR_B_RES"
+effects = [SubResource("e1_0"), SubResource("e1_1")]
+
+[resource]
+script = ExtResource("1")
+id = &"abandoned_altar"
+title_key = "EVT_ABANDONED_ALTAR_TITLE"
+text_key = "EVT_ABANDONED_ALTAR_TEXT"
+options = [SubResource("o0"), SubResource("o1")]

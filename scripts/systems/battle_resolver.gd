@@ -165,7 +165,8 @@ static func add_temp_obstacle(state: BattleState, hex: Vector2i, rounds: int, ev
 static func check_end(state: BattleState, events: Array[BattleEvent]) -> bool:
 	if state.outcome != BattleState.Outcome.NONE:
 		return true
-	if state.alive(UnitState.Side.ENEMY).is_empty():
+	var boss := state.get_unit(state.boss_uid)
+	if state.alive(UnitState.Side.ENEMY).is_empty() or (boss != null and not boss.is_alive()):
 		state.outcome = BattleState.Outcome.PLAYER_WON
 	elif state.alive(UnitState.Side.PLAYER).is_empty():
 		state.outcome = BattleState.Outcome.PLAYER_LOST
