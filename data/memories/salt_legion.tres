@@ -6,6 +6,9 @@
 script = ExtResource("1")
 id = &"salt_legion"
 name_key = "MEM_SALT_LEGION"
+kind = 0
 unit_id = &"salt_guard"
 count = 12
 max_durability = 4
+spell_id = &"salt_wall"
+upgrade_id = &"up_defense"

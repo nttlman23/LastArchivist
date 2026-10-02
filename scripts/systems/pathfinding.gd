@@ -48,10 +48,10 @@ static func reachable(state: BattleState, u: UnitState) -> Dictionary[Vector2i, 
 	if u.is_flying:
 		for h in state.grid.all_hexes():
 			var d := HexGrid.distance(u.hex, h)
-			if d > 0 and d <= u.speed and state.is_free(h):
+			if d > 0 and d <= u.move_speed() and state.is_free(h):
 				result[h] = d
 		return result
-	var res := bfs(state, u.hex, u.speed)
+	var res := bfs(state, u.hex, u.move_speed())
 	for h in res.dist:
 		if h != u.hex:
 			result[h] = res.dist[h]
@@ -62,4 +62,4 @@ static func reachable(state: BattleState, u: UnitState) -> Dictionary[Vector2i, 
 static func path(state: BattleState, u: UnitState, dest: Vector2i) -> Array[Vector2i]:
 	if u.is_flying:
 		return [u.hex, dest]
-	return bfs(state, u.hex, u.speed).path_to(dest)
+	return bfs(state, u.hex, u.move_speed()).path_to(dest)

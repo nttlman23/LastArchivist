@@ -8,11 +8,24 @@ func before_all() -> void:
 
 
 func test_defs_loaded() -> void:
-	assert_eq(db.units.size(), 6)
-	assert_eq(db.memories.size(), 6)
-	assert_eq(db.encounters.size(), 3)
+	assert_eq(db.units.size(), 9)
+	assert_eq(db.memories.size(), 8)
+	assert_eq(db.encounters.size(), 5)
+	assert_eq(db.abilities.size(), 9)
+	assert_eq(db.spells.size(), 7)
+	assert_eq(db.orders.size(), 3)
+	assert_eq(db.upgrades.size(), 7)
+	for u: UnitDef in db.units.values():
+		assert_true(db.abilities.has(u.ability_id), "у %s есть способность" % u.id)
 	for m: MemoryCardDef in db.memories.values():
-		assert_true(db.units.has(m.unit_id), "карта %s ссылается на существо" % m.id)
+		if m.is_unit():
+			assert_true(db.units.has(m.unit_id), "карта %s ссылается на существо" % m.id)
+			assert_true(db.spells.has(m.spell_id), "у карты %s есть заклинание" % m.id)
+			assert_true(db.upgrades.has(m.upgrade_id), "у карты %s есть улучшение" % m.id)
+		else:
+			assert_true(db.orders.has(m.order_id), "геройская карта %s открывает приказ" % m.id)
+	for id in db.base_orders:
+		assert_true(db.orders.has(id))
 	for e: EncounterDef in db.encounters.values():
 		assert_eq(e.unit_ids.size(), e.counts.size())
 	for id in db.encounter_chain:

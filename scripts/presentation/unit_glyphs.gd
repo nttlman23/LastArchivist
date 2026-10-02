@@ -14,6 +14,12 @@ const ICON_RETALIATION_USED := &"retaliation_used"
 const ICON_DEFEND := &"defend"
 const ICON_WAIT := &"wait"
 const ICON_MOVE := &"move"
+const ICON_ABILITY := &"ability"
+const ICON_MARK := &"mark"
+const ICON_ARMOR := &"armor"
+const ICON_HEAL := &"heal"
+const ICON_ORDER := &"order"
+const ICON_SPELL := &"spell"
 
 
 ## Силуэт существа по id определения.
@@ -31,6 +37,12 @@ static func draw_unit(ci: CanvasItem, def_id: StringName, c: Vector2, r: float, 
 			_poly(ci, c, r, [Vector2(0.15, -0.8), Vector2(-0.45, 0.12), Vector2(-0.02, 0.12), Vector2(-0.22, 0.8), Vector2(0.48, -0.18), Vector2(0.05, -0.18)], ink)
 		&"rust_sentinel":
 			_tower(ci, c, r, ink, body)
+		&"faceless_choir":
+			_masks(ci, c, r, ink, body)
+		&"ash_priest":
+			_chalice(ci, c, r, ink)
+		&"rift_ram":
+			_poly(ci, c, r, [Vector2(-0.75, 0.55), Vector2(-0.35, -0.55), Vector2(0.15, -0.75), Vector2(0.8, -0.2), Vector2(0.25, -0.15), Vector2(0.1, 0.55)], ink)
 		_:
 			ci.draw_circle(c, r * 0.45, ink)
 
@@ -59,9 +71,53 @@ static func draw_icon(ci: CanvasItem, kind: StringName, c: Vector2, r: float, bg
 			_poly(ci, c, s, [Vector2(0, 0), Vector2(0.6, 0.8), Vector2(-0.6, 0.8)], fg)
 		ICON_MOVE:
 			_poly(ci, c, s, [Vector2(-0.8, -0.25), Vector2(0.1, -0.25), Vector2(0.1, -0.7), Vector2(0.85, 0), Vector2(0.1, 0.7), Vector2(0.1, 0.25), Vector2(-0.8, 0.25)], fg)
+		ICON_ABILITY:
+			_star(ci, c, s, fg)
+		ICON_MARK:
+			ci.draw_arc(c, s * 0.6, 0, TAU, 16, fg, maxf(1.5, s * 0.15))
+			for d: Vector2 in [Vector2.UP, Vector2.DOWN, Vector2.LEFT, Vector2.RIGHT]:
+				ci.draw_line(c + d * s * 0.35, c + d * s, fg, maxf(1.5, s * 0.15))
+		ICON_ARMOR:
+			_shield(ci, c, s, fg, bg)
+			ci.draw_line(c + Vector2(-0.3, 0.1) * s, c + Vector2(0.3, 0.1) * s, bg, maxf(1.5, s * 0.2))
+		ICON_HEAL:
+			ci.draw_line(c + Vector2(0, -0.75) * s, c + Vector2(0, 0.75) * s, fg, maxf(2.0, s * 0.35))
+			ci.draw_line(c + Vector2(-0.75, 0) * s, c + Vector2(0.75, 0) * s, fg, maxf(2.0, s * 0.35))
+		ICON_ORDER:
+			# Флажок на древке.
+			ci.draw_line(c + Vector2(-0.5, 0.85) * s, c + Vector2(-0.5, -0.85) * s, fg, maxf(1.5, s * 0.15))
+			_poly(ci, c, s, [Vector2(-0.45, -0.85), Vector2(0.8, -0.5), Vector2(-0.45, -0.1)], fg)
+		ICON_SPELL:
+			_poly(ci, c, s, [Vector2(0, -0.9), Vector2(0.6, 0), Vector2(0, 0.9), Vector2(-0.6, 0)], fg)
 
 
 # --- Примитивы ---------------------------------------------------------------
+
+static func _star(ci: CanvasItem, c: Vector2, r: float, color: Color) -> void:
+	var pts := PackedVector2Array()
+	for i in 10:
+		var radius := r * (0.95 if i % 2 == 0 else 0.42)
+		pts.append(c + Vector2.from_angle(deg_to_rad(-90 + 36 * i)) * radius)
+	ci.draw_colored_polygon(pts, color)
+
+
+static func _masks(ci: CanvasItem, c: Vector2, r: float, ink: Color, body: Color) -> void:
+	for p: Vector2 in [Vector2(-0.45, 0.2), Vector2(0.45, 0.2), Vector2(0, -0.3)]:
+		var center := c + p * r
+		var pts := PackedVector2Array()
+		for i in 16:
+			var a := TAU * i / 16.0
+			pts.append(center + Vector2(cos(a) * 0.32, sin(a) * 0.42) * r)
+		ci.draw_colored_polygon(pts, ink)
+		ci.draw_circle(center + Vector2(-0.11, -0.08) * r, r * 0.06, body)
+		ci.draw_circle(center + Vector2(0.11, -0.08) * r, r * 0.06, body)
+
+
+static func _chalice(ci: CanvasItem, c: Vector2, r: float, ink: Color) -> void:
+	_poly(ci, c, r, [Vector2(-0.6, -0.1), Vector2(0.6, -0.1), Vector2(0.3, 0.3), Vector2(-0.3, 0.3)], ink)
+	_poly(ci, c, r, [Vector2(-0.08, 0.3), Vector2(0.08, 0.3), Vector2(0.08, 0.6), Vector2(-0.08, 0.6)], ink)
+	_poly(ci, c, r, [Vector2(-0.4, 0.6), Vector2(0.4, 0.6), Vector2(0.4, 0.75), Vector2(-0.4, 0.75)], ink)
+	_poly(ci, c, r, [Vector2(-0.3, -0.15), Vector2(-0.1, -0.55), Vector2(0.0, -0.35), Vector2(0.15, -0.8), Vector2(0.3, -0.15)], ink)
 
 static func _poly(ci: CanvasItem, c: Vector2, r: float, pts: Array, color: Color) -> void:
 	var packed := PackedVector2Array()

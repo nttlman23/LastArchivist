@@ -10,6 +10,14 @@ const DIED := &"died"                       # {uid}
 const WAITED := &"waited"                   # {uid}
 const DEFENDED := &"defended"               # {uid}
 const BATTLE_ENDED := &"battle_ended"       # {outcome}
+const ABILITY_USED := &"ability_used"       # {uid, ability, target, hex}
+const HERO_ACTED := &"hero_acted"           # {action: id, spell: bool, target, hex}
+const HEALED := &"healed"                   # {uid, amount, revived}
+const PUSHED := &"pushed"                   # {uid, from, to}
+const OBSTACLE_ADDED := &"obstacle_added"   # {hex, rounds}
+const OBSTACLE_EXPIRED := &"obstacle_expired"  # {hex}
+const STATUS_CHANGED := &"status_changed"   # {uid, status, on}
+const DAMAGED := &"damaged"                 # {uid, damage, killed, source} — урон без атаки (заклинания, рикошеты)
 
 var type: StringName
 var data: Dictionary

@@ -6,6 +6,9 @@
 script = ExtResource("1")
 id = &"rust_sentinels"
 name_key = "MEM_RUST_SENTINELS"
+kind = 0
 unit_id = &"rust_sentinel"
 count = 6
 max_durability = 3
+spell_id = &"rust_armor"
+upgrade_id = &"up_hp"

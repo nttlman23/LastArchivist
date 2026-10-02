@@ -6,6 +6,9 @@
 script = ExtResource("1")
 id = &"ghoul_pack"
 name_key = "MEM_GHOUL_PACK"
+kind = 0
 unit_id = &"ash_ghoul"
 count = 10
 max_durability = 3
+spell_id = &"hunger"
+upgrade_id = &"up_attack"

@@ -15,8 +15,31 @@ const _ODD_DIRS: Array[Vector2i] = [
 	Vector2i(-1, 0), Vector2i(0, -1), Vector2i(1, -1),
 ]
 
+# Направления в кубических координатах (q, r, s): В, ЮВ, ЮЗ, З, СЗ, СВ.
+const CUBE_DIRS: Array[Vector3i] = [
+	Vector3i(1, 0, -1), Vector3i(0, 1, -1), Vector3i(-1, 1, 0),
+	Vector3i(-1, 0, 1), Vector3i(0, -1, 1), Vector3i(1, -1, 0),
+]
+
 var width: int
 var height: int
+
+
+## Соседняя клетка в направлении dir (0..5), без проверки границ.
+static func step(hex: Vector2i, dir: int) -> Vector2i:
+	return from_cube(to_cube(hex) + CUBE_DIRS[dir])
+
+
+## Направление прямой от a к b (0..5) или -1, если b не лежит на прямой.
+static func line_direction(a: Vector2i, b: Vector2i) -> int:
+	var dist := distance(a, b)
+	if dist == 0:
+		return -1
+	var delta := to_cube(b) - to_cube(a)
+	for d in CUBE_DIRS.size():
+		if CUBE_DIRS[d] * dist == delta:
+			return d
+	return -1
 
 
 func _init(w: int = 11, h: int = 9) -> void:

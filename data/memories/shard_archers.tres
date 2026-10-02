@@ -6,6 +6,9 @@
 script = ExtResource("1")
 id = &"shard_archers"
 name_key = "MEM_SHARD_ARCHERS"
+kind = 0
 unit_id = &"shard_archer"
 count = 12
 max_durability = 2
+spell_id = &"shard_rain"
+upgrade_id = &"up_ranged_attack"

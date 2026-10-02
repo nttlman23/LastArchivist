@@ -1,6 +1,8 @@
 class_name AiController
 extends RefCounted
-## Простой AI без поиска по дереву (SPEC 5). Работает только с данными боя.
+## Простой AI без поиска по дереву (SPEC 5, SPEC_SPRINT2 4.3). Работает только с данными боя.
+## Кандидаты (выстрел, лучший удар, способности) оцениваются в одной шкале — ожидаемых ОЗ —
+## и выбирается лучший; если атаковать нечем, стек идёт к врагу.
 
 const RANGED_TARGET_WEIGHT := 1.5
 const STACK_KILL_BONUS := 1000.0
@@ -13,12 +15,23 @@ static func choose_action(state: BattleState, uid: int) -> BattleAction:
 	if enemies.is_empty():
 		return BattleAction.defend()
 
+	var candidates: Array = []
 	if u.can_shoot() and not state.is_blocked(u):
-		return BattleAction.shoot(_best_shot_target(u, enemies).uid)
-
+		var target := _best_shot_target(u, enemies)
+		candidates.append([BattleAction.shoot(target.uid), value(DamageCalc.expected(u, target, true), target)])
 	var melee := _best_melee(state, u, enemies)
-	if melee:
-		return melee
+	if not melee.is_empty():
+		candidates.append(melee)
+	candidates.append_array(Abilities.ai_candidates(state, u))
+
+	var best: BattleAction = null
+	var best_score := 0.0
+	for c: Array in candidates:
+		if float(c[1]) > best_score:
+			best_score = c[1]
+			best = c[0]
+	if best:
+		return best
 
 	var dest := _approach_hex(state, u, enemies)
 	if dest != u.hex:
@@ -26,7 +39,15 @@ static func choose_action(state: BattleState, uid: int) -> BattleAction:
 	return BattleAction.defend()
 
 
-static func _value(dealt: float, target: UnitState) -> float:
+## Может ли стек атаковать прямо сейчас (выстрелом или дойдя до врага).
+static func can_attack_now(state: BattleState, u: UnitState) -> bool:
+	if u.can_shoot() and not state.is_blocked(u):
+		return true
+	return not _best_melee(state, u, state.enemies_of(u)).is_empty()
+
+
+## Ценность нанесения урона dealt по цели: ОЗ, стрелки дороже, уничтожение стека — огромный бонус.
+static func value(dealt: float, target: UnitState) -> float:
 	var hp := float(target.total_hp())
 	var score := minf(dealt, hp)
 	if target.is_ranged:
@@ -36,44 +57,8 @@ static func _value(dealt: float, target: UnitState) -> float:
 	return score
 
 
-static func _best_shot_target(u: UnitState, enemies: Array[UnitState]) -> UnitState:
-	var best: UnitState = null
-	var best_score := -INF
-	for e in enemies:
-		var score := _value(DamageCalc.expected(u, e, true), e)
-		if score > best_score:
-			best_score = score
-			best = e
-	return best
-
-
-static func _best_melee(state: BattleState, u: UnitState, enemies: Array[UnitState]) -> BattleAction:
-	var origins: Array[Vector2i] = [u.hex]
-	# Заблокированный стрелок не уходит, а бьёт соседа.
-	if not (u.is_ranged and state.is_blocked(u)):
-		for h in Pathfinding.reachable(state, u):
-			origins.append(h)
-	var best: BattleAction = null
-	var best_score := -INF
-	for e in enemies:
-		var dealt := DamageCalc.expected(u, e, false)
-		var retaliation := 0.0
-		if not e.retaliated and dealt < e.total_hp():
-			retaliation = _retaliation_estimate(e, u, dealt)
-		var score := _value(dealt, e) - RETALIATION_WEIGHT * retaliation
-		for origin in origins:
-			if not HexGrid.are_adjacent(origin, e.hex):
-				continue
-			# Небольшой штраф за длину пути — при равенстве не бегать зря.
-			var s := score - 0.01 * HexGrid.distance(u.hex, origin)
-			if s > best_score:
-				best_score = s
-				best = BattleAction.melee(origin, e.uid)
-	return best
-
-
 ## Ожидаемый ответный урон от уцелевшей части стека.
-static func _retaliation_estimate(defender: UnitState, attacker: UnitState, dealt: float) -> float:
+static func retaliation_estimate(defender: UnitState, attacker: UnitState, dealt: float) -> float:
 	var survivor := UnitState.new()
 	survivor.count = defender.count - DamageCalc.kills(defender, roundi(dealt))
 	survivor.hp = defender.hp
@@ -86,6 +71,47 @@ static func _retaliation_estimate(defender: UnitState, attacker: UnitState, deal
 	if survivor.count <= 0:
 		return 0.0
 	return DamageCalc.expected(survivor, attacker, false)
+
+
+static func _best_shot_target(u: UnitState, enemies: Array[UnitState]) -> UnitState:
+	var best: UnitState = null
+	var best_score := -INF
+	for e in enemies:
+		var score := value(DamageCalc.expected(u, e, true), e)
+		if score > best_score:
+			best_score = score
+			best = e
+	return best
+
+
+## Лучший удар ближнего боя: [BattleAction, score] или пусто.
+static func _best_melee(state: BattleState, u: UnitState, enemies: Array[UnitState]) -> Array:
+	var origins: Array[Vector2i] = [u.hex]
+	# Заблокированный стрелок не уходит, а бьёт соседа.
+	if not (u.is_ranged and state.is_blocked(u)):
+		for h in Pathfinding.reachable(state, u):
+			origins.append(h)
+	var best: BattleAction = null
+	var best_score := -INF
+	for e in enemies:
+		var dealt := DamageCalc.expected(u, e, false)
+		var retaliation := 0.0
+		var retaliates := not e.retaliated or e.has_status(UnitState.STATUS_SHIELD_WALL)
+		if retaliates and dealt < e.total_hp():
+			retaliation = retaliation_estimate(e, u, dealt)
+		var score := value(dealt, e) - RETALIATION_WEIGHT * retaliation
+		for origin in origins:
+			if not HexGrid.are_adjacent(origin, e.hex):
+				continue
+			# Небольшой штраф за длину пути — при равенстве не бегать зря.
+			var s := score - 0.01 * HexGrid.distance(u.hex, origin)
+			if s > best_score:
+				best_score = s
+				best = BattleAction.melee(origin, e.uid)
+	if best == null:
+		return []
+	# Даже невыгодный удар лучше бездействия рядом с врагом.
+	return [best, maxf(best_score, 0.01)]
 
 
 ## Самая продвинутая к ближайшему врагу клетка, достижимая в этот ход.
@@ -121,7 +147,7 @@ static func _approach_hex(state: BattleState, u: UnitState, enemies: Array[UnitS
 				best_hex = h
 		return best_hex
 	var path := res.path_to(goal)
-	return path[mini(u.speed, path.size() - 1)]
+	return path[mini(u.move_speed(), path.size() - 1)]
 
 
 static func _nearest_enemy_distance(hex: Vector2i, enemies: Array[UnitState]) -> int:

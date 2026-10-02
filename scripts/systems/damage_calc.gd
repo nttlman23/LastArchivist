@@ -9,6 +9,7 @@ const DEFENSE_BONUS_CAP := 28
 const DEFEND_MULTIPLIER := 1.3
 const LONG_RANGE := 5
 const HALF := 0.5
+const MARK_BONUS := 1.5
 ## При большом стеке бросаем один раз и умножаем, как в HoMM3.
 const SUM_ROLL_LIMIT := 10
 
@@ -32,27 +33,30 @@ static func multiplier(attacker: UnitState, defender: UnitState, ranged: bool) -
 			m *= HALF
 	elif attacker.is_ranged:
 		m *= HALF
+	if defender.has_status(UnitState.STATUS_MARKED):
+		m *= MARK_BONUS
 	return m
 
 
-static func roll(attacker: UnitState, defender: UnitState, ranged: bool, rng: RandomNumberGenerator) -> int:
+## bonus — множитель способности (таран, залп, рикошет молнии).
+static func roll(attacker: UnitState, defender: UnitState, ranged: bool, rng: RandomNumberGenerator, bonus: float = 1.0) -> int:
 	var base := 0
 	if attacker.count <= SUM_ROLL_LIMIT:
 		for i in attacker.count:
 			base += rng.randi_range(attacker.dmg_min, attacker.dmg_max)
 	else:
 		base = attacker.count * rng.randi_range(attacker.dmg_min, attacker.dmg_max)
-	return _finalize(base, multiplier(attacker, defender, ranged))
+	return _finalize(base, multiplier(attacker, defender, ranged) * bonus)
 
 
 ## Диапазон урона для превью: Vector2i(min, max).
-static func damage_range(attacker: UnitState, defender: UnitState, ranged: bool) -> Vector2i:
-	var m := multiplier(attacker, defender, ranged)
+static func damage_range(attacker: UnitState, defender: UnitState, ranged: bool, bonus: float = 1.0) -> Vector2i:
+	var m := multiplier(attacker, defender, ranged) * bonus
 	return Vector2i(_finalize(attacker.count * attacker.dmg_min, m), _finalize(attacker.count * attacker.dmg_max, m))
 
 
-static func expected(attacker: UnitState, defender: UnitState, ranged: bool) -> float:
-	var r := damage_range(attacker, defender, ranged)
+static func expected(attacker: UnitState, defender: UnitState, ranged: bool, bonus: float = 1.0) -> float:
+	var r := damage_range(attacker, defender, ranged, bonus)
 	return (r.x + r.y) * 0.5
 
 

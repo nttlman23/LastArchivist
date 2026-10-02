@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="UnitDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/unit_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"rift_ram"
+name_key = "UNIT_RIFT_RAM"
+hp = 45
+attack = 8
+defense = 8
+dmg_min = 5
+dmg_max = 8
+speed = 3
+initiative = 4
+is_ranged = false
+shots = 0
+is_flying = false
+ability_id = &"ram"
+color = Color(0.5, 0.34, 0.58, 1)

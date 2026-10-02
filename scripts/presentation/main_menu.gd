@@ -11,6 +11,6 @@ func _ready() -> void:
 
 	box.add_child(UiKit.button(tr("MENU_NEW_RUN"), Game.new_run, 360))
 	var cont := UiKit.button(tr("MENU_CONTINUE"), Game.continue_run, 360)
-	cont.disabled = not SaveService.has_save()
+	cont.disabled = SaveService.load_run() == null
 	box.add_child(cont)
 	box.add_child(UiKit.button(tr("MENU_QUIT"), get_tree().quit, 360))

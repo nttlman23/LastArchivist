@@ -14,4 +14,5 @@ extends Resource
 @export var is_ranged := false
 @export var shots: int = 0
 @export var is_flying := false
+@export var ability_id: StringName
 @export var color := Color.WHITE

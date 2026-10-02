@@ -2,7 +2,7 @@ extends GutTest
 ## Целостность строк: CSV без сломанных строк, все ключи из кода и данных существуют.
 
 const CSV_PATH := "res://translations/strings.csv"
-const CODE_DIRS := ["res://scripts/presentation", "res://scripts/autoload"]
+const CODE_DIRS := ["res://scripts/presentation", "res://scripts/autoload", "res://scripts/systems"]
 
 
 func _csv_keys() -> Dictionary:
@@ -45,3 +45,17 @@ func test_data_keys_exist() -> void:
 		assert_true(keys.has(m.name_key), m.name_key)
 	for e: EncounterDef in db.encounters.values():
 		assert_true(keys.has(e.name_key), e.name_key)
+	for a: AbilityDef in db.abilities.values():
+		assert_true(keys.has(a.name_key), a.name_key)
+		assert_true(keys.has(a.desc_key), a.desc_key)
+	for sp: SpellDef in db.spells.values():
+		assert_true(keys.has(sp.name_key), sp.name_key)
+		assert_true(keys.has(sp.desc_key), sp.desc_key)
+	for o: OrderDef in db.orders.values():
+		assert_true(keys.has(o.name_key), o.name_key)
+		assert_true(keys.has(o.desc_key), o.desc_key)
+	for up: UpgradeDef in db.upgrades.values():
+		assert_true(keys.has(up.name_key), up.name_key)
+	for m: MemoryCardDef in db.memories.values():
+		if m.desc_key != "":
+			assert_true(keys.has(m.desc_key), m.desc_key)

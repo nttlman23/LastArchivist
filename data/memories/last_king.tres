@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MemoryCardDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/memory_card_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"last_king"
+name_key = "MEM_LAST_KING"
+kind = 1
+count = 0
+max_durability = 3
+order_id = &"order_royal"
+passive_upgrade_id = &"up_initiative"
+desc_key = "MEM_LAST_KING_DESC"

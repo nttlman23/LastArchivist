@@ -17,6 +17,10 @@ func test_run_roundtrip() -> void:
 	var run := RunState.create(db, -8070450532247928832)
 	run.battle_index = 1
 	run.codex.cards[0].durability = 1
+	run.codex.cards[1].level = 2
+	run.codex.add(db, &"last_king")
+	CodexOps.apply(db, run, 2, CodexOps.Form.SPELL)
+	CodexOps.apply(db, run, 2, CodexOps.Form.UPGRADE)
 	run.roll_rewards(db)
 	assert_true(SaveService.save_run(run, PATH))
 	var loaded := SaveService.load_run(PATH)
@@ -24,6 +28,8 @@ func test_run_roundtrip() -> void:
 	assert_eq(loaded.run_seed, run.run_seed)
 	assert_eq(loaded.battle_index, 1)
 	assert_eq(loaded.codex.to_array(), run.codex.to_array())
+	assert_eq(loaded.hero.to_dict(), run.hero.to_dict())
+	assert_eq(loaded.codex.cards[1].level, 2)
 	# Генератор лута продолжает ту же последовательность.
 	assert_eq(loaded.roll_rewards(db), run.roll_rewards(db))
 
@@ -43,10 +49,19 @@ func test_wrong_version_rejected() -> void:
 	assert_null(RunState.from_dict(d))
 
 
+func test_v1_save_rejected() -> void:
+	var d := RunState.create(db, 1).to_dict()
+	d["version"] = 1
+	assert_null(RunState.from_dict(d))
+
+
 func test_battle_state_roundtrip() -> void:
 	var run := RunState.create(db, 3)
+	CodexOps.apply(db, run, 3, CodexOps.Form.SPELL)
 	var selected: Array[int] = [0, 1]
-	var s := BattleState.create(db, db.encounter(&"crypt_1"), run.codex, selected, 77)
+	var s := BattleState.create(db, db.encounter(&"crypt_4"), run.codex, selected, 77, run.hero)
+	s.temp_obstacles[Vector2i(5, 5)] = 2
+	s.units[0].statuses[UnitState.STATUS_MARKED] = UnitState.PERMANENT
 	BattleResolver.begin(s)
 	BattleResolver.apply(s, AiController.choose_action(s, s.active_uid))
 	var json := JSON.stringify(s.to_dict())

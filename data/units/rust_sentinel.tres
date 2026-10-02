@@ -16,4 +16,5 @@ initiative = 5
 is_ranged = false
 shots = 0
 is_flying = false
+ability_id = &"cover"
 color = Color(0.7, 0.4, 0.25, 1)

@@ -87,14 +87,16 @@ static func unit_stats(def: UnitDef) -> String:
 	return text
 
 
+const HERO_CARD_COLOR := Color(0.95, 0.75, 0.3)
+
+
 ## Карта-воспоминание в виде кнопки. durability < 0 — показывать максимальную.
-static func card_button(db: DefsDB, memory_id: StringName, durability: int = -1) -> Button:
+static func card_button(db: DefsDB, memory_id: StringName, durability: int = -1, level: int = 1) -> Button:
 	var mem := db.memory(memory_id)
-	var def := db.unit(mem.unit_id)
 	var dur := mem.max_durability if durability < 0 else durability
 
 	var b := Button.new()
-	b.custom_minimum_size = Vector2(400, 215)
+	b.custom_minimum_size = Vector2(400, 235)
 	var normal := panel_style(PANEL_COLOR, Color(0.25, 0.27, 0.33), 2)
 	var hover := panel_style(PANEL_COLOR.lightened(0.08), Color(0.45, 0.48, 0.55), 2)
 	var pressed := panel_style(PANEL_COLOR.lightened(0.05), ACCENT, 3)
@@ -116,7 +118,7 @@ static func card_button(db: DefsDB, memory_id: StringName, durability: int = -1)
 	margin.add_child(row)
 
 	var strip := ColorRect.new()
-	strip.color = def.color
+	strip.color = db.unit(mem.unit_id).color if mem.is_unit() else HERO_CARD_COLOR
 	strip.custom_minimum_size = Vector2(10, 0)
 	strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(strip)
@@ -125,11 +127,38 @@ static func card_button(db: DefsDB, memory_id: StringName, durability: int = -1)
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(col)
-	col.add_child(label(TranslationServer.translate(mem.name_key), 24, ACCENT))
-	col.add_child(label("%d × %s" % [mem.count, TranslationServer.translate(def.name_key)]))
+	var title := TranslationServer.translate(mem.name_key)
+	if level > 1:
+		title += "  " + TranslationServer.translate("CARD_LEVEL") % level
+	col.add_child(label(title, 24, ACCENT))
 	var dur_color := DANGER if dur <= 1 else MUTED
-	col.add_child(label(TranslationServer.translate("CARD_DURABILITY") % [dur, mem.max_durability], 0, dur_color))
-	var stats := label(unit_stats(def), 17, MUTED)
-	stats.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	col.add_child(stats)
+	if mem.is_unit():
+		var def := db.unit(mem.unit_id)
+		var count := floori(mem.count * (1.0 + 0.5 * (level - 1)))
+		col.add_child(label("%d × %s" % [count, TranslationServer.translate(def.name_key)]))
+		col.add_child(label(TranslationServer.translate("CARD_DURABILITY") % [dur, mem.max_durability], 0, dur_color))
+		var stats := label(unit_stats(def), 16, MUTED)
+		stats.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		col.add_child(stats)
+		if def.ability_id != &"":
+			var ab := label(TranslationServer.translate("CARD_ABILITY") % TranslationServer.translate(db.ability(def.ability_id).name_key), 16, ACCENT)
+			col.add_child(ab)
+	else:
+		col.add_child(label(TranslationServer.translate("CARD_HERO"), 0, HERO_CARD_COLOR))
+		col.add_child(label(TranslationServer.translate("CARD_DURABILITY") % [dur, mem.max_durability], 0, dur_color))
+		var desc := label(TranslationServer.translate(mem.desc_key), 16, MUTED)
+		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		col.add_child(desc)
+	b.tooltip_text = _card_tooltip(db, mem)
 	return b
+
+
+## Подсказка карты: способность существа или описание геройской карты.
+static func _card_tooltip(db: DefsDB, mem: MemoryCardDef) -> String:
+	if not mem.is_unit():
+		return TranslationServer.translate(mem.desc_key)
+	var def := db.unit(mem.unit_id)
+	if def.ability_id == &"":
+		return ""
+	var ab := db.ability(def.ability_id)
+	return "%s: %s" % [TranslationServer.translate(ab.name_key), TranslationServer.translate(ab.desc_key)]

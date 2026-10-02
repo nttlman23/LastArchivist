@@ -1,6 +1,7 @@
 class_name BattleResolver
 extends RefCounted
 ## Единственная точка изменения BattleState: проверка и применение действий.
+## Общие боевые операции (удар, урон, лечение, стены) открыты для Abilities и HeroActions.
 
 
 ## Начинает бой: первый раунд и первый ход.
@@ -35,30 +36,38 @@ static func validate(state: BattleState, action: BattleAction) -> bool:
 			return not u.waited
 		BattleAction.Type.DEFEND:
 			return true
+		BattleAction.Type.ABILITY:
+			return u.ability_ready() and action.ref_id == u.ability_id and Abilities.validate(state, u, action)
+		BattleAction.Type.HERO:
+			return HeroActions.validate(state, action)
 	return false
 
 
-## Применяет действие активного стека и передаёт ход. Недопустимое действие игнорируется.
+## Применяет действие. Действие отряда передаёт ход; действие героя — нет.
+## Недопустимое действие игнорируется.
 static func apply(state: BattleState, action: BattleAction) -> Array[BattleEvent]:
 	var events: Array[BattleEvent] = []
 	if not validate(state, action):
 		push_warning("Invalid action %s" % action)
 		return events
+	if action.is_hero():
+		HeroActions.apply(state, action, events)
+		if check_end(state, events):
+			state.active_uid = -1
+		return events
+
 	var u := state.active_unit()
 	match action.type:
 		BattleAction.Type.MOVE:
-			_move(state, u, action.dest, events)
+			move_unit(state, u, action.dest, events)
 		BattleAction.Type.MELEE:
 			var target := state.get_unit(action.target_uid)
-			_move(state, u, action.dest, events)
-			_strike(state, u, target, false, false, events)
-			if target.is_alive() and not target.retaliated:
-				target.retaliated = true
-				_strike(state, target, u, false, true, events)
+			move_unit(state, u, action.dest, events)
+			melee_exchange(state, u, target, events)
 		BattleAction.Type.SHOOT:
 			var target := state.get_unit(action.target_uid)
 			u.shots_left -= 1
-			_strike(state, u, target, true, false, events)
+			strike(state, u, target, true, false, events)
 		BattleAction.Type.WAIT:
 			u.waited = true
 			state.wait_queue.append(u.uid)
@@ -66,7 +75,12 @@ static func apply(state: BattleState, action: BattleAction) -> Array[BattleEvent
 		BattleAction.Type.DEFEND:
 			u.defending = true
 			events.append(BattleEvent.new(BattleEvent.DEFENDED, {"uid": u.uid}))
-	if _check_end(state, events):
+		BattleAction.Type.ABILITY:
+			Abilities.apply(state, u, action, events)
+	# «Вперёд!» действует до конца хода стека; ожидание ход не заканчивает.
+	if action.type != BattleAction.Type.WAIT and u.has_status(UnitState.STATUS_ADVANCE):
+		u.statuses.erase(UnitState.STATUS_ADVANCE)
+	if check_end(state, events):
 		state.active_uid = -1
 		return events
 	# Бонус защиты снимается TurnManager в начале следующего хода этого стека.
@@ -74,26 +88,83 @@ static func apply(state: BattleState, action: BattleAction) -> Array[BattleEvent
 	return events
 
 
-static func _move(state: BattleState, u: UnitState, dest: Vector2i, events: Array[BattleEvent]) -> void:
+# --- Общие операции -------------------------------------------------------------
+
+static func move_unit(state: BattleState, u: UnitState, dest: Vector2i, events: Array[BattleEvent], path: Array[Vector2i] = []) -> void:
 	if dest == u.hex:
 		return
-	var path := Pathfinding.path(state, u, dest)
+	if path.is_empty():
+		path = Pathfinding.path(state, u, dest)
 	u.hex = dest
 	events.append(BattleEvent.new(BattleEvent.MOVED, {"uid": u.uid, "path": path}))
 
 
-static func _strike(state: BattleState, attacker: UnitState, target: UnitState, ranged: bool, retaliation: bool, events: Array[BattleEvent]) -> void:
-	var damage := DamageCalc.roll(attacker, target, ranged, state.rng)
+## Удар ближнего боя с ответом (один за раунд, без лимита под «Стеной щитов»).
+static func melee_exchange(state: BattleState, attacker: UnitState, target: UnitState, events: Array[BattleEvent], bonus: float = 1.0) -> int:
+	var dealt := strike(state, attacker, target, false, false, events, bonus)
+	try_retaliate(state, target, attacker, events)
+	return dealt
+
+
+static func try_retaliate(state: BattleState, defender: UnitState, attacker: UnitState, events: Array[BattleEvent]) -> void:
+	if not defender.is_alive() or not attacker.is_alive():
+		return
+	if not HexGrid.are_adjacent(defender.hex, attacker.hex):
+		return
+	if defender.retaliated and not defender.has_status(UnitState.STATUS_SHIELD_WALL):
+		return
+	defender.retaliated = true
+	strike(state, defender, attacker, false, true, events)
+
+
+## Атака с броском урона. Снимает метку с цели. Возвращает нанесённый урон.
+static func strike(state: BattleState, attacker: UnitState, target: UnitState, ranged: bool, retaliation: bool, events: Array[BattleEvent], bonus: float = 1.0) -> int:
+	var damage := DamageCalc.roll(attacker, target, ranged, state.rng, bonus)
 	var killed := target.take_damage(damage)
 	events.append(BattleEvent.new(BattleEvent.ATTACKED, {
 		"attacker": attacker.uid, "target": target.uid, "damage": damage,
 		"killed": killed, "ranged": ranged, "retaliation": retaliation,
 	}))
+	if target.has_status(UnitState.STATUS_MARKED):
+		target.statuses.erase(UnitState.STATUS_MARKED)
+		events.append(BattleEvent.new(BattleEvent.STATUS_CHANGED, {"uid": target.uid, "status": UnitState.STATUS_MARKED, "on": false}))
+	if not target.is_alive():
+		events.append(BattleEvent.new(BattleEvent.DIED, {"uid": target.uid}))
+	return damage
+
+
+## Фиксированный урон без атаки (заклинания): защита не учитывается, ответа нет.
+static func deal_damage(target: UnitState, amount: int, source: StringName, events: Array[BattleEvent]) -> void:
+	var killed := target.take_damage(amount)
+	events.append(BattleEvent.new(BattleEvent.DAMAGED, {"uid": target.uid, "damage": amount, "killed": killed, "source": source}))
 	if not target.is_alive():
 		events.append(BattleEvent.new(BattleEvent.DIED, {"uid": target.uid}))
 
 
-static func _check_end(state: BattleState, events: Array[BattleEvent]) -> bool:
+static func heal(target: UnitState, amount: int, events: Array[BattleEvent]) -> void:
+	var before := target.count
+	var healed := target.heal(amount)
+	events.append(BattleEvent.new(BattleEvent.HEALED, {"uid": target.uid, "amount": healed, "revived": target.count - before}))
+
+
+static func add_status(u: UnitState, status: StringName, rounds: int, events: Array[BattleEvent]) -> void:
+	u.statuses[status] = rounds
+	events.append(BattleEvent.new(BattleEvent.STATUS_CHANGED, {"uid": u.uid, "status": status, "on": true}))
+
+
+static func set_defending(u: UnitState, events: Array[BattleEvent]) -> void:
+	u.defending = true
+	events.append(BattleEvent.new(BattleEvent.DEFENDED, {"uid": u.uid}))
+
+
+static func add_temp_obstacle(state: BattleState, hex: Vector2i, rounds: int, events: Array[BattleEvent]) -> void:
+	state.temp_obstacles[hex] = rounds
+	events.append(BattleEvent.new(BattleEvent.OBSTACLE_ADDED, {"hex": hex, "rounds": rounds}))
+
+
+static func check_end(state: BattleState, events: Array[BattleEvent]) -> bool:
+	if state.outcome != BattleState.Outcome.NONE:
+		return true
 	if state.alive(UnitState.Side.ENEMY).is_empty():
 		state.outcome = BattleState.Outcome.PLAYER_WON
 	elif state.alive(UnitState.Side.PLAYER).is_empty():

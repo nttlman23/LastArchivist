@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="SpellDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/spell_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"rust_armor"
+name_key = "SPELL_RUST_ARMOR"
+desc_key = "SPELL_RUST_ARMOR_DESC"
+target = 1
+power = 4

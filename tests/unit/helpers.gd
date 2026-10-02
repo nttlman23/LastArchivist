@@ -21,7 +21,18 @@ static func unit_def(id: StringName, overrides: Dictionary = {}) -> UnitDef:
 static func empty_battle(seed_value: int = 1) -> BattleState:
 	var s := BattleState.new()
 	s.rng.seed = seed_value
+	for id in _db().abilities:
+		s.ability_cooldowns[id] = _db().abilities[id].cooldown
 	return s
+
+
+static var _cached_db: DefsDB
+
+
+static func _db() -> DefsDB:
+	if _cached_db == null:
+		_cached_db = DefsDB.load_default()
+	return _cached_db
 
 
 static func add(s: BattleState, side: int, hex: Vector2i, count: int = 10, overrides: Dictionary = {}) -> UnitState:

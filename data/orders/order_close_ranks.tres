@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="OrderDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/order_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"order_close_ranks"
+name_key = "ORDER_CLOSE_RANKS"
+desc_key = "ORDER_CLOSE_RANKS_DESC"
+target = 1

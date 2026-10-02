@@ -2,32 +2,38 @@ class_name DefsDB
 extends RefCounted
 ## Реестр всех определений, загружаемых из res://data.
 
-const UNITS_DIR := "res://data/units"
-const MEMORIES_DIR := "res://data/memories"
-const ENCOUNTERS_DIR := "res://data/encounters"
+const DATA_DIR := "res://data"
 
 var units: Dictionary[StringName, UnitDef] = {}
 var memories: Dictionary[StringName, MemoryCardDef] = {}
 var encounters: Dictionary[StringName, EncounterDef] = {}
+var abilities: Dictionary[StringName, AbilityDef] = {}
+var spells: Dictionary[StringName, SpellDef] = {}
+var orders: Dictionary[StringName, OrderDef] = {}
+var upgrades: Dictionary[StringName, UpgradeDef] = {}
 ## Порядок боёв забега.
-var encounter_chain: Array[StringName] = [&"crypt_1", &"crypt_2", &"crypt_3"]
+var encounter_chain: Array[StringName] = [&"crypt_1", &"crypt_2", &"crypt_3", &"crypt_4", &"crypt_5"]
 var starting_codex: Array[StringName] = [&"salt_legion", &"salt_legion", &"ash_chroniclers", &"ghoul_pack"]
+## Приказы, доступные всегда.
+var base_orders: Array[StringName] = [&"order_advance", &"order_close_ranks"]
 
 
 static func load_default() -> DefsDB:
 	var db := DefsDB.new()
-	for res in _load_dir(UNITS_DIR):
-		var u := res as UnitDef
-		if u:
-			db.units[u.id] = u
-	for res in _load_dir(MEMORIES_DIR):
-		var m := res as MemoryCardDef
-		if m:
-			db.memories[m.id] = m
-	for res in _load_dir(ENCOUNTERS_DIR):
-		var e := res as EncounterDef
-		if e:
-			db.encounters[e.id] = e
+	for res in _load_dir("units"):
+		db.units[res.id] = res as UnitDef
+	for res in _load_dir("memories"):
+		db.memories[res.id] = res as MemoryCardDef
+	for res in _load_dir("encounters"):
+		db.encounters[res.id] = res as EncounterDef
+	for res in _load_dir("abilities"):
+		db.abilities[res.id] = res as AbilityDef
+	for res in _load_dir("spells"):
+		db.spells[res.id] = res as SpellDef
+	for res in _load_dir("orders"):
+		db.orders[res.id] = res as OrderDef
+	for res in _load_dir("upgrades"):
+		db.upgrades[res.id] = res as UpgradeDef
 	return db
 
 
@@ -46,6 +52,26 @@ func encounter(id: StringName) -> EncounterDef:
 	return encounters[id]
 
 
+func ability(id: StringName) -> AbilityDef:
+	assert(abilities.has(id), "Unknown ability: %s" % id)
+	return abilities[id]
+
+
+func spell(id: StringName) -> SpellDef:
+	assert(spells.has(id), "Unknown spell: %s" % id)
+	return spells[id]
+
+
+func order(id: StringName) -> OrderDef:
+	assert(orders.has(id), "Unknown order: %s" % id)
+	return orders[id]
+
+
+func upgrade(id: StringName) -> UpgradeDef:
+	assert(upgrades.has(id), "Unknown upgrade: %s" % id)
+	return upgrades[id]
+
+
 func memory_ids() -> Array[StringName]:
 	var ids: Array[StringName] = []
 	ids.assign(memories.keys())
@@ -53,7 +79,8 @@ func memory_ids() -> Array[StringName]:
 	return ids
 
 
-static func _load_dir(path: String) -> Array[Resource]:
+static func _load_dir(sub: String) -> Array[Resource]:
+	var path := DATA_DIR.path_join(sub)
 	var result: Array[Resource] = []
 	for file in ResourceLoader.list_directory(path):
 		if file.ends_with(".tres") or file.ends_with(".res"):

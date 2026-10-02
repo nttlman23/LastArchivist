@@ -30,6 +30,13 @@ const ACTIVE_RING := Color(1.0, 0.85, 0.3)
 const THREAT_COLOR := Color(1.0, 0.35, 0.3, 0.8)
 const TARGET_COLOR := Color(1, 0.3, 0.25)
 const BADGE_BG := Color(0.1, 0.11, 0.15)
+const TEMP_WALL_COLOR := Color(0.62, 0.66, 0.72)
+const TARGET_HEX_COLOR := Color(0.62, 0.4, 0.95, 0.45)
+const AFFECTED_ALLY := Color(1, 0.3, 0.25)
+const AFFECTED_ENEMY := Color(0.95, 0.8, 0.4)
+const HEAL_COLOR := Color(0.45, 0.95, 0.5)
+const DAMAGE_COLOR := Color(1, 0.4, 0.35)
+const NAME_COLOR := Color(0.95, 0.85, 0.5)
 
 var state: BattleState
 var db: DefsDB
@@ -41,6 +48,11 @@ var preview_target := -1
 var hover_hex := Vector2i(-1, -1)
 ## Клетки, куда может дойти враг под курсором (зона угрозы).
 var threat: Dictionary[Vector2i, int] = {}
+## Режим прицеливания: допустимые клетки-цели и стеки, которых заденет действие (uid -> свой ли).
+var targets: Dictionary[Vector2i, bool] = {}
+var affected: Dictionary[int, bool] = {}
+## Подпись для ABILITY_USED/HERO_ACTED (название способности, приказа, заклинания); задаёт экран.
+var event_label: Callable = func(_e: BattleEvent) -> String: return ""
 var show_active := true
 
 # Отображаемое состояние стеков — отстаёт от BattleState на время анимаций.
@@ -161,6 +173,8 @@ func clear_preview() -> void:
 	preview_path = []
 	preview_target = -1
 	threat = {}
+	targets = {}
+	affected = {}
 	_cursor.kind = &""
 	_overlay.queue_redraw()
 
@@ -211,7 +225,45 @@ func play(events: Array[BattleEvent]) -> void:
 				await _play_attack(e.data)
 			BattleEvent.DIED:
 				await _tween_value(func(v: float) -> void: _alpha[int(e.data["uid"])] = v, 1.0, 0.0, FADE_TIME, _units)
+			BattleEvent.PUSHED:
+				var uid: int = e.data["uid"]
+				var from := hex_center(e.data["from"])
+				var to := hex_center(e.data["to"])
+				await _tween_value(func(t: float) -> void: _pos[uid] = from.lerp(to, t), 0.0, 1.0, STEP_TIME * 1.5, _units)
+			BattleEvent.HEALED:
+				var uid: int = e.data["uid"]
+				_count[uid] = _count.get(uid, 0) + int(e.data["revived"])
+				_float_text(uid, "+%d" % int(e.data["amount"]), HEAL_COLOR)
+				_units.queue_redraw()
+				await get_tree().create_timer(0.3).timeout
+			BattleEvent.DAMAGED:
+				var uid: int = e.data["uid"]
+				_count[uid] = maxi(0, _count.get(uid, 0) - int(e.data["killed"]))
+				_flash[uid] = 0.25
+				_float_text(uid, _damage_text(e.data["damage"], e.data["killed"]), DAMAGE_COLOR)
+				_units.queue_redraw()
+				await get_tree().create_timer(0.25).timeout
+			BattleEvent.ABILITY_USED, BattleEvent.HERO_ACTED:
+				# Название способности/приказа/заклинания над тем, кто действует (или над целью).
+				var who: int = e.data["uid"] if e.data.has("uid") else int(e.data["target"])
+				var label: String = event_label.call(e)
+				if label != "" and _pos.has(who):
+					_float_text(who, label, NAME_COLOR, -26.0)
+					await get_tree().create_timer(0.35).timeout
+			BattleEvent.OBSTACLE_ADDED, BattleEvent.OBSTACLE_EXPIRED:
+				_overlay.queue_redraw()
 	sync()
+
+
+func _float_text(uid: int, text: String, color: Color, rise: float = 0.0) -> void:
+	_floaters.append({"text": text, "pos": _pos[uid] + Vector2(0, rise), "t": 0.0, "color": color})
+
+
+static func _damage_text(damage: int, killed: int) -> String:
+	var text := "-%d" % damage
+	if killed > 0:
+		text += "  †%d" % killed
+	return text
 
 
 func _play_move(uid: int, path: Array) -> void:
@@ -239,10 +291,7 @@ func _play_attack(d: Dictionary) -> void:
 		_pos[attacker] = from
 	_count[target] = maxi(0, _count[target] - int(d["killed"]))
 	_flash[target] = 0.25
-	var text := "-%d" % int(d["damage"])
-	if int(d["killed"]) > 0:
-		text += "  †%d" % int(d["killed"])
-	_floaters.append({"text": text, "pos": to, "t": 0.0})
+	_floaters.append({"text": _damage_text(d["damage"], d["killed"]), "pos": to, "t": 0.0, "color": DAMAGE_COLOR})
 	_units.queue_redraw()
 	await get_tree().create_timer(0.25).timeout
 
@@ -260,27 +309,64 @@ func _tween_step(value: float, setter: Callable, layer: CanvasItem) -> void:
 
 # --- Слои --------------------------------------------------------------------
 
+## Пакет выпуклых многоугольников: все заливки слоя уходят одним вызовом отрисовки
+## (каждый draw_colored_polygon — отдельный draw call).
+class FillBatch:
+	var points := PackedVector2Array()
+	var colors := PackedColorArray()
+	var indices := PackedInt32Array()
+
+	func add(pts: PackedVector2Array, color: Color) -> void:
+		var base := points.size()
+		for p in pts:
+			points.append(p)
+			colors.append(color)
+		for i in range(1, pts.size() - 1):
+			indices.append_array([base, base + i, base + i + 1])
+
+	func draw(ci: CanvasItem) -> void:
+		if not indices.is_empty():
+			RenderingServer.canvas_item_add_triangle_array(ci.get_canvas_item(), indices, points, colors)
+
+
 func _draw_board(ci: CanvasItem) -> void:
+	var fills := FillBatch.new()
 	var outlines := PackedVector2Array()
 	for hex in _hex_fill:
 		var pts := _hex_fill[hex]
-		ci.draw_colored_polygon(pts, OBSTACLE_COLOR if state.obstacles.has(hex) else HEX_COLOR)
+		fills.add(pts, OBSTACLE_COLOR if state.obstacles.has(hex) else HEX_COLOR)
 		for i in 6:
 			outlines.append(pts[i])
 			outlines.append(pts[(i + 1) % 6])
 		if state.obstacles.has(hex):
-			_draw_rock(ci, hex_center(hex))
+			fills.add(_rock(hex_center(hex)), OBSTACLE_COLOR.darkened(0.35))
+	fills.draw(ci)
 	# Все контуры одним вызовом.
 	ci.draw_multiline(outlines, HEX_LINE, 1.5)
 
 
 func _draw_overlay(ci: CanvasItem) -> void:
+	var fills := FillBatch.new()
+	var wall_dark := TEMP_WALL_COLOR.darkened(0.3)
+	for hex in state.temp_obstacles:
+		var c := hex_center(hex)
+		fills.add(_hex_fill[hex], OBSTACLE_COLOR.lerp(TEMP_WALL_COLOR, 0.5))
+		fills.add(PackedVector2Array([c + Vector2(-26, 14), c + Vector2(-26, -10), c + Vector2(26, -10), c + Vector2(26, 14)]), wall_dark)
+		for x: float in [-26.0, -9.0, 8.0]:
+			fills.add(PackedVector2Array([c + Vector2(x, -18), c + Vector2(x + 10, -18), c + Vector2(x + 10, -10), c + Vector2(x, -10)]), wall_dark)
+	for hex in targets:
+		fills.add(_hex_fill[hex], TARGET_HEX_COLOR)
 	for hex in reachable:
-		ci.draw_colored_polygon(_hex_fill[hex], REACH_COLOR)
+		fills.add(_hex_fill[hex], REACH_COLOR)
 	for hex in preview_path:
-		ci.draw_colored_polygon(_hex_fill[hex], PATH_COLOR)
+		fills.add(_hex_fill[hex], PATH_COLOR)
 	if _hex_fill.has(hover_hex):
-		ci.draw_colored_polygon(_hex_fill[hover_hex], HOVER_COLOR)
+		fills.add(_hex_fill[hover_hex], HOVER_COLOR)
+	fills.draw(ci)
+	for hex in state.temp_obstacles:
+		var c := hex_center(hex)
+		ci.draw_string_outline(_font, c + Vector2(-20, 36), str(state.temp_obstacles[hex]), HORIZONTAL_ALIGNMENT_CENTER, 40, 18, 4, Color.BLACK)
+		ci.draw_string(_font, c + Vector2(-20, 36), str(state.temp_obstacles[hex]), HORIZONTAL_ALIGNMENT_CENTER, 40, 18, Color.WHITE)
 	if not threat.is_empty():
 		var lines := PackedVector2Array()
 		for hex in threat:
@@ -291,6 +377,9 @@ func _draw_overlay(ci: CanvasItem) -> void:
 		ci.draw_multiline(lines, THREAT_COLOR, 2.5)
 	if preview_target >= 0 and _pos.has(preview_target):
 		ci.draw_arc(_pos[preview_target], UNIT_RADIUS + 7, 0, TAU, 32, TARGET_COLOR, 4.0)
+	for uid in affected:
+		if _pos.has(uid):
+			ci.draw_arc(_pos[uid], UNIT_RADIUS + 12, 0, TAU, 32, AFFECTED_ALLY if affected[uid] else AFFECTED_ENEMY, 3.0)
 
 
 func _draw_marker_ring(ci: CanvasItem) -> void:
@@ -317,14 +406,14 @@ func _draw_fx(ci: CanvasItem) -> void:
 	for f in _floaters:
 		var t := float(f["t"])
 		var pos: Vector2 = f["pos"] + Vector2(-30, -UNIT_RADIUS - 10 - 40 * t)
-		var col := Color(1, 0.4, 0.35, clampf(1.6 - t * 1.4, 0, 1))
+		var col: Color = f.get("color", DAMAGE_COLOR)
+		col.a = clampf(1.6 - t * 1.4, 0, 1)
 		ci.draw_string_outline(_font, pos, f["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, 28, 6, Color(0, 0, 0, col.a))
 		ci.draw_string(_font, pos, f["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, 28, col)
 
 
-func _draw_rock(ci: CanvasItem, c: Vector2) -> void:
-	var rock := PackedVector2Array([c + Vector2(-24, 14), c + Vector2(-14, -12), c + Vector2(4, -20), c + Vector2(22, -6), c + Vector2(20, 16)])
-	ci.draw_colored_polygon(rock, OBSTACLE_COLOR.darkened(0.35))
+func _rock(c: Vector2) -> PackedVector2Array:
+	return PackedVector2Array([c + Vector2(-24, 14), c + Vector2(-14, -12), c + Vector2(4, -20), c + Vector2(22, -6), c + Vector2(20, 16)])
 
 
 func _draw_unit(ci: CanvasItem, u: UnitState) -> void:
@@ -355,8 +444,22 @@ func _draw_unit(ci: CanvasItem, u: UnitState) -> void:
 		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_FLYING, c + Vector2(UNIT_RADIUS - 2, -UNIT_RADIUS + 4), badge_r, bg, fg)
 	if u.defending:
 		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_DEFEND, c + Vector2(-UNIT_RADIUS - 4, 8), badge_r, bg, Color(UiKit.PLAYER_COLOR.lightened(0.3), alpha))
-	if u.retaliated:
+	if u.has_status(UnitState.STATUS_SHIELD_WALL):
+		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_RETALIATION, c + Vector2(UNIT_RADIUS + 4, 8), badge_r, bg, Color(UiKit.ACCENT, alpha))
+	elif u.retaliated:
 		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_RETALIATION_USED, c + Vector2(UNIT_RADIUS + 4, 8), badge_r, bg, Color(UiKit.MUTED, alpha))
+	if u.has_status(UnitState.STATUS_MARKED):
+		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_MARK, c + Vector2(0, -UNIT_RADIUS + 2), badge_r, bg, Color(DAMAGE_COLOR, alpha))
+	if u.has_status(UnitState.STATUS_RUST_ARMOR):
+		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_ARMOR, c + Vector2(UNIT_RADIUS + 2, UNIT_RADIUS - 12), badge_r, bg, Color(UiKit.ACCENT, alpha))
+	if u.ability_id != &"":
+		# Способность: золотая звезда — готова, серая с цифрой — раунды до готовности.
+		var pos := c + Vector2(-UNIT_RADIUS - 2, UNIT_RADIUS - 12)
+		var ready := u.ability_cd <= 0
+		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_ABILITY, pos, badge_r, bg, Color(UiKit.ACCENT if ready else UiKit.MUTED, alpha))
+		if not ready:
+			ci.draw_string_outline(_font, pos + Vector2(-8, 6), str(u.ability_cd), HORIZONTAL_ALIGNMENT_CENTER, 16, 15, 4, Color(0, 0, 0, alpha))
+			ci.draw_string(_font, pos + Vector2(-8, 6), str(u.ability_cd), HORIZONTAL_ALIGNMENT_CENTER, 16, 15, fg)
 
 	# Численность и полоска здоровья верхнего существа.
 	var badge := Rect2(c + Vector2(-24, UNIT_RADIUS - 12), Vector2(48, 24))

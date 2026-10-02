@@ -6,6 +6,9 @@
 script = ExtResource("1")
 id = &"ash_chroniclers"
 name_key = "MEM_ASH_CHRONICLERS"
+kind = 0
 unit_id = &"chronicler"
 count = 10
 max_durability = 3
+spell_id = &"ash_record"
+upgrade_id = &"up_shots"

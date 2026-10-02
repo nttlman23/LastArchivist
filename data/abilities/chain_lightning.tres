@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="AbilityDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/ability_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"chain_lightning"
+name_key = "ABIL_CHAIN_LIGHTNING"
+desc_key = "ABIL_CHAIN_LIGHTNING_DESC"
+cooldown = 3
+target = 2

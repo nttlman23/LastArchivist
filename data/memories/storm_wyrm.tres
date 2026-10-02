@@ -6,6 +6,9 @@
 script = ExtResource("1")
 id = &"storm_wyrm"
 name_key = "MEM_STORM_WYRM"
+kind = 0
 unit_id = &"storm_wyrm_echo"
 count = 3
 max_durability = 2
+spell_id = &"chain_spell"
+upgrade_id = &"up_initiative"

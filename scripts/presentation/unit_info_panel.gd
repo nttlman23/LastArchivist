@@ -14,6 +14,8 @@ var _stats: Label
 var _abilities: VBoxContainer
 ## Снимок показанного стека: пересобираем карточку, только если он изменился.
 var _shown: Array = []
+## Компактная карточка: без базовых строк «ближний бой» и «ответ готов».
+var compact := false
 
 
 func _init() -> void:
@@ -53,7 +55,8 @@ func show_unit(db: DefsDB, u: UnitState, header: String, header_color: Color = U
 	visible = u != null
 	if u == null:
 		return
-	var snapshot := [u.uid, u.def_id, u.count, u.top_hp, u.shots_left, u.retaliated, u.defending, u.waited, header]
+	var snapshot := [u.uid, u.def_id, u.count, u.top_hp, u.shots_left, u.retaliated, u.defending, u.waited,
+			u.ability_cd, u.statuses.duplicate(), u.defense, u.speed, header]
 	if snapshot == _shown:
 		return
 	_shown = snapshot
@@ -71,13 +74,20 @@ func show_unit(db: DefsDB, u: UnitState, header: String, header_color: Color = U
 
 	for child in _abilities.get_children():
 		child.queue_free()
-	for entry in abilities_of(u):
+	for entry in abilities_of(db, u, compact):
 		_abilities.add_child(_ability_row(entry[0], entry[1], entry[2]))
 
 
 ## [значок, текст, активно ли] — общий список для карточки и тестов.
-static func abilities_of(u: UnitState) -> Array:
+static func abilities_of(db: DefsDB, u: UnitState, skip_basic: bool = false) -> Array:
 	var list: Array = []
+	if u.ability_id != &"" and db.abilities.has(u.ability_id):
+		var ab := db.ability(u.ability_id)
+		var state_text: String = TranslationServer.translate("ABILITY_READY")
+		if u.ability_cd > 0:
+			state_text = TranslationServer.translate("ABILITY_COOLDOWN") % u.ability_cd
+		list.append([UnitGlyphs.ICON_ABILITY, "%s (%s): %s" % [
+			TranslationServer.translate(ab.name_key), state_text, TranslationServer.translate(ab.desc_key)], u.ability_cd <= 0])
 	if u.is_ranged:
 		list.append([UnitGlyphs.ICON_RANGED, TranslationServer.translate("ABILITY_RANGED") % u.shots_left, u.shots_left > 0])
 	else:
@@ -92,6 +102,16 @@ static func abilities_of(u: UnitState) -> Array:
 		list.append([UnitGlyphs.ICON_DEFEND, TranslationServer.translate("STATUS_DEFENDING"), true])
 	if u.waited:
 		list.append([UnitGlyphs.ICON_WAIT, TranslationServer.translate("STATUS_WAITED"), true])
+	if u.has_status(UnitState.STATUS_MARKED):
+		list.append([UnitGlyphs.ICON_MARK, TranslationServer.translate("STATUS_MARKED"), true])
+	if u.has_status(UnitState.STATUS_SHIELD_WALL):
+		list.append([UnitGlyphs.ICON_RETALIATION, TranslationServer.translate("STATUS_SHIELD_WALL"), true])
+	if u.has_status(UnitState.STATUS_RUST_ARMOR):
+		list.append([UnitGlyphs.ICON_ARMOR, TranslationServer.translate("STATUS_RUST_ARMOR"), true])
+	if u.has_status(UnitState.STATUS_ADVANCE):
+		list.append([UnitGlyphs.ICON_ORDER, TranslationServer.translate("STATUS_ADVANCE"), true])
+	if skip_basic:
+		return list.filter(func(e: Array) -> bool: return e[0] != UnitGlyphs.ICON_MELEE and e[0] != UnitGlyphs.ICON_RETALIATION)
 	return list
 
 

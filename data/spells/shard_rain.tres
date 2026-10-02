@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="SpellDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/spell_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"shard_rain"
+name_key = "SPELL_SHARD_RAIN"
+desc_key = "SPELL_SHARD_RAIN_DESC"
+target = 3
+power = 20

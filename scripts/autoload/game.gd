@@ -30,22 +30,23 @@ func _ready() -> void:
 ## Проверка собранной игры: `LastArchivist.exe --headless -- --smoke`.
 ## Печатает SMOKE OK/FAIL и завершает процесс с кодом 0/1.
 func _smoke_test() -> void:
-	var ok := defs.units.size() > 0 and defs.memories.size() > 0
+	var ok := not (defs.units.is_empty() or defs.memories.is_empty() or defs.abilities.is_empty()
+			or defs.spells.is_empty() or defs.orders.is_empty() or defs.upgrades.is_empty())
 	for id in defs.encounter_chain:
 		ok = ok and defs.encounters.has(id)
 	var outcome := BattleState.Outcome.NONE
 	if ok:
 		var test_run := RunState.create(defs, 1)
 		var cards: Array[int] = [0, 1, 2, 3]
-		var s := BattleState.create(defs, defs.encounter(defs.encounter_chain[0]), test_run.codex, cards, 1)
+		var s := BattleState.create(defs, defs.encounter(defs.encounter_chain[0]), test_run.codex, cards, 1, test_run.hero)
 		BattleResolver.begin(s)
 		while s.outcome == BattleState.Outcome.NONE:
 			BattleResolver.apply(s, AiController.choose_action(s, s.active_uid))
 		outcome = s.outcome
 		ok = outcome != BattleState.Outcome.NONE
-	print("SMOKE %s: units=%d memories=%d encounters=%d battle=%s" % [
+	print("SMOKE %s: units=%d memories=%d encounters=%d abilities=%d spells=%d battle=%s" % [
 		"OK" if ok else "FAIL", defs.units.size(), defs.memories.size(), defs.encounters.size(),
-		BattleState.Outcome.keys()[outcome]])
+		defs.abilities.size(), defs.spells.size(), BattleState.Outcome.keys()[outcome]])
 	get_tree().quit(0 if ok else 1)
 
 
@@ -75,21 +76,23 @@ func abandon_battle() -> void:
 	goto(SCENE_PREP)
 
 
-func finish_battle(outcome: BattleState.Outcome) -> void:
+func finish_battle(outcome: BattleState.Outcome, spell_charges: Array[int] = []) -> void:
 	if outcome != BattleState.Outcome.PLAYER_WON:
 		_end_run(false)
 		return
-	last_faded = run.codex.decay(selected)
+	run.apply_spell_charges(spell_charges)
+	last_faded = []
 	if run.is_last_battle(defs):
 		_end_run(true)
 		return
+	last_faded = run.decay_after_battle(defs, selected)
 	goto(SCENE_REWARD)
 
 
 ## Вызывается экраном награды после выбора (или пропуска).
 func complete_reward() -> void:
 	run.battle_index += 1
-	if not run.codex.has_unit_cards():
+	if not run.codex.has_unit_cards(defs):
 		_end_run(false)
 		return
 	SaveService.save_run(run)

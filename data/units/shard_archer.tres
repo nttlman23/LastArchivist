@@ -16,4 +16,5 @@ initiative = 10
 is_ranged = true
 shots = 8
 is_flying = false
+ability_id = &"shard_volley"
 color = Color(0.55, 0.75, 0.9, 1)

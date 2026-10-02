@@ -14,6 +14,11 @@ static func start_round(state: BattleState) -> Array[BattleEvent]:
 	for u in order:
 		u.retaliated = false
 		u.waited = false
+		if u.ability_cd > 0:
+			u.ability_cd -= 1
+		_tick_statuses(u, events)
+	_tick_obstacles(state, events)
+	state.hero_actions_left = BattleState.HERO_ACTIONS_PER_ROUND
 	order.sort_custom(_main_phase_before)
 	state.queue.clear()
 	state.wait_queue.clear()
@@ -21,6 +26,29 @@ static func start_round(state: BattleState) -> Array[BattleEvent]:
 		state.queue.append(u.uid)
 	events.append(BattleEvent.new(BattleEvent.ROUND_STARTED, {"round": state.round_number}))
 	return events
+
+
+static func _tick_statuses(u: UnitState, events: Array[BattleEvent]) -> void:
+	for id in u.statuses.keys():
+		var left: int = u.statuses[id]
+		if left == UnitState.PERMANENT:
+			continue
+		left -= 1
+		if left <= 0:
+			u.statuses.erase(id)
+			events.append(BattleEvent.new(BattleEvent.STATUS_CHANGED, {"uid": u.uid, "status": id, "on": false}))
+		else:
+			u.statuses[id] = left
+
+
+static func _tick_obstacles(state: BattleState, events: Array[BattleEvent]) -> void:
+	for hex in state.temp_obstacles.keys():
+		var left: int = state.temp_obstacles[hex] - 1
+		if left <= 0:
+			state.temp_obstacles.erase(hex)
+			events.append(BattleEvent.new(BattleEvent.OBSTACLE_EXPIRED, {"hex": hex}))
+		else:
+			state.temp_obstacles[hex] = left
 
 
 ## Передаёт ход следующему живому стеку, при необходимости начиная новый раунд.

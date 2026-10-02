@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="UnitDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/unit_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"faceless_choir"
+name_key = "UNIT_FACELESS_CHOIR"
+hp = 15
+attack = 3
+defense = 6
+dmg_min = 1
+dmg_max = 3
+speed = 4
+initiative = 7
+is_ranged = false
+shots = 0
+is_flying = false
+ability_id = &"echo"
+color = Color(0.86, 0.84, 0.74, 1)
