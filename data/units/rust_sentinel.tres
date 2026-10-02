@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="UnitDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/unit_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"rust_sentinel"
+name_key = "UNIT_RUST_SENTINEL"
+hp = 35
+attack = 6
+defense = 11
+dmg_min = 3
+dmg_max = 6
+speed = 3
+initiative = 5
+is_ranged = false
+shots = 0
+is_flying = false
+color = Color(0.7, 0.4, 0.25, 1)

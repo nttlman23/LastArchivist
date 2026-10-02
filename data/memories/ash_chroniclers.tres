@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="MemoryCardDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/memory_card_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"ash_chroniclers"
+name_key = "MEM_ASH_CHRONICLERS"
+unit_id = &"chronicler"
+count = 10
+max_durability = 3

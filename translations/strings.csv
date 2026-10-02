@@ -1,0 +1,62 @@
+keys,ru
+GAME_TITLE,Последний Архивариус
+MENU_NEW_RUN,Новый забег
+MENU_CONTINUE,Продолжить
+MENU_QUIT,Выход
+UNIT_SALT_GUARD,Соляной Страж
+UNIT_CHRONICLER,Летописец-стрелок
+UNIT_ASH_GHOUL,Пепельный Гуль
+UNIT_SHARD_ARCHER,Осколочный Лучник
+UNIT_STORM_WYRM_ECHO,Эхо Грозового Змея
+UNIT_RUST_SENTINEL,Ржавый Часовой
+MEM_SALT_LEGION,Легион Соляных Стражей
+MEM_ASH_CHRONICLERS,Летописцы Пепла
+MEM_GHOUL_PACK,Стая Пепельных Гулей
+MEM_STORM_WYRM,Эхо Грозового Змея
+MEM_RUST_SENTINELS,Ржавые Часовые
+MEM_SHARD_ARCHERS,Осколочные Лучники
+ENC_CRYPT_1,Склеп: преддверие
+ENC_CRYPT_2,Склеп: галереи
+ENC_CRYPT_3,Склеп: сердце
+PREP_TITLE,"Бой %d из %d: %s"
+PREP_HINT,"Выберите до %d воспоминаний для боя"
+PREP_ENEMIES,Противник:
+PREP_START,В бой
+PREP_TO_MENU,В меню
+CARD_DURABILITY,"Прочность: %d/%d"
+CARD_STATS,"ОЗ %d · Атк %d · Защ %d · Урон %d–%d · Скор %d · Иниц %d"
+TAG_RANGED,"стрелок (%d)"
+TAG_FLYING,летает
+TAG_DEFENDING,в защите
+BATTLE_WAIT,Ждать [W]
+BATTLE_DEFEND,Защита [D]
+BATTLE_RETREAT,Отступить
+BATTLE_ROUND,"Раунд %d"
+BATTLE_QUEUE,Очередь:
+BATTLE_PREVIEW_MELEE,"Атака: урон %d–%d, убьёт %d–%d"
+BATTLE_PREVIEW_SHOOT,"Выстрел: урон %d–%d, убьёт %d–%d"
+BATTLE_PREVIEW_MOVE,Перемещение
+BATTLE_ENEMY_TURN,Ход противника…
+BATTLE_YOUR_TURN,"Ваш ход: %s"
+BATTLE_WON,Победа!
+BATTLE_LOST,Поражение
+BATTLE_CONTINUE,Продолжить
+LOG_ATTACK,"%s атакует %s: урон %d, погибло %d"
+LOG_SHOOT,"%s стреляет в %s: урон %d, погибло %d"
+LOG_RETALIATE,"%s отвечает %s: урон %d, погибло %d"
+LOG_DIED,%s уничтожен
+LOG_WAIT,%s ждёт
+LOG_DEFEND,%s защищается
+LOG_ROUND,"— Раунд %d —"
+LOG_TIMEOUT,Время вышло
+REWARD_TITLE,Победа. Выберите воспоминание
+REWARD_FADED,"Угасли воспоминания: %s"
+REWARD_NONE_FADED,Ни одно воспоминание не угасло
+REWARD_SKIP,Пропустить
+REWARD_DISCARD,"Кодекс полон (%d). Выберите карту, которую забыть:"
+REWARD_CANCEL,Отмена
+RUN_WON_TITLE,Экспедиция завершена
+RUN_WON_TEXT,Хранитель склепа повержен. Воспоминания сохранены.
+RUN_LOST_TITLE,Архивариус пал
+RUN_LOST_TEXT,Память этой экспедиции растворилась в разломе.
+RUN_TO_MENU,В главное меню

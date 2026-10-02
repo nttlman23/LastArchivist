@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"crypt_3"
+name_key = "ENC_CRYPT_3"
+unit_ids = Array[StringName]([&"storm_wyrm_echo", &"ash_ghoul", &"shard_archer", &"rust_sentinel"])
+counts = Array[int]([3, 21, 17, 7])
+obstacles = Array[Vector2i]([Vector2i(5, 0), Vector2i(5, 1), Vector2i(5, 7), Vector2i(5, 8)])

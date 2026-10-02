@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="UnitDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/unit_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"salt_guard"
+name_key = "UNIT_SALT_GUARD"
+hp = 25
+attack = 5
+defense = 9
+dmg_min = 2
+dmg_max = 4
+speed = 3
+initiative = 6
+is_ranged = false
+shots = 0
+is_flying = false
+color = Color(0.78, 0.82, 0.86, 1)

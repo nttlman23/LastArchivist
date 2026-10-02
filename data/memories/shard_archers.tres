@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="MemoryCardDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/memory_card_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"shard_archers"
+name_key = "MEM_SHARD_ARCHERS"
+unit_id = &"shard_archer"
+count = 12
+max_durability = 2

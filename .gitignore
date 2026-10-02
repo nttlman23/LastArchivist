@@ -1,0 +1,10 @@
+# Godot
+.godot/
+/android/
+*.translation
+export.cfg
+export_credentials.cfg
+*.tmp
+
+# Builds
+build/

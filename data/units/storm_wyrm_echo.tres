@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="UnitDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/unit_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"storm_wyrm_echo"
+name_key = "UNIT_STORM_WYRM_ECHO"
+hp = 40
+attack = 9
+defense = 7
+dmg_min = 6
+dmg_max = 10
+speed = 7
+initiative = 11
+is_ranged = false
+shots = 0
+is_flying = true
+color = Color(0.55, 0.45, 0.95, 1)
