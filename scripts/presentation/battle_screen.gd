@@ -4,7 +4,8 @@ extends Control
 const BOARD_TOP := 150.0
 const AI_DELAY := 0.35
 const LOG_LINES := 8
-const QUEUE_SLOT := Vector2(64, 64)
+const QUEUE_SLOT := 60.0
+const QUEUE_ACTIVE_SLOT := 76.0
 
 var db: DefsDB
 var state: BattleState
@@ -12,11 +13,12 @@ var view: BattleView
 
 var _busy := true
 var _pending: BattleAction
+var _hover_key := ""
 var _queue_box: HBoxContainer
 var _round_label: Label
 var _status_label: Label
-var _info_label: Label
-var _hover_label: Label
+var _active_panel: UnitInfoPanel
+var _hover_panel: UnitInfoPanel
 var _preview_label: Label
 var _log: RichTextLabel
 var _log_lines: Array[String] = []
@@ -64,13 +66,15 @@ func _build_hud() -> void:
 	add_child(top)
 	_round_label = UiKit.label("", 28, UiKit.ACCENT)
 	_round_label.custom_minimum_size = Vector2(150, 0)
+	_round_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	top.add_child(_round_label)
 	_queue_box = HBoxContainer.new()
 	_queue_box.add_theme_constant_override("separation", 6)
+	_queue_box.alignment = BoxContainer.ALIGNMENT_CENTER
 	top.add_child(_queue_box)
 
 	_status_label = UiKit.label("", 26)
-	_status_label.position = Vector2(24, 100)
+	_status_label.position = Vector2(24, 104)
 	add_child(_status_label)
 
 	var side := VBoxContainer.new()
@@ -81,10 +85,11 @@ func _build_hud() -> void:
 	side.offset_bottom = -20
 	side.add_theme_constant_override("separation", 12)
 	add_child(side)
-	_hover_label = UiKit.label("", 19, UiKit.MUTED)
-	_hover_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_hover_label.custom_minimum_size = Vector2(380, 150)
-	side.add_child(_hover_label)
+	_active_panel = UnitInfoPanel.new()
+	side.add_child(_active_panel)
+	_hover_panel = UnitInfoPanel.new()
+	_hover_panel.visible = false
+	side.add_child(_hover_panel)
 	_log = RichTextLabel.new()
 	_log.bbcode_enabled = true
 	_log.scroll_following = true
@@ -106,10 +111,6 @@ func _build_hud() -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 16)
 	bottom.add_child(row)
-	_info_label = UiKit.label("", 19)
-	_info_label.custom_minimum_size = Vector2(620, 0)
-	_info_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	row.add_child(_info_label)
 	_wait_btn = UiKit.button(tr("BATTLE_WAIT"), _on_wait, 200)
 	row.add_child(_wait_btn)
 	_defend_btn = UiKit.button(tr("BATTLE_DEFEND"), _on_defend, 200)
@@ -128,12 +129,17 @@ func _refresh_hud() -> void:
 		upcoming.append(state.active_uid)
 	upcoming.append_array(TurnManager.upcoming(state))
 	for uid in upcoming:
-		_queue_box.add_child(_queue_slot(state.get_unit(uid), uid == state.active_uid))
+		var is_active := uid == state.active_uid
+		var slot := UnitPortrait.create(db, state.get_unit(uid), QUEUE_ACTIVE_SLOT if is_active else QUEUE_SLOT, is_active)
+		slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		_queue_box.add_child(slot)
 	var sep := UiKit.label("│", 40, UiKit.MUTED)
+	sep.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_queue_box.add_child(sep)
 	for uid in TurnManager.next_round_order(state):
-		var slot := _queue_slot(state.get_unit(uid), false)
-		slot.modulate = Color(1, 1, 1, 0.55)
+		var slot := UnitPortrait.create(db, state.get_unit(uid), QUEUE_SLOT)
+		slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		slot.modulate = Color(1, 1, 1, 0.5)
 		_queue_box.add_child(slot)
 
 	var u := state.active_unit()
@@ -142,47 +148,12 @@ func _refresh_hud() -> void:
 	_defend_btn.disabled = not player_turn
 	if u == null or state.outcome != BattleState.Outcome.NONE:
 		_status_label.text = ""
-		_info_label.text = ""
+		_active_panel.visible = false
 		return
-	_info_label.text = _unit_text(u)
-	if player_turn:
-		_status_label.text = tr("BATTLE_YOUR_TURN") % UiKit.unit_name(db, u.def_id)
-		_status_label.add_theme_color_override("font_color", UiKit.PLAYER_COLOR)
-	else:
-		_status_label.text = tr("BATTLE_ENEMY_TURN")
-		_status_label.add_theme_color_override("font_color", UiKit.ENEMY_COLOR)
-
-
-func _queue_slot(u: UnitState, is_active: bool) -> PanelContainer:
-	var p := PanelContainer.new()
-	p.custom_minimum_size = QUEUE_SLOT
-	var border := UiKit.ACTIVE_BORDER if is_active else (UiKit.PLAYER_COLOR if u.side == UnitState.Side.PLAYER else UiKit.ENEMY_COLOR)
-	var sb := UiKit.panel_style(db.unit(u.def_id).color.darkened(0.3), border, 4 if is_active else 2)
-	sb.set_content_margin_all(2)
-	p.add_theme_stylebox_override("panel", sb)
-	var l := UiKit.label("%s\n%d" % [UiKit.unit_abbr(db, u.def_id), u.count], 17, Color(0.05, 0.05, 0.08))
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	p.add_child(l)
-	p.tooltip_text = UiKit.unit_name(db, u.def_id)
-	return p
-
-
-func _unit_text(u: UnitState) -> String:
-	var lines: Array[String] = [
-		"%s × %d   (ОЗ верхнего: %d/%d)" % [UiKit.unit_name(db, u.def_id), u.count, u.top_hp, u.hp],
-		tr("CARD_STATS") % [u.hp, u.attack, u.defense, u.dmg_min, u.dmg_max, u.speed, u.initiative],
-	]
-	var tags: Array[String] = []
-	if u.is_ranged:
-		tags.append(tr("TAG_RANGED") % u.shots_left)
-	if u.is_flying:
-		tags.append(tr("TAG_FLYING"))
-	if u.defending:
-		tags.append(tr("TAG_DEFENDING"))
-	if not tags.is_empty():
-		lines.append(", ".join(tags))
-	return "\n".join(lines)
+	var side_color := UiKit.PLAYER_COLOR if player_turn else UiKit.ENEMY_COLOR
+	_status_label.text = (tr("BATTLE_YOUR_TURN") if player_turn else tr("BATTLE_ENEMY_TURN")) % UiKit.unit_name(db, u.def_id)
+	_status_label.add_theme_color_override("font_color", side_color)
+	_active_panel.show_unit(db, u, tr("INFO_ACTIVE"), UiKit.ACTIVE_BORDER)
 
 
 # --- Ход боя -----------------------------------------------------------------
@@ -204,11 +175,13 @@ func _run_turns() -> void:
 		return
 	_busy = false
 	view.reachable = Pathfinding.reachable(state, state.active_unit())
+	_invalidate_hover()
 	_update_hover()
 
 
 func _execute(action: BattleAction) -> void:
 	_pending = null
+	_invalidate_hover()
 	view.clear_preview()
 	view.show_active = false
 	_preview_label.text = ""
@@ -255,18 +228,45 @@ func _update_hover() -> void:
 		return
 	var local := view.get_local_mouse_position()
 	var hex := view.hex_at(local)
+	var can_act := not _busy and _is_player_turn()
+	var pending := _action_at(local, hex) if can_act else null
+	view.set_cursor(_CURSOR_ICONS.get(pending.type, &"") if pending else &"", local)
+	# Мышь шлёт много событий за кадр: пересобираем подсветку и карточки, только если что-то изменилось.
+	var key := "%s|%s|%s" % [hex, pending, can_act]
+	if key == _hover_key:
+		return
+	_hover_key = key
+	_pending = pending
+
 	view.hover_hex = hex
 	var hovered: UnitState = state.unit_at(hex) if hex.x >= 0 else null
-	_hover_label.text = _unit_text(hovered) if hovered else ""
+	var active := state.active_unit()
+	if hovered and hovered != active:
+		_hover_panel.show_unit(db, hovered, tr("INFO_HOVER"))
+	else:
+		_hover_panel.visible = false
 
-	_pending = null
 	view.preview_path = []
 	view.preview_target = -1
+	view.threat = {}
 	_preview_label.text = ""
-	if not _busy and _is_player_turn():
-		_pending = _action_at(local, hex)
-		_show_preview(_pending)
-	view.queue_redraw()
+	# Зона угрозы: куда может дойти враг под курсором.
+	if hovered and active and hovered.side != active.side and not hovered.is_ranged:
+		view.threat = Pathfinding.reachable(state, hovered)
+	_show_preview(_pending)
+	view.refresh_highlights()
+
+
+## Сбрасывает кэш наведения после изменения состояния боя.
+func _invalidate_hover() -> void:
+	_hover_key = ""
+
+
+const _CURSOR_ICONS := {
+	BattleAction.Type.MOVE: UnitGlyphs.ICON_MOVE,
+	BattleAction.Type.MELEE: UnitGlyphs.ICON_MELEE,
+	BattleAction.Type.SHOOT: UnitGlyphs.ICON_RANGED,
+}
 
 
 func _action_at(local: Vector2, hex: Vector2i) -> BattleAction:

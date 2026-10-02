@@ -81,3 +81,18 @@ func test_melee_side_follows_cursor() -> void:
 	var right: BattleAction = scene._melee_from_cursor(u, e, center + Vector2(30, 0))
 	assert_eq(left.dest, Vector2i(4, 4))
 	assert_eq(right.dest, Vector2i(6, 4))
+
+
+func _icons(u: UnitState) -> Array:
+	return UnitInfoPanel.abilities_of(u).map(func(e: Array) -> StringName: return e[0])
+
+
+func test_abilities_reflect_state() -> void:
+	var s := TestHelpers.empty_battle()
+	var archer := TestHelpers.add(s, 0, Vector2i(0, 0), 5, {"is_ranged": true, "shots": 3, "is_flying": true})
+	assert_eq(_icons(archer), [UnitGlyphs.ICON_RANGED, UnitGlyphs.ICON_FLYING, UnitGlyphs.ICON_RETALIATION])
+	var guard := TestHelpers.add(s, 1, Vector2i(5, 0), 5)
+	guard.retaliated = true
+	guard.defending = true
+	guard.waited = true
+	assert_eq(_icons(guard), [UnitGlyphs.ICON_MELEE, UnitGlyphs.ICON_RETALIATION_USED, UnitGlyphs.ICON_DEFEND, UnitGlyphs.ICON_WAIT])

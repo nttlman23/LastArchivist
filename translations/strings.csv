@@ -36,7 +36,7 @@ BATTLE_QUEUE,Очередь:
 BATTLE_PREVIEW_MELEE,"Атака: урон %d–%d, убьёт %d–%d"
 BATTLE_PREVIEW_SHOOT,"Выстрел: урон %d–%d, убьёт %d–%d"
 BATTLE_PREVIEW_MOVE,Перемещение
-BATTLE_ENEMY_TURN,Ход противника…
+BATTLE_ENEMY_TURN,"Ход противника: %s"
 BATTLE_YOUR_TURN,"Ваш ход: %s"
 BATTLE_WON,Победа!
 BATTLE_LOST,Поражение
@@ -60,3 +60,15 @@ RUN_WON_TEXT,Хранитель склепа повержен. Воспомин�
 RUN_LOST_TITLE,Архивариус пал
 RUN_LOST_TEXT,Память этой экспедиции растворилась в разломе.
 RUN_TO_MENU,В главное меню
+INFO_ACTIVE,Ходит сейчас
+INFO_HOVER,Под курсором
+INFO_HP,"ОЗ верхнего существа: %d/%d"
+INFO_STATS_COMBAT,"Атк %d · Защ %d · Урон %d–%d"
+INFO_STATS_PACE,"Скор %d · Иниц %d"
+ABILITY_MELEE,Ближний бой: подходит к врагу и бьёт. Получает ответный удар.
+ABILITY_RANGED,"Стрелок (выстрелов: %d): бьёт на любую дистанцию без ответного удара, дальше 5 клеток — ½ урона. Если враг рядом, стрелять нельзя: ближний бой с ½ урона."
+ABILITY_FLYING,Летает: перелетает препятствия и отряды.
+STATUS_RETALIATION_READY,"Ответный удар готов: ответит первому, кто ударит вплотную."
+STATUS_RETALIATION_USED,Ответный удар уже потрачен в этом раунде.
+STATUS_DEFENDING,В защите: +30% к защите до своего следующего хода.
+STATUS_WAITED,Ждёт: походит в конце раунда.
