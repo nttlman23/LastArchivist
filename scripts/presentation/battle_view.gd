@@ -216,8 +216,32 @@ func _update_marker() -> void:
 
 # --- Проигрывание событий ---------------------------------------------------
 
+## Звук на событие боя (id из Audio.SFX); ATTACKED озвучивается отдельно.
+const EVENT_SOUNDS := {
+	BattleEvent.MOVED: &"move",
+	BattleEvent.DIED: &"death",
+	BattleEvent.HEALED: &"heal",
+	BattleEvent.DAMAGED: &"impact",
+	BattleEvent.PUSHED: &"push",
+	BattleEvent.OBSTACLE_ADDED: &"wall",
+	BattleEvent.ABILITY_USED: &"ability",
+}
+
+
+static func sound_for(e: BattleEvent) -> StringName:
+	match e.type:
+		BattleEvent.ATTACKED:
+			return &"shoot" if e.data["ranged"] else &"melee"
+		BattleEvent.HERO_ACTED:
+			return &"spell" if e.data["spell"] else &"order"
+	return EVENT_SOUNDS.get(e.type, &"")
+
+
 func play(events: Array[BattleEvent]) -> void:
 	for e in events:
+		var sound := sound_for(e)
+		if sound != &"":
+			Audio.play(sound)
 		match e.type:
 			BattleEvent.MOVED:
 				await _play_move(e.data["uid"], e.data["path"])
@@ -285,6 +309,7 @@ func _play_attack(d: Dictionary) -> void:
 		await _tween_value(func(t: float) -> void: _projectile_t = t, 0.0, 1.0, SHOT_TIME, _fx)
 		_projectile_t = -1.0
 		_fx.queue_redraw()
+		Audio.play(&"impact")
 	else:
 		var lunge := from.lerp(to, 0.35)
 		await _tween_value(func(t: float) -> void: _pos[attacker] = from.lerp(lunge, t), 0.0, 1.0, LUNGE_TIME, _units)

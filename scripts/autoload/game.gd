@@ -23,6 +23,7 @@ func _ready() -> void:
 	var theme := Theme.new()
 	theme.default_font_size = FONT_SIZE
 	get_tree().root.theme = theme
+	Audio.play_music(&"menu")
 	if "--smoke" in OS.get_cmdline_user_args():
 		_smoke_test()
 
@@ -104,6 +105,7 @@ func to_main_menu() -> void:
 
 
 func goto(scene: String) -> void:
+	Audio.play_music(&"battle" if scene == SCENE_BATTLE else &"menu")
 	get_tree().change_scene_to_file.call_deferred(scene)
 
 

@@ -181,6 +181,7 @@ func _on_form(form: CodexOps.Form) -> void:
 
 
 func _apply_form(form: CodexOps.Form) -> void:
+	Audio.play(&"transform")
 	CodexOps.apply(db, run, _selected_card, form)
 	Game.complete_reward()
 

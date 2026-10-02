@@ -36,6 +36,7 @@ static func button(text: String, on_pressed: Callable, min_width: int = 260) -> 
 	var b := Button.new()
 	b.text = text
 	b.custom_minimum_size = Vector2(min_width, 56)
+	b.pressed.connect(Audio.play.bind(&"ui_click"))
 	b.pressed.connect(on_pressed)
 	return b
 
@@ -150,6 +151,7 @@ static func card_button(db: DefsDB, memory_id: StringName, durability: int = -1,
 		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		col.add_child(desc)
 	b.tooltip_text = _card_tooltip(db, mem)
+	b.pressed.connect(Audio.play.bind(&"card"))
 	return b
 
 

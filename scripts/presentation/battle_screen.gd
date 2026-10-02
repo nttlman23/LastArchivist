@@ -47,6 +47,7 @@ func _ready() -> void:
 	state = BattleState.create(db, encounter, run.codex, Game.selected, run.battle_seed(), run.hero)
 
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	Audio.play_music(&"battle")
 	UiKit.add_background(self)
 	view = BattleView.new()
 	add_child(view)
@@ -264,6 +265,7 @@ func _run_turns() -> void:
 		return
 	_busy = false
 	_refresh_hud()
+	Audio.play(&"turn")
 	view.reachable = Pathfinding.reachable(state, state.active_unit())
 	_invalidate_hover()
 	_update_hover()
@@ -629,6 +631,7 @@ func _name(uid: int) -> String:
 func _show_end() -> void:
 	view.clear_preview()
 	var won := state.outcome == BattleState.Outcome.PLAYER_WON
+	Audio.play(&"victory" if won else &"defeat")
 	_end_panel = PanelContainer.new()
 	_end_panel.add_theme_stylebox_override("panel", UiKit.panel_style(UiKit.PANEL_COLOR, UiKit.ACCENT, 3))
 	var box := VBoxContainer.new()
