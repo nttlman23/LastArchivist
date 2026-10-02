@@ -20,6 +20,21 @@ const ICON_ARMOR := &"armor"
 const ICON_HEAL := &"heal"
 const ICON_ORDER := &"order"
 const ICON_SPELL := &"spell"
+const ICON_INK := &"ink"
+const ICON_PARCHMENT := &"parchment"
+const ICON_AETHER := &"aether"
+const ICON_HP := &"hp"
+const ICON_SPEED := &"speed"
+const ICON_KILL := &"kill"
+const ICON_POINTS := &"points"
+const ICON_LOCK := &"lock"
+
+## Все значки — для запекания в текстуры (IconAtlas).
+const ALL_ICONS: Array[StringName] = [
+	ICON_MELEE, ICON_RANGED, ICON_FLYING, ICON_RETALIATION, ICON_RETALIATION_USED, ICON_DEFEND, ICON_WAIT,
+	ICON_MOVE, ICON_ABILITY, ICON_MARK, ICON_ARMOR, ICON_HEAL, ICON_ORDER, ICON_SPELL,
+	ICON_INK, ICON_PARCHMENT, ICON_AETHER, ICON_HP, ICON_SPEED, ICON_KILL, ICON_POINTS, ICON_LOCK,
+]
 
 
 ## Силуэт существа по id определения.
@@ -52,10 +67,14 @@ static func draw_unit(ci: CanvasItem, def_id: StringName, c: Vector2, r: float, 
 
 
 ## Значок способности/состояния в круглом медальоне.
-static func draw_icon(ci: CanvasItem, kind: StringName, c: Vector2, r: float, bg: Color, fg: Color = Color.WHITE) -> void:
-	ci.draw_circle(c, r, bg)
-	ci.draw_circle(c, r, Color(fg, 0.35 * fg.a), false, 1.5)
+## ring = false — без медальона (значок крупнее; для текстур IconAtlas).
+static func draw_icon(ci: CanvasItem, kind: StringName, c: Vector2, r: float, bg: Color, fg: Color = Color.WHITE, ring: bool = true) -> void:
 	var s := r * 0.75
+	if ring:
+		ci.draw_circle(c, r, bg)
+		ci.draw_circle(c, r, Color(fg, 0.35 * fg.a), false, 1.5)
+	else:
+		s = r * 0.95
 	match kind:
 		ICON_MELEE:
 			_sword(ci, c, s, fg, -45.0)
@@ -93,6 +112,45 @@ static func draw_icon(ci: CanvasItem, kind: StringName, c: Vector2, r: float, bg
 			_poly(ci, c, s, [Vector2(-0.45, -0.85), Vector2(0.8, -0.5), Vector2(-0.45, -0.1)], fg)
 		ICON_SPELL:
 			_poly(ci, c, s, [Vector2(0, -0.9), Vector2(0.6, 0), Vector2(0, 0.9), Vector2(-0.6, 0)], fg)
+		ICON_INK:
+			# Капля.
+			var drop := PackedVector2Array([c + Vector2(0, -0.95) * s])
+			for i in 13:
+				var a := PI * i / 12.0
+				drop.append(c + Vector2(cos(a) * 0.55, 0.3 + sin(a) * 0.55) * s)
+			ci.draw_colored_polygon(drop, fg)
+		ICON_PARCHMENT:
+			# Свиток: лист и два валика.
+			_poly(ci, c, s, [Vector2(-0.55, -0.6), Vector2(0.55, -0.6), Vector2(0.55, 0.6), Vector2(-0.55, 0.6)], fg)
+			ci.draw_line(c + Vector2(-0.75, -0.65) * s, c + Vector2(0.75, -0.65) * s, fg, maxf(2.0, s * 0.25))
+			ci.draw_line(c + Vector2(-0.75, 0.65) * s, c + Vector2(0.75, 0.65) * s, fg, maxf(2.0, s * 0.25))
+			for y: float in [-0.25, 0.05, 0.35]:
+				ci.draw_line(c + Vector2(-0.35, y) * s, c + Vector2(0.35, y) * s, bg if bg.a > 0.5 else Color(0, 0, 0, 0.6), maxf(1.0, s * 0.1))
+		ICON_AETHER:
+			# Четырёхлучевая искра.
+			_poly(ci, c, s, [Vector2(0, -1), Vector2(0.22, -0.22), Vector2(1, 0), Vector2(0.22, 0.22), Vector2(0, 1), Vector2(-0.22, 0.22), Vector2(-1, 0), Vector2(-0.22, -0.22)], fg)
+		ICON_HP:
+			# Сердце.
+			ci.draw_circle(c + Vector2(-0.33, -0.25) * s, s * 0.38, fg)
+			ci.draw_circle(c + Vector2(0.33, -0.25) * s, s * 0.38, fg)
+			_poly(ci, c, s, [Vector2(-0.7, -0.1), Vector2(0.7, -0.1), Vector2(0, 0.85)], fg)
+		ICON_SPEED:
+			# Сапог.
+			_poly(ci, c, s, [Vector2(-0.35, -0.85), Vector2(0.15, -0.85), Vector2(0.15, 0.2), Vector2(0.85, 0.35), Vector2(0.85, 0.75), Vector2(-0.35, 0.75)], fg)
+		ICON_KILL:
+			# Череп: голова, челюсть, глазницы.
+			ci.draw_circle(c + Vector2(0, -0.15) * s, s * 0.65, fg)
+			_poly(ci, c, s, [Vector2(-0.35, 0.3), Vector2(0.35, 0.3), Vector2(0.3, 0.8), Vector2(-0.3, 0.8)], fg)
+			var hole := bg if bg.a > 0.5 else Color(0, 0, 0, 0.85)
+			ci.draw_circle(c + Vector2(-0.25, -0.2) * s, s * 0.17, hole)
+			ci.draw_circle(c + Vector2(0.25, -0.2) * s, s * 0.17, hole)
+		ICON_POINTS:
+			# Раскрытая книга.
+			_poly(ci, c, s, [Vector2(-0.9, -0.5), Vector2(-0.05, -0.3), Vector2(-0.05, 0.7), Vector2(-0.9, 0.5)], fg)
+			_poly(ci, c, s, [Vector2(0.9, -0.5), Vector2(0.05, -0.3), Vector2(0.05, 0.7), Vector2(0.9, 0.5)], fg)
+		ICON_LOCK:
+			ci.draw_arc(c + Vector2(0, -0.2) * s, s * 0.38, PI, TAU, 12, fg, maxf(2.0, s * 0.18))
+			_poly(ci, c, s, [Vector2(-0.6, -0.15), Vector2(0.6, -0.15), Vector2(0.6, 0.8), Vector2(-0.6, 0.8)], fg)
 
 
 # --- Примитивы ---------------------------------------------------------------

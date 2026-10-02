@@ -19,6 +19,9 @@ func _ready() -> void:
 	db = Game.defs
 	run = Game.run
 	_offer = run.roll_rewards(db, Game.reward_guarantees_hero())
+	Hints.show_hint(&"memory")
+	if not Game.last_faded.is_empty():
+		Hints.show_hint(&"faded")
 	UiKit.add_background(self)
 	var scroll := ScrollContainer.new()
 	scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -45,7 +48,11 @@ func _show_main() -> void:
 	_clear()
 	_content.add_child(UiKit.label(tr("MEMORY_TITLE"), 40, UiKit.ACCENT))
 	if not Game.last_rewards.is_empty():
-		_content.add_child(UiKit.label(tr("MEMORY_RESOURCES") % UiKit.resources_text(Game.last_rewards, true), 0, UiKit.ACCENT))
+		var got := HBoxContainer.new()
+		got.add_theme_constant_override("separation", 12)
+		got.add_child(UiKit.label(tr("MEMORY_RESOURCES_SHORT"), 0, UiKit.MUTED))
+		got.add_child(UiKit.resource_row(Game.last_rewards, true))
+		_content.add_child(got)
 	if Game.last_faded.is_empty():
 		_content.add_child(UiKit.label(tr("REWARD_NONE_FADED"), 0, UiKit.MUTED))
 	else:
@@ -53,7 +60,8 @@ func _show_main() -> void:
 		for id in Game.last_faded:
 			names.append(tr(db.memory(id).name_key))
 		_content.add_child(UiKit.label(tr("REWARD_FADED") % ", ".join(names), 0, UiKit.DANGER))
-	_content.add_child(UiKit.label(tr("MEMORY_ONE_ACTION"), 0, UiKit.MUTED))
+	if Settings.detailed:
+		_content.add_child(UiKit.label(tr("MEMORY_ONE_ACTION"), 0, UiKit.MUTED))
 
 	# Секция 1: новое воспоминание.
 	_content.add_child(UiKit.label(tr("MEMORY_NEW"), 28, UiKit.ACCENT))
@@ -67,7 +75,8 @@ func _show_main() -> void:
 
 	# Секция 2: переработка карты Кодекса.
 	_content.add_child(UiKit.label(tr("MEMORY_REWORK"), 28, UiKit.ACCENT))
-	_content.add_child(UiKit.label(tr("MEMORY_REWORK_HINT"), 0, UiKit.MUTED))
+	if Settings.detailed:
+		_content.add_child(UiKit.label(tr("MEMORY_REWORK_HINT"), 0, UiKit.MUTED))
 	_rework = ReworkPanel.new()
 	_rework.setup(db, run)
 	_rework.confirmed.connect(_apply)

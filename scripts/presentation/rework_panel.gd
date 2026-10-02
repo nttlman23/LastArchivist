@@ -5,6 +5,12 @@ extends HBoxContainer
 
 signal confirmed(card_index: int, form: CodexOps.Form)
 
+const FORM_ICONS := {
+	CodexOps.Form.SPELL: UnitGlyphs.ICON_SPELL,
+	CodexOps.Form.UPGRADE: UnitGlyphs.ICON_ABILITY,
+	CodexOps.Form.SACRIFICE: UnitGlyphs.ICON_HEAL,
+	CodexOps.Form.FUSE: UnitGlyphs.ICON_RETALIATION,
+}
 const FORM_KEYS := {
 	CodexOps.Form.SPELL: "FORM_NAME_SPELL",
 	CodexOps.Form.UPGRADE: "FORM_NAME_UPGRADE",
@@ -75,18 +81,40 @@ func select_card(index: int) -> void:
 		b.custom_minimum_size = Vector2(0, 46)
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.focus_mode = Control.FOCUS_NONE
+		b.icon = IconAtlas.get_icon(FORM_ICONS[form])
+		b.add_theme_constant_override("icon_max_width", 22)
 		var reason: String = extra_reason.call(index, form)
 		if reason == "":
 			reason = CodexOps.unavailable_reason(db, run, index, form)
 		if reason == "":
-			b.text = form_preview(db, run, index, form)
+			var full := form_preview(db, run, index, form)
+			b.text = full if Settings.detailed else "%s: %s" % [tr(FORM_KEYS[form]), form_short(db, run, index, form)]
+			var tip_body := full
 			if form == CodexOps.Form.SPELL:
-				b.tooltip_text = tr(db.spell(db.memory(run.codex.cards[index].memory_id).spell_id).desc_key)
+				tip_body += "\n" + tr(db.spell(db.memory(run.codex.cards[index].memory_id).spell_id).desc_key)
+			Tip.attach(b, tr(FORM_KEYS[form]), tip_body, FORM_ICONS[form])
 			b.pressed.connect(_ask_confirm.bind(form))
 		else:
 			b.text = "%s — %s" % [tr(FORM_KEYS[form]), tr(reason)]
 			b.disabled = true
 		forms_box.add_child(b)
+
+
+## Короткий результат для кнопки: «Цепная молния ×2», «+1 к атаке», «+1 → 3 карты», «ур. 2 · 18».
+static func form_short(p_db: DefsDB, p_run: RunState, index: int, form: CodexOps.Form) -> String:
+	var card := p_run.codex.cards[index]
+	var mem := p_db.memory(card.memory_id)
+	match form:
+		CodexOps.Form.SPELL:
+			return "%s ×%d" % [TranslationServer.translate(p_db.spell(mem.spell_id).name_key), CodexOps.spell_charges(card)]
+		CodexOps.Form.UPGRADE:
+			return TranslationServer.translate(p_db.upgrade(mem.upgrade_id).name_key)
+		CodexOps.Form.SACRIFICE:
+			return TranslationServer.translate("FORM_SACRIFICE_SHORT") % CodexOps.sacrifice_repairs(p_db, p_run.codex, index)
+		CodexOps.Form.FUSE:
+			var result := CodexOps.fuse_result(p_run.codex, index)
+			return TranslationServer.translate("FORM_FUSE_SHORT") % [result[0], floori(mem.count * (1.0 + 0.5 * (result[0] - 1)))]
+	return ""
 
 
 ## Текст результата превращения — то, что игрок увидит до подтверждения.

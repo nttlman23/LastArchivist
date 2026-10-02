@@ -24,6 +24,8 @@ var _status_label: Label
 var _active_panel: UnitInfoPanel
 var _hover_panel: UnitInfoPanel
 var _preview_label: Label
+## Короткое превью значками (в режиме «подробно» вместо него — текст в _preview_label).
+var _preview_box: HBoxContainer
 var _log: RichTextLabel
 var _log_lines: Array[String] = []
 var _ability_btn: Button
@@ -45,7 +47,7 @@ func _ready() -> void:
 		MapActions.travel(Game.run, Game.run.map.next_of(MapState.START)[0])
 	var run := Game.run
 	var encounter := db.encounter(run.current_encounter_id(db))
-	state = BattleState.create(db, encounter, run.codex, Game.selected, run.battle_seed(), run.hero)
+	state = BattleState.create(db, encounter, run.codex, Game.selected, run.battle_seed(), run.hero, Game.school_passive())
 
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	Audio.play_music(&"battle")
@@ -121,8 +123,14 @@ func _build_hud() -> void:
 	bottom.offset_bottom = -12
 	bottom.add_theme_constant_override("separation", 8)
 	add_child(bottom)
+	var preview_row := HBoxContainer.new()
+	preview_row.add_theme_constant_override("separation", 16)
+	bottom.add_child(preview_row)
 	_preview_label = UiKit.label("", 22, UiKit.ACCENT)
-	bottom.add_child(_preview_label)
+	preview_row.add_child(_preview_label)
+	_preview_box = HBoxContainer.new()
+	_preview_box.add_theme_constant_override("separation", 16)
+	preview_row.add_child(_preview_box)
 
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
@@ -130,8 +138,12 @@ func _build_hud() -> void:
 	_ability_btn = _small_button("", _on_ability, 330)
 	row.add_child(_ability_btn)
 	_wait_btn = _small_button(tr("BATTLE_WAIT"), _on_wait, 170)
+	_wait_btn.icon = IconAtlas.get_icon(UnitGlyphs.ICON_WAIT)
+	Tip.attach(_wait_btn, tr("CHIP_WAITED"), tr("STATUS_WAITED"), UnitGlyphs.ICON_WAIT)
 	row.add_child(_wait_btn)
 	_defend_btn = _small_button(tr("BATTLE_DEFEND"), _on_defend, 170)
+	_defend_btn.icon = IconAtlas.get_icon(UnitGlyphs.ICON_DEFEND)
+	Tip.attach(_defend_btn, tr("CHIP_DEFENDING"), tr("STATUS_DEFENDING"), UnitGlyphs.ICON_DEFEND)
 	row.add_child(_defend_btn)
 	row.add_child(_small_button(tr("BATTLE_RETREAT"), Game.abandon_node, 170))
 
@@ -196,7 +208,7 @@ func _refresh_ability_button(u: UnitState, player_turn: bool) -> void:
 	if u == null or u.ability_id == &"" or not player_turn:
 		_ability_btn.text = tr("HUD_NO_ABILITY")
 		_ability_btn.disabled = true
-		_ability_btn.tooltip_text = ""
+		Tip.attach(_ability_btn, "", "")
 		return
 	var ab := db.ability(u.ability_id)
 	var title := tr(ab.name_key)
@@ -208,7 +220,9 @@ func _refresh_ability_button(u: UnitState, player_turn: bool) -> void:
 	else:
 		_ability_btn.text = tr("HUD_ABILITY") % title
 	_ability_btn.disabled = Abilities.options(state, u).is_empty()
-	_ability_btn.tooltip_text = tr(ab.desc_key)
+	_ability_btn.icon = IconAtlas.get_icon(UnitGlyphs.ICON_ABILITY)
+	_ability_btn.add_theme_constant_override("icon_max_width", 22)
+	Tip.attach(_ability_btn, title, tr(ab.desc_key), UnitGlyphs.ICON_ABILITY, UiKit.ACCENT)
 
 
 func _refresh_hero_panel() -> void:
@@ -240,7 +254,10 @@ func _refresh_hero_panel() -> void:
 			tooltip = tr(db.spell(id).desc_key)
 		var b := _small_button(text, _on_hero.bind(i), 0)
 		b.custom_minimum_size.x = 0
-		b.tooltip_text = tooltip
+		b.icon = IconAtlas.get_icon(UnitGlyphs.ICON_ORDER if slot < 0 else UnitGlyphs.ICON_SPELL)
+		b.add_theme_constant_override("icon_max_width", 20)
+		Tip.attach(b, tr(db.order(id).name_key) if slot < 0 else tr(db.spell(id).name_key), tooltip,
+				UnitGlyphs.ICON_ORDER if slot < 0 else UnitGlyphs.ICON_SPELL)
 		b.disabled = not can_act or HeroActions.options(state, id, slot).is_empty()
 		if slot >= 0:
 			b.add_theme_color_override("font_color", Color(0.75, 0.6, 1.0))
@@ -267,9 +284,19 @@ func _run_turns() -> void:
 	_busy = false
 	_refresh_hud()
 	Audio.play(&"turn")
+	_show_turn_hints()
 	view.reachable = Pathfinding.reachable(state, state.active_unit())
 	_invalidate_hover()
 	_update_hover()
+
+
+func _show_turn_hints() -> void:
+	Hints.show_hint(&"battle")
+	var u := state.active_unit()
+	if u.ability_ready() and not Abilities.options(state, u).is_empty():
+		Hints.show_hint(&"ability")
+	if state.can_hero_act() and not _hero_entries.is_empty():
+		Hints.show_hint(&"hero")
 
 
 func _execute(action: BattleAction) -> void:
@@ -278,7 +305,7 @@ func _execute(action: BattleAction) -> void:
 	_invalidate_hover()
 	view.clear_preview()
 	view.show_active = false
-	_preview_label.text = ""
+	_set_preview("", [])
 	var events := BattleResolver.apply(state, action)
 	_log_events(events)
 	await view.play(events)
@@ -327,6 +354,7 @@ func _begin_targeting(label: String, options: Array[BattleAction]) -> void:
 		_player_act(options[0])
 		return
 	_targeting = {"label": label, "options": options}
+	Hints.show_hint(&"targeting")
 	var hexes: Dictionary[Vector2i, bool] = {}
 	for a in options:
 		var u := state.get_unit(a.target_uid)
@@ -407,9 +435,9 @@ func _update_hover() -> void:
 	view.preview_target = -1
 	view.threat = {}
 	view.affected = {}
-	_preview_label.text = ""
+	_set_preview("", [])
 	if not _targeting.is_empty():
-		_preview_label.text = tr("TARGET_PROMPT") % _targeting["label"]
+		_set_preview(tr("TARGET_PROMPT") % _targeting["label"], [], tr("TARGET_PROMPT_SHORT") % _targeting["label"])
 		if _pending:
 			_show_target_preview(_pending)
 	else:
@@ -481,6 +509,25 @@ func _melee_from_cursor(u: UnitState, target: UnitState, local: Vector2) -> Batt
 	return best
 
 
+## Превью: в режиме «подробно» — полный текст, иначе короткая подпись и чипы [значок, текст, цвет, подсказка].
+func _set_preview(text: String, chips: Array, short: String = "") -> void:
+	for child in _preview_box.get_children():
+		child.queue_free()
+	if Settings.detailed:
+		_preview_label.text = text
+		return
+	_preview_label.text = short
+	for c in chips:
+		_preview_box.add_child(UiKit.chip(c[0], c[1], c[2], c[3], "", 22))
+
+
+func _damage_chips(icon: StringName, r: Vector2i, target: UnitState) -> Array:
+	return [
+		[icon, "%d–%d" % [r.x, r.y], UiKit.ACCENT, tr("PREVIEW_TIP_DAMAGE")],
+		[UnitGlyphs.ICON_KILL, "%d–%d" % [DamageCalc.kills(target, r.x), DamageCalc.kills(target, r.y)], UiKit.DANGER, tr("PREVIEW_TIP_KILLS")],
+	]
+
+
 func _show_preview(action: BattleAction) -> void:
 	if action == null:
 		return
@@ -488,7 +535,7 @@ func _show_preview(action: BattleAction) -> void:
 	match action.type:
 		BattleAction.Type.MOVE:
 			view.preview_path = Pathfinding.path(state, u, action.dest)
-			_preview_label.text = tr("BATTLE_PREVIEW_MOVE")
+			_set_preview(tr("BATTLE_PREVIEW_MOVE"), [[UnitGlyphs.ICON_MOVE, str(view.preview_path.size() - 1), UiKit.ACCENT, tr("PREVIEW_TIP_STEPS")]])
 		BattleAction.Type.MELEE, BattleAction.Type.SHOOT:
 			var target := state.get_unit(action.target_uid)
 			var ranged := action.type == BattleAction.Type.SHOOT
@@ -499,7 +546,8 @@ func _show_preview(action: BattleAction) -> void:
 				view.preview_path = [u.hex]
 			var r := DamageCalc.damage_range(u, target, ranged)
 			var key := "BATTLE_PREVIEW_SHOOT" if ranged else "BATTLE_PREVIEW_MELEE"
-			_preview_label.text = tr(key) % [r.x, r.y, DamageCalc.kills(target, r.x), DamageCalc.kills(target, r.y)]
+			_set_preview(tr(key) % [r.x, r.y, DamageCalc.kills(target, r.x), DamageCalc.kills(target, r.y)],
+					_damage_chips(UnitGlyphs.ICON_RANGED if ranged else UnitGlyphs.ICON_MELEE, r, target))
 
 
 ## Превью способности/приказа/заклинания: эффект на цель и кого ещё заденет.
@@ -509,20 +557,27 @@ func _show_target_preview(action: BattleAction) -> void:
 	if target:
 		view.preview_target = target.uid
 	view.affected = _harmed_by(action)
-	var text: String = _targeting["label"]
+	var label: String = _targeting["label"]
+	var text := label
+	var chips: Array = []
 	if action.is_hero() and action.slot >= 0:
 		var power := int(state.hero_spells[action.slot]["power"])
 		match action.ref_id:
 			HeroActions.ASH_RECORD, HeroActions.CHAIN_SPELL:
-				text = tr("PREVIEW_FIXED") % [text, power, DamageCalc.kills(target, power)]
+				text = tr("PREVIEW_FIXED") % [label, power, DamageCalc.kills(target, power)]
+				chips = [[UnitGlyphs.ICON_SPELL, str(power), UiKit.ACCENT, tr("PREVIEW_TIP_DAMAGE")],
+						[UnitGlyphs.ICON_KILL, str(DamageCalc.kills(target, power)), UiKit.DANGER, tr("PREVIEW_TIP_KILLS")]]
 			HeroActions.HUNGER:
-				text = tr("PREVIEW_HEAL") % [text, mini(power, target.start_count * target.hp - target.total_hp())]
+				var heal := mini(power, target.start_count * target.hp - target.total_hp())
+				text = tr("PREVIEW_HEAL") % [label, heal]
+				chips = [[UnitGlyphs.ICON_HEAL, "+%d" % heal, Color(0.45, 0.95, 0.5), tr("PREVIEW_TIP_HEAL")]]
 			HeroActions.SHARD_RAIN:
-				text = tr("PREVIEW_AREA") % [text, power]
+				text = tr("PREVIEW_AREA") % [label, power]
+				chips = [[UnitGlyphs.ICON_SPELL, str(power), UiKit.ACCENT, tr("PREVIEW_TIP_AREA")]]
 			_:
 				text = tr(db.spell(action.ref_id).desc_key)
 	elif action.is_hero():
-		text = "%s: %s" % [text, tr(db.order(action.ref_id).desc_key)]
+		text = "%s: %s" % [label, tr(db.order(action.ref_id).desc_key)]
 	else:
 		var id := Abilities.effective(state, u)
 		match id:
@@ -534,15 +589,19 @@ func _show_target_preview(action: BattleAction) -> void:
 					bonus = Abilities.RAM_BONUS if state.is_free(HexGrid.step(target.hex, dir)) else Abilities.RAM_BLOCKED_BONUS
 					view.preview_path = Abilities.ram_path(state, u, target)
 				var r := DamageCalc.damage_range(u, target, ranged, bonus)
-				text = tr("PREVIEW_DAMAGE") % [text, r.x, r.y, DamageCalc.kills(target, r.x), DamageCalc.kills(target, r.y)]
+				text = tr("PREVIEW_DAMAGE") % [label, r.x, r.y, DamageCalc.kills(target, r.x), DamageCalc.kills(target, r.y)]
+				chips = _damage_chips(UnitGlyphs.ICON_ABILITY, r, target)
 			Abilities.RESTORE:
-				text = tr("PREVIEW_HEAL") % [text, mini(Abilities.RESTORE_AMOUNT, target.start_count * target.hp - target.total_hp())]
+				var heal := mini(Abilities.RESTORE_AMOUNT, target.start_count * target.hp - target.total_hp())
+				text = tr("PREVIEW_HEAL") % [label, heal]
+				chips = [[UnitGlyphs.ICON_HEAL, "+%d" % heal, Color(0.45, 0.95, 0.5), tr("PREVIEW_TIP_HEAL")]]
 			_:
-				text = "%s: %s" % [text, tr(db.ability(id).desc_key)]
+				text = "%s: %s" % [label, tr(db.ability(id).desc_key)]
 	var allies_hit := view.affected.values().count(true)
 	if allies_hit > 0:
 		text += tr("PREVIEW_ALLIES_HIT") % allies_hit
-	_preview_label.text = text
+		chips.append([UnitGlyphs.ICON_RETALIATION_USED, str(allies_hit), UiKit.DANGER, tr("PREVIEW_TIP_ALLIES")])
+	_set_preview(text, chips, label)
 
 
 ## Кто потеряет ОЗ от действия (uid -> свой ли), кроме самого действующего стека.
@@ -613,14 +672,17 @@ func _log_events(events: Array[BattleEvent]) -> void:
 				line = tr("LOG_WALL") % int(e.data["rounds"])
 			BattleEvent.RIFT_MARKED:
 				line = "[color=#c080ff]%s[/color]" % (tr("LOG_RIFT_MARK") % _name(e.data["uid"]))
+				Hints.show_hint(&"rift")
 			BattleEvent.ERASED:
 				line = "[color=#c080ff]%s[/color]" % (tr("LOG_RIFT_ERASE") % _name(e.data["uid"]))
 			BattleEvent.DIED:
 				line = tr("LOG_DIED") % _name(e.data["uid"])
 			BattleEvent.WAITED:
-				line = tr("LOG_WAIT") % _name(e.data["uid"])
+				if Settings.detailed:
+					line = tr("LOG_WAIT") % _name(e.data["uid"])
 			BattleEvent.DEFENDED:
-				line = tr("LOG_DEFEND") % _name(e.data["uid"])
+				if Settings.detailed:
+					line = tr("LOG_DEFEND") % _name(e.data["uid"])
 			BattleEvent.BATTLE_ENDED:
 				if e.data.get("reason", "") == "rounds":
 					line = tr("LOG_TIMEOUT")

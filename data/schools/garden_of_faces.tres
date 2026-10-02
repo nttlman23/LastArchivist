@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="SchoolDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/school_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"garden_of_faces"
+name_key = "SCHOOL_GARDEN_OF_FACES"
+desc_key = "SCHOOL_GARDEN_OF_FACES_DESC"
+color = Color(0.7, 0.45, 0.8, 1)
+starting_codex = Array[StringName]([])
+passive_id = &"garden_masks"
+favored_memories = Array[StringName]([])
+own_memories = Array[StringName]([])
+unlock_cost = 10
+implemented = false
+order = 3

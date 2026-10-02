@@ -1,0 +1,101 @@
+class_name MetaRewards
+extends RefCounted
+## Мета-прогрессия (SPEC_SPRINT4 5): очки памяти за забег, каталог открытий, пулы карт и событий.
+
+const POINTS_PER_LAYER := 1
+const POINTS_PER_ELITE := 2
+const POINTS_FOR_RIFT := 5
+
+enum Kind { SCHOOL, CARD, EVENT }
+
+## Открытия, кроме школ (школы берутся из SchoolDef.unlock_cost).
+const CATALOG := [
+	{"id": &"card_storm_wyrm", "kind": Kind.CARD, "target": &"storm_wyrm", "cost": 4},
+	{"id": &"card_faceless_choir", "kind": Kind.CARD, "target": &"faceless_choir", "cost": 4},
+	{"id": &"event_rift_whisper", "kind": Kind.EVENT, "target": &"rift_whisper", "cost": 3},
+	{"id": &"event_captive_king", "kind": Kind.EVENT, "target": &"captive_king", "cost": 3},
+]
+
+
+static func points_for_run(run: RunState, won: bool) -> int:
+	var layer := run.map.current_layer()
+	return maxi(0, layer - 1) * POINTS_PER_LAYER + run.elites_won * POINTS_PER_ELITE + (POINTS_FOR_RIFT if won else 0)
+
+
+## Все открытия: школы (кроме бесплатных) и каталог. Каждое — {id, kind, target, cost}.
+static func all_unlocks(db: DefsDB) -> Array:
+	var result: Array = []
+	for school in db.schools_sorted():
+		if school.unlock_cost > 0:
+			result.append({"id": school_unlock_id(school.id), "kind": Kind.SCHOOL, "target": school.id, "cost": school.unlock_cost})
+	result.append_array(CATALOG)
+	return result
+
+
+static func school_unlock_id(school_id: StringName) -> StringName:
+	return StringName("school_" + String(school_id))
+
+
+static func is_school_open(profile: ProfileState, school: SchoolDef) -> bool:
+	return school.implemented and (school.unlock_cost == 0 or profile.is_unlocked(school_unlock_id(school.id)))
+
+
+## Ключ причины, почему открыть нельзя, или "".
+static func buy_reason(db: DefsDB, profile: ProfileState, unlock: Dictionary) -> String:
+	if profile.is_unlocked(unlock["id"]):
+		return "REASON_UNLOCKED"
+	if unlock["kind"] == Kind.SCHOOL and not db.school(unlock["target"]).implemented:
+		return "REASON_SOON"
+	if profile.points < int(unlock["cost"]):
+		return "REASON_NO_POINTS"
+	return ""
+
+
+static func buy(db: DefsDB, profile: ProfileState, unlock: Dictionary) -> bool:
+	if buy_reason(db, profile, unlock) != "":
+		return false
+	profile.points -= int(unlock["cost"])
+	profile.unlocked.append(unlock["id"])
+	return true
+
+
+## Пул карт наград и лавки: открытые карты + карты существ открытых школ; любимые карты школы — ×2.
+static func card_pool(db: DefsDB, profile: ProfileState, school: SchoolDef) -> Array[StringName]:
+	var locked: Array[StringName] = []
+	for u in CATALOG:
+		if u["kind"] == Kind.CARD and not profile.is_unlocked(u["id"]):
+			locked.append(u["target"])
+	for s in db.schools_sorted():
+		if not is_school_open(profile, s):
+			locked.append_array(s.own_memories)
+	var pool: Array[StringName] = []
+	for id in db.memory_ids():
+		if locked.has(id):
+			continue
+		pool.append(id)
+		if school and school.favored_memories.has(id):
+			pool.append(id)
+	return pool
+
+
+static func event_pool(db: DefsDB, profile: ProfileState) -> Array[StringName]:
+	var locked: Array[StringName] = []
+	for u in CATALOG:
+		if u["kind"] == Kind.EVENT and not profile.is_unlocked(u["id"]):
+			locked.append(u["target"])
+	var pool: Array[StringName] = []
+	for id in db.event_ids():
+		if not locked.has(id):
+			pool.append(id)
+	return pool
+
+
+## Итог забега: начисляет очки и статистику, возвращает начисленные очки.
+static func finish_run(profile: ProfileState, run: RunState, won: bool) -> int:
+	var gained := points_for_run(run, won)
+	profile.points += gained
+	profile.runs += 1
+	if won:
+		profile.wins += 1
+	profile.best_layer = maxi(profile.best_layer, run.map.current_layer())
+	return gained

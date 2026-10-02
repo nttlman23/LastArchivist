@@ -41,10 +41,13 @@ var rift := false
 var erased_cards: Array[int] = []
 ## Хранитель Разлома (первый стек встречи-босса); его гибель — победа.
 var boss_uid := -1
+## Пассивка школы Архивариуса (SchoolPassives).
+var passive_id: StringName
 
 
 ## Собирает бой из встречи и выбранных карт Кодекса.
-static func create(db: DefsDB, encounter: EncounterDef, codex: CodexState, selected: Array[int], seed_value: int, hero: HeroState = null) -> BattleState:
+static func create(db: DefsDB, encounter: EncounterDef, codex: CodexState, selected: Array[int], seed_value: int,
+		hero: HeroState = null, passive: StringName = &"") -> BattleState:
 	assert(selected.size() <= MAX_STACKS)
 	var s := BattleState.new()
 	s.rng.seed = seed_value
@@ -53,6 +56,7 @@ static func create(db: DefsDB, encounter: EncounterDef, codex: CodexState, selec
 	for h in encounter.obstacles:
 		s.obstacles[h] = true
 	s.rift = encounter.boss
+	s.passive_id = passive
 	var upgrades: Array[StringName] = []
 	if hero:
 		upgrades = hero.active_upgrades(db, codex)
@@ -192,7 +196,7 @@ func to_dict() -> Dictionary:
 		"rng_seed": str(rng.seed), "rng_state": str(rng.state), "next_uid": _next_uid,
 		"hero_actions_left": hero_actions_left, "hero_orders": Array(hero_orders).map(func(x: StringName) -> String: return String(x)),
 		"hero_spells": spells, "last_ability": last, "ability_cooldowns": cds,
-		"rift": rift, "erased_cards": erased_cards.duplicate(), "boss_uid": boss_uid,
+		"rift": rift, "erased_cards": erased_cards.duplicate(), "boss_uid": boss_uid, "passive_id": String(passive_id),
 	}
 
 
@@ -230,6 +234,7 @@ static func from_dict(d: Dictionary) -> BattleState:
 		s.ability_cooldowns[StringName(id)] = int(cds[id])
 	s.rift = bool(d["rift"])
 	s.boss_uid = int(d["boss_uid"])
+	s.passive_id = StringName(d["passive_id"])
 	for i in d["erased_cards"]:
 		s.erased_cards.append(int(i))
 	return s

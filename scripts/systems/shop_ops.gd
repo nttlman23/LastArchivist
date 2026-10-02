@@ -23,7 +23,7 @@ static func open(db: DefsDB, run: RunState, node_id: int) -> Visit:
 	var v := Visit.new()
 	var rng := RandomNumberGenerator.new()
 	rng.seed = run.node_seed(node_id, "shop")
-	var pool := db.memory_ids()
+	var pool := run.pool_unique()
 	for i in mini(OFFER_SIZE, pool.size()):
 		var idx := rng.randi_range(0, pool.size() - 1)
 		v.offer.append(pool[idx])

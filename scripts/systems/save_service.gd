@@ -1,11 +1,16 @@
 class_name SaveService
 extends RefCounted
 ## Сохранение забега в JSON (SPEC 6.3).
+## Путь по умолчанию можно подменить (автопрогон, тесты), чтобы не трогать сохранение игрока.
 
 const DEFAULT_PATH := "user://run_save.json"
 
+## Текущий путь сохранения; пустой аргумент path у функций означает его.
+static var current_path := DEFAULT_PATH
 
-static func save_run(run: RunState, path: String = DEFAULT_PATH) -> bool:
+
+static func save_run(run: RunState, path: String = "") -> bool:
+	path = _resolve(path)
 	var file := FileAccess.open(path, FileAccess.WRITE)
 	if file == null:
 		push_error("Cannot write save %s: %s" % [path, FileAccess.get_open_error()])
@@ -14,7 +19,8 @@ static func save_run(run: RunState, path: String = DEFAULT_PATH) -> bool:
 	return true
 
 
-static func load_run(path: String = DEFAULT_PATH) -> RunState:
+static func load_run(path: String = "") -> RunState:
+	path = _resolve(path)
 	if not FileAccess.file_exists(path):
 		return null
 	var json := JSON.new()
@@ -24,10 +30,15 @@ static func load_run(path: String = DEFAULT_PATH) -> RunState:
 	return RunState.from_dict(json.data)
 
 
-static func has_save(path: String = DEFAULT_PATH) -> bool:
-	return FileAccess.file_exists(path)
+static func has_save(path: String = "") -> bool:
+	return FileAccess.file_exists(_resolve(path))
 
 
-static func delete_save(path: String = DEFAULT_PATH) -> void:
+static func delete_save(path: String = "") -> void:
+	path = _resolve(path)
 	if FileAccess.file_exists(path):
 		DirAccess.remove_absolute(path)
+
+
+static func _resolve(path: String) -> String:
+	return current_path if path == "" else path

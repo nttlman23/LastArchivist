@@ -12,7 +12,8 @@ var spells: Dictionary[StringName, SpellDef] = {}
 var orders: Dictionary[StringName, OrderDef] = {}
 var upgrades: Dictionary[StringName, UpgradeDef] = {}
 var events: Dictionary[StringName, EventDef] = {}
-var starting_codex: Array[StringName] = [&"salt_legion", &"salt_legion", &"ash_chroniclers", &"ghoul_pack"]
+var schools: Dictionary[StringName, SchoolDef] = {}
+const DEFAULT_SCHOOL := &"ash_archive"
 ## Приказы, доступные всегда.
 var base_orders: Array[StringName] = [&"order_advance", &"order_close_ranks"]
 
@@ -35,6 +36,8 @@ static func load_default() -> DefsDB:
 		db.upgrades[res.id] = res as UpgradeDef
 	for res in _load_dir("events"):
 		db.events[res.id] = res as EventDef
+	for res in _load_dir("schools"):
+		db.schools[res.id] = res as SchoolDef
 	return db
 
 
@@ -71,6 +74,18 @@ func order(id: StringName) -> OrderDef:
 func upgrade(id: StringName) -> UpgradeDef:
 	assert(upgrades.has(id), "Unknown upgrade: %s" % id)
 	return upgrades[id]
+
+
+func school(id: StringName) -> SchoolDef:
+	assert(schools.has(id), "Unknown school: %s" % id)
+	return schools[id]
+
+
+func schools_sorted() -> Array[SchoolDef]:
+	var list: Array[SchoolDef] = []
+	list.assign(schools.values())
+	list.sort_custom(func(a: SchoolDef, b: SchoolDef) -> bool: return a.order < b.order)
+	return list
 
 
 func event(id: StringName) -> EventDef:

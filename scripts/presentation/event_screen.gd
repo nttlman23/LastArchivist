@@ -15,6 +15,7 @@ func _ready() -> void:
 	db = Game.defs
 	run = Game.run
 	event = db.event(run.pending().content)
+	Hints.show_hint(&"event")
 	UiKit.add_background(self)
 	_content = UiKit.centered_column(self, 18)
 	_show_options()
@@ -27,7 +28,7 @@ func _clear() -> void:
 
 func _header() -> void:
 	_content.add_child(UiKit.label(tr(event.title_key), 44, UiKit.ACCENT))
-	_content.add_child(UiKit.label(UiKit.resources_text(run.resources), 0, UiKit.MUTED))
+	_content.add_child(UiKit.resource_row(run.resources))
 
 
 func _show_options() -> void:
@@ -36,13 +37,51 @@ func _show_options() -> void:
 	_content.add_child(_text(tr(event.text_key), 22))
 	for i in event.options.size():
 		var option: EventOptionDef = event.options[i]
-		var b := UiKit.button(tr(option.label_key), _on_option.bind(i), 760)
+		var full := tr(option.label_key)
+		# Коротко: только действие, без пояснения в скобках — его заменяют чипы эффектов.
+		var short := full.get_slice(" (", 0) if not Settings.detailed else full
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 14)
+		var b := UiKit.button(short, _on_option.bind(i), 420)
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		Tip.attach(b, short, full)
 		var reason := EventResolver.option_reason(db, run, option)
 		if reason != "":
 			b.text += "  — " + tr(reason)
 			b.disabled = true
-		_content.add_child(b)
+		row.add_child(b)
+		if not Settings.detailed:
+			for c in option_chips(option):
+				row.add_child(UiKit.chip(c[0], c[1], c[2], c[3], "", 20))
+		_content.add_child(row)
+
+
+## Чипы эффектов варианта: [значок, текст, цвет, подсказка].
+static func option_chips(option: EventOptionDef) -> Array:
+	var t := func(key: String) -> String: return TranslationServer.translate(key)
+	var chips: Array = []
+	if option.chance < 1.0:
+		chips.append([UnitGlyphs.ICON_MARK, "%d%%" % roundi(option.chance * 100), UiKit.ACCENT, t.call("EVENT_CHIP_CHANCE")])
+	for e: EventEffect in option.effects:
+		match e.kind:
+			EventEffect.Kind.RESOURCE:
+				chips.append([UiKit.RESOURCE_ICONS[e.resource], "%+d" % e.amount, UiKit.RESOURCE_COLORS[e.resource], t.call("RES_" + String(e.resource).to_upper())])
+			EventEffect.Kind.DURABILITY_CHOSEN, EventEffect.Kind.DURABILITY_RANDOM, EventEffect.Kind.DURABILITY_STRONGEST:
+				var text := "%+d" % e.amount
+				if e.kind == EventEffect.Kind.DURABILITY_RANDOM:
+					text += " ×%d" % e.count
+				chips.append([UnitGlyphs.ICON_HEAL, text, UiKit.ACCENT if e.amount > 0 else UiKit.DANGER, t.call("EVENT_CHIP_DURABILITY")])
+			EventEffect.Kind.ADD_CARD:
+				chips.append([UnitGlyphs.ICON_ABILITY, "+%d" % e.count, UiKit.ACCENT, t.call("EVENT_CHIP_ADD_CARD")])
+			EventEffect.Kind.REMOVE_CHOSEN:
+				chips.append([UnitGlyphs.ICON_ABILITY, "−1", UiKit.DANGER, t.call("EVENT_CHIP_REMOVE_CARD")])
+			EventEffect.Kind.SPELL_CHARGES_ALL:
+				chips.append([UnitGlyphs.ICON_SPELL, "%+d" % e.amount, UiKit.ACCENT, t.call("EVENT_CHIP_CHARGES")])
+			EventEffect.Kind.UPGRADE_RANDOM:
+				chips.append([UnitGlyphs.ICON_ABILITY, "", UiKit.ACCENT, t.call("EVENT_CHIP_UPGRADE")])
+			EventEffect.Kind.BATTLE:
+				chips.append([UnitGlyphs.ICON_MELEE, t.call("EVENT_CHIP_BATTLE") % e.tier, UiKit.DANGER, t.call("EVENT_CHIP_BATTLE") % e.tier])
+	return chips
 
 
 func _on_option(index: int) -> void:
@@ -78,7 +117,7 @@ func _resolve(option_index: int, card_index: int) -> void:
 	_header()
 	_content.add_child(_text(tr(_result.text_key), 22))
 	if not _result.resources.is_empty():
-		_content.add_child(UiKit.label(UiKit.resources_text(_result.resources, true), 22, UiKit.ACCENT))
+		_content.add_child(UiKit.resource_row(_result.resources, true, 22))
 	if not _result.gone.is_empty():
 		var names: Array[String] = []
 		for id in _result.gone:

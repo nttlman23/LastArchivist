@@ -80,7 +80,7 @@ static func _apply_effect(db: DefsDB, run: RunState, e: EventEffect, chosen: Cod
 					break
 				var id := e.memory_id
 				if id == &"":
-					var units := db.memory_ids().filter(func(m: StringName) -> bool: return db.memory(m).is_unit())
+					var units := run.pool_unique().filter(func(m: StringName) -> bool: return db.memory(m).is_unit())
 					id = units[rng.randi_range(0, units.size() - 1)]
 				var card := run.codex.add(db, id)
 				if e.durability > 0:

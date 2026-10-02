@@ -315,3 +315,119 @@ EVT_STORM_BRIDGE_A_RES,"Буря утихла, но потребовала эф�
 EVT_STORM_BRIDGE_B,Прорваться (риск)
 EVT_STORM_BRIDGE_B_RES,Вы проскочили и подобрали сорванные ветром листы.
 EVT_STORM_BRIDGE_B_FAIL,Молнии хлестнули по строю — два воспоминания пострадали.
+STAT_HP,Здоровье
+STAT_HP_TIP,ОЗ одного существа (у верхнего существа стека — текущие/максимум).
+STAT_ATTACK,Атака
+STAT_ATTACK_TIP,Каждое очко атаки сверх защиты цели — +5% урона.
+STAT_DEFENSE,Защита
+STAT_DEFENSE_TIP,"Каждое очко защиты сверх атаки врага — −2,5% получаемого урона."
+STAT_DAMAGE,Урон
+STAT_DAMAGE_TIP,Урон одного существа; стек бьёт урон × численность.
+STAT_SPEED,Скорость
+STAT_SPEED_TIP,На сколько клеток стек ходит за ход.
+STAT_INITIATIVE,Инициатива
+STAT_INITIATIVE_TIP,"Чем выше, тем раньше стек ходит в раунде."
+DURABILITY_TIP,"После каждой победы карта, бывшая в бою, теряет 1 прочность. На нуле воспоминание угасает."
+RES_INK_TIP,"Ремонт прочности карт (лавка, события)."
+RES_PARCHMENT_TIP,Новые воспоминания и переработка карт в лавке.
+RES_AETHER_TIP,"Перезаряд заклинаний, разведка и перелёт на карте."
+CHIP_RANGED,Стрелок
+CHIP_FLYING,Летает
+CHIP_RETALIATION_USED,Ответ потрачен
+CHIP_DEFENDING,В защите
+CHIP_WAITED,Ждёт
+CHIP_RIFT,Будет стёрт
+CHIP_MARKED,Помечен
+CHIP_ALL,все
+CHIP_ASH_FURY,Пепельная ярость
+STATUS_ASH_FURY,«Пепельная жертва»: +1 к атаке за каждого павшего союзника до конца боя.
+MEM_LAST_KING_SHORT,Королевский приказ · +1 инициатива армии
+PREVIEW_TIP_DAMAGE,Урон
+PREVIEW_TIP_KILLS,Погибнет существ
+PREVIEW_TIP_STEPS,Шагов
+PREVIEW_TIP_HEAL,Лечение
+PREVIEW_TIP_AREA,Урон каждому стеку в зоне
+PREVIEW_TIP_ALLIES,Заденет своих
+TARGET_PROMPT_SHORT,%s → цель · ПКМ — отмена
+META_POINTS,Очки памяти
+META_POINTS_TIP,"Даются за пройденные слои, элитные бои и закрытый разлом. Тратятся в «Архиве открытий»."
+META_TITLE,Архив открытий
+META_STATS,Забегов: %d · побед: %d · лучший слой: %d
+META_OPEN,открыто
+META_KIND_SCHOOL,Школа: %s
+META_KIND_CARD,Воспоминание: %s
+META_KIND_EVENT,Событие: %s
+META_CARD_TIP,Карта появится в наградах и в лавке.
+REASON_UNLOCKED,открыто
+REASON_SOON,скоро
+REASON_NO_POINTS,мало очков
+MAP_FLIGHT_SHORT,Перелёт %d
+MAP_FLIGHT_TITLE,Перелёт
+MAP_FLIGHT_TIP,Лететь на остров следующего слоя без моста — за Эфир.
+MAP_SCOUT_SHORT,Разведать %d
+MAP_SCOUT_TITLE,Разведка
+MAP_SCOUT_TIP,Узнать врагов или событие на острове — за Эфир.
+MAP_REWARD_SHORT,Награда:
+NODE_BATTLE_SHORT,Ресурсы и новое воспоминание.
+NODE_ELITE_SHORT,"Сильнее, богаче, геройская карта."
+NODE_EVENT_SHORT,Выбор с последствиями.
+NODE_SHOP_SHORT,"Купить, починить, перезарядить."
+NODE_HAVEN_SHORT,Передышка: одно бесплатное дело.
+NODE_RIFT_SHORT,Хранитель Разлома.
+FORM_SACRIFICE_SHORT,+1 прочн. → %d карт
+FORM_FUSE_SHORT,ур. %d · %d существ
+MEMORY_RESOURCES_SHORT,Добыто:
+SHOP_PRICE_TIP,Цена в Пергаменте.
+SHOP_REPAIR_SHORT,Ремонт +1
+SHOP_RECHARGE_SHORT,Перезаряд +1
+SHOP_REWORK_SHORT,Переработка
+EVENT_CHIP_CHANCE,Шанс успеха
+EVENT_CHIP_DURABILITY,Прочность карт
+EVENT_CHIP_ADD_CARD,Новые воспоминания
+EVENT_CHIP_REMOVE_CARD,Отдать воспоминание
+EVENT_CHIP_CHARGES,Заряды всех заклинаний
+EVENT_CHIP_UPGRADE,Улучшение героя
+EVENT_CHIP_BATTLE,бой ур. %d
+HINT_OK,Понятно
+HINT_SCHOOL,Школа задаёт стартовый Кодекс и пассивку Архивариуса. Новые школы открываются за очки памяти.
+HINT_MAP,Выбирайте остров на следующем слое. Наведите на значок или остров — появится подсказка.
+HINT_BATTLE,"Клик по зелёной клетке — ход, по врагу — атака. Наведение на врага покажет урон и зону его хода."
+HINT_ABILITY,Способность готова (золотая звезда): кнопка внизу или Q. Она заменяет весь ход отряда.
+HINT_HERO,Архивариус раз в раунд отдаёт приказ или кастует заклинание — ход отряда при этом не тратится.
+HINT_TARGETING,Выберите подсвеченную цель. Красное кольцо — свои под ударом. ПКМ или Esc — отмена.
+HINT_RIFT,Разлом пометил ваш сильнейший отряд: в начале следующего раунда он исчезнет вместе с картой. Убейте Хранителя!
+HINT_MEMORY,Одно действие после боя: взять новую карту или переработать имеющуюся.
+HINT_FADED,Воспоминание угасло: прочность кончилась. Чините карты в лавке и гавани.
+HINT_SHOP,"Пергамент — новые карты, Чернила — ремонт, Эфир — заряды заклинаний."
+HINT_HAVEN,В гавани можно сделать одно дело бесплатно.
+HINT_EVENT,"Значки рядом с вариантом показывают, что он даст или отнимет."
+SETTINGS_TITLE,Настройки
+SETTINGS_DETAILED,Подробные описания
+SETTINGS_DETAILED_TIP,Вместо значков и коротких подписей показывать полные тексты способностей и правил.
+SETTINGS_HINTS,Подсказки обучения
+SETTINGS_HINTS_TIP,Короткие подсказки при первой встрече с механикой.
+SETTINGS_RESET_HINTS,Показать подсказки заново
+SETTINGS_BACK,Назад
+SCHOOL_TITLE,Выберите школу памяти
+SCHOOL_START,Старт: %s
+SCHOOL_SOON,скоро
+SCHOOL_LOCKED,открыть: %d очков
+SCHOOL_ASH_ARCHIVE,Архив Пепла
+SCHOOL_ASH_ARCHIVE_DESC,"Агрессия и жертвы. «Пепельная жертва»: когда гибнет ваш отряд, остальные получают +1 к атаке до конца боя."
+SCHOOL_ASH_ARCHIVE_DESC_SHORT,Агрессия. Гибель своих злит остальных: +1 атака.
+SCHOOL_TIDE_ORDER,Орден Приливов
+SCHOOL_TIDE_ORDER_DESC,"Контроль позиции: притягивание, вязкая вода. «Течение»: способности перезаряжаются на раунд быстрее."
+SCHOOL_TIDE_ORDER_DESC_SHORT,Контроль позиции и быстрые способности.
+SCHOOL_MACHINE_SYNOD,Машинный Синод
+SCHOOL_MACHINE_SYNOD_DESC,Инженерия: турели и барьеры. «Ремонт»: конструкты восстанавливают ОЗ каждый раунд.
+SCHOOL_MACHINE_SYNOD_DESC_SHORT,"Турели, барьеры, починка."
+SCHOOL_GARDEN_OF_FACES,Сад Лиц
+SCHOOL_GARDEN_OF_FACES_DESC,Иллюзии и копирование. «Маски»: в начале боя у вашего отряда появляется иллюзия-копия.
+SCHOOL_GARDEN_OF_FACES_DESC_SHORT,Иллюзии и чужие способности.
+MENU_META,Архив открытий
+MENU_SETTINGS,Настройки
+RUN_POINTS,+%d очков памяти (всего %d)
+PASSIVE_ASH_SACRIFICE,Пепельная жертва
+PASSIVE_TIDE_CURRENT,Течение
+PASSIVE_SYNOD_REPAIR,Ремонт
+PASSIVE_GARDEN_MASKS,Маски

@@ -9,15 +9,35 @@ const SCENES := [
 ]
 
 
+var _real_profile: ProfileState
+var _real_profile_path: String
+var _real_hints: bool
+
+
+## Сцены пишут в профиль (подсказки) — подменяем его тестовым, чтобы не трогать профиль игрока.
+func before_all() -> void:
+	_real_profile = Game.profile
+	_real_profile_path = Game.profile_path
+	_real_hints = Settings.hints
+	Game.profile_path = "user://test_profile.cfg"
+	Game.profile = ProfileState.new()
+	Settings.hints = false
+
+
+func after_all() -> void:
+	Game.profile = _real_profile
+	Game.profile_path = _real_profile_path
+	Settings.hints = _real_hints
+	Game.run = null
+	if FileAccess.file_exists("user://test_profile.cfg"):
+		DirAccess.remove_absolute("user://test_profile.cfg")
+
+
 func before_each() -> void:
 	Game.run = RunState.create(Game.defs, 3)
 	Game.selected = [0, 1, 2, 3]
 	# Бой и подготовка открываются для начатого острова; на 1-м слое — всегда бои.
 	MapActions.travel(Game.run, Game.run.map.next_of(MapState.START)[0])
-
-
-func after_all() -> void:
-	Game.run = null
 
 
 func test_static_screens_build() -> void:

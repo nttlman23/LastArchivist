@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="SchoolDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/school_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"tide_order"
+name_key = "SCHOOL_TIDE_ORDER"
+desc_key = "SCHOOL_TIDE_ORDER_DESC"
+color = Color(0.3, 0.6, 0.85, 1)
+starting_codex = Array[StringName]([])
+passive_id = &"tide_current"
+favored_memories = Array[StringName]([])
+own_memories = Array[StringName]([])
+unlock_cost = 10
+implemented = false
+order = 1

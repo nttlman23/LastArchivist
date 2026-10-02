@@ -15,6 +15,7 @@ var db: DefsDB
 var run: RunState
 var view: MapView
 var _resources_label: Label
+var _resources_box: HBoxContainer
 var _layer_label: Label
 var _info: VBoxContainer
 var _codex_overlay: PanelContainer
@@ -39,6 +40,7 @@ func _ready() -> void:
 	if run.pending_node >= 0:
 		_select(run.pending_node)
 	_refresh()
+	Hints.show_hint(&"map")
 
 
 func _layout() -> void:
@@ -57,7 +59,14 @@ func _build_hud() -> void:
 	top.add_child(_layer_label)
 	_resources_label = UiKit.label("", 22)
 	_resources_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_resources_label.visible = false
 	top.add_child(_resources_label)
+	_resources_box = HBoxContainer.new()
+	_resources_box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	top.add_child(_resources_box)
+	var points := UiKit.chip(UnitGlyphs.ICON_POINTS, str(Game.profile.points), UiKit.ACCENT, tr("META_POINTS"), tr("META_POINTS_TIP"), 20)
+	points.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	top.add_child(points)
 
 	var side := PanelContainer.new()
 	side.set_anchors_and_offsets_preset(Control.PRESET_RIGHT_WIDE)
@@ -80,6 +89,9 @@ func _build_hud() -> void:
 
 func _refresh() -> void:
 	_resources_label.text = UiKit.resources_text(run.resources)
+	for child in _resources_box.get_children():
+		child.queue_free()
+	_resources_box.add_child(UiKit.resource_row(run.resources, false, 22))
 	_layer_label.text = tr("MAP_LAYER") % [run.map.current_layer(), MapState.LAYERS]
 	view.selected = _selected
 	view.refresh()
@@ -128,7 +140,8 @@ func _show_info() -> void:
 	if reachable:
 		_info.add_child(UiKit.button(tr("MAP_TRAVEL"), _travel.bind(n.id), 380))
 	elif flight:
-		var b := UiKit.button(tr("MAP_FLIGHT") % MapActions.FLIGHT_COST, _travel.bind(n.id), 380)
+		var b := UiKit.icon_button(UnitGlyphs.ICON_AETHER, tr("MAP_FLIGHT_SHORT") % MapActions.FLIGHT_COST, _travel.bind(n.id),
+				tr("MAP_FLIGHT_TITLE"), tr("MAP_FLIGHT_TIP"), 380)
 		b.disabled = not MapActions.can_travel(run, n.id)
 		_info.add_child(b)
 	elif run.map.visited.has(n.id):
@@ -136,14 +149,20 @@ func _show_info() -> void:
 	else:
 		_info.add_child(_wrapped(tr("MAP_UNREACHABLE"), UiKit.MUTED))
 	if (reachable or flight) and n.content != &"" and not n.scouted:
-		var s := UiKit.button(tr("MAP_SCOUT") % MapActions.SCOUT_COST, _scout.bind(n.id), 380)
+		var s := UiKit.icon_button(UnitGlyphs.ICON_AETHER, tr("MAP_SCOUT_SHORT") % MapActions.SCOUT_COST, _scout.bind(n.id),
+				tr("MAP_SCOUT_TITLE"), tr("MAP_SCOUT_TIP"), 380)
 		s.disabled = not MapActions.can_scout(run, n.id)
 		_info.add_child(s)
 
 
 func _add_node_card(n: MapState.MapNode) -> void:
-	_info.add_child(UiKit.label(tr(TYPE_KEYS[n.type]), 28, MapView.TYPE_COLORS[n.type].lightened(0.3)))
-	_info.add_child(_wrapped(tr(TYPE_KEYS[n.type] + "_DESC"), Color.WHITE))
+	var title := UiKit.label(tr(TYPE_KEYS[n.type]), 28, MapView.TYPE_COLORS[n.type].lightened(0.3))
+	Tip.attach(title, tr(TYPE_KEYS[n.type]), tr(TYPE_KEYS[n.type] + "_DESC"))
+	_info.add_child(title)
+	if Settings.detailed:
+		_info.add_child(_wrapped(tr(TYPE_KEYS[n.type] + "_DESC"), Color.WHITE))
+	else:
+		_info.add_child(_wrapped(tr(TYPE_KEYS[n.type] + "_SHORT"), Color.WHITE))
 	if n.type == MapState.NodeType.BATTLE:
 		_info.add_child(UiKit.label(tr("MAP_TIER") % MapGenerator.tier_for_layer(n.layer), 0, UiKit.MUTED))
 	if n.is_battle():
@@ -155,7 +174,11 @@ func _add_node_card(n: MapState.MapNode) -> void:
 			_info.add_child(_wrapped("%s %s" % [tr("PREP_ENEMIES"), ", ".join(enemies)], UiKit.ENEMY_COLOR))
 		var rewards := MapActions.battle_rewards(enc)
 		if not rewards.values().all(func(v: int) -> bool: return v == 0):
-			_info.add_child(_wrapped(tr("MAP_REWARD") % UiKit.resources_text(rewards, true), UiKit.ACCENT))
+			var line := HBoxContainer.new()
+			line.add_theme_constant_override("separation", 10)
+			line.add_child(UiKit.label(tr("MAP_REWARD_SHORT"), 18, UiKit.MUTED))
+			line.add_child(UiKit.resource_row(rewards, true, 18))
+			_info.add_child(line)
 	elif n.type == MapState.NodeType.EVENT and n.scouted:
 		_info.add_child(_wrapped(tr(db.event(n.content).title_key), Color(0.7, 0.8, 1.0)))
 

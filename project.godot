@@ -11,6 +11,10 @@ config/features=PackedStringArray("4.7", "GL Compatibility")
 [autoload]
 
 Audio="*res://scripts/autoload/audio.gd"
+Settings="*res://scripts/autoload/settings.gd"
+IconAtlas="*res://scripts/autoload/icon_atlas.gd"
+Tip="*res://scripts/autoload/tip.gd"
+Hints="*res://scripts/autoload/hints.gd"
 Game="*res://scripts/autoload/game.gd"
 
 [display]

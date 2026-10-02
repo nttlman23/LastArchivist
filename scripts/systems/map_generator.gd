@@ -21,14 +21,15 @@ static func tier_for_layer(layer: int) -> int:
 	return clampi((layer + 1) / 2, 1, 3)
 
 
-static func generate(db: DefsDB, seed_value: int) -> MapState:
+## events — пул событий забега (пусто — все события).
+static func generate(db: DefsDB, seed_value: int, events: Array[StringName] = []) -> MapState:
 	for attempt in MAX_ATTEMPTS:
 		var rng := RandomNumberGenerator.new()
 		rng.seed = hash("map:%d:%d" % [seed_value, attempt])
 		var map := _build_graph(rng)
 		_assign_types(map, rng)
 		if _valid(map):
-			_assign_content(db, map, rng)
+			_assign_content(db, map, rng, events if not events.is_empty() else db.event_ids())
 			return map
 	push_error("Не удалось сгенерировать карту для сида %d" % seed_value)
 	return MapState.new()
@@ -149,7 +150,7 @@ static func _valid(map: MapState) -> bool:
 
 
 ## Встречи и события без повторов, пока пул не исчерпан.
-static func _assign_content(db: DefsDB, map: MapState, rng: RandomNumberGenerator) -> void:
+static func _assign_content(db: DefsDB, map: MapState, rng: RandomNumberGenerator, events: Array[StringName]) -> void:
 	var pools := {}
 	var draw := func(key: String, source: Array[StringName]) -> StringName:
 		if not pools.has(key) or pools[key].is_empty():
@@ -165,7 +166,7 @@ static func _assign_content(db: DefsDB, map: MapState, rng: RandomNumberGenerato
 			MapState.NodeType.ELITE:
 				n.content = draw.call("elite", db.encounter_pool(0, true))
 			MapState.NodeType.EVENT:
-				n.content = draw.call("event", db.event_ids())
+				n.content = draw.call("event", events)
 			MapState.NodeType.RIFT:
 				n.content = db.boss_encounter()
 

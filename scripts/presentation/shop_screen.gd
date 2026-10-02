@@ -15,6 +15,7 @@ func _ready() -> void:
 	db = Game.defs
 	run = Game.run
 	visit = ShopOps.open(db, run, run.pending_node)
+	Hints.show_hint(&"shop")
 	UiKit.add_background(self)
 	var scroll := ScrollContainer.new()
 	scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -35,8 +36,7 @@ func _rebuild() -> void:
 	for child in _content.get_children():
 		child.queue_free()
 	_content.add_child(UiKit.label(tr("SHOP_TITLE"), 40, UiKit.ACCENT))
-	_resources = UiKit.label(UiKit.resources_text(run.resources), 24)
-	_content.add_child(_resources)
+	_content.add_child(UiKit.resource_row(run.resources, false, 24))
 
 	_content.add_child(UiKit.label(tr("SHOP_CARDS"), 26, UiKit.ACCENT))
 	var row := HBoxContainer.new()
@@ -50,10 +50,15 @@ func _rebuild() -> void:
 		var reason := ShopOps.buy_reason(db, run, visit, i)
 		card.disabled = reason != ""
 		col.add_child(card)
-		var price := tr("SHOP_PRICE") % ShopOps.price(db, visit.offer[i])
-		col.add_child(UiKit.label(price if reason == "" else "%s — %s" % [price, tr(reason)], 18, UiKit.MUTED if reason != "" else UiKit.ACCENT))
+		var price_row := HBoxContainer.new()
+		price_row.add_theme_constant_override("separation", 8)
+		price_row.add_child(UiKit.chip(UnitGlyphs.ICON_PARCHMENT, str(ShopOps.price(db, visit.offer[i])),
+				UiKit.RESOURCE_COLORS[RunState.PARCHMENT] if reason == "" else UiKit.MUTED, tr("RES_PARCHMENT"), tr("SHOP_PRICE_TIP"), 20))
+		if reason != "":
+			price_row.add_child(UiKit.label(tr(reason), 18, UiKit.MUTED))
+		col.add_child(price_row)
 
-	_content.add_child(UiKit.label(tr("SHOP_REPAIR") % ShopOps.REPAIR_COST, 26, UiKit.ACCENT))
+	_content.add_child(_section(tr("SHOP_REPAIR_SHORT"), UnitGlyphs.ICON_INK, ShopOps.REPAIR_COST, RunState.INK, tr("SHOP_REPAIR") % ShopOps.REPAIR_COST))
 	var grid := GridContainer.new()
 	grid.columns = 3
 	grid.add_theme_constant_override("h_separation", 8)
@@ -68,7 +73,7 @@ func _rebuild() -> void:
 		grid.add_child(b)
 
 	if not run.hero.spells.is_empty():
-		_content.add_child(UiKit.label(tr("SHOP_RECHARGE") % ShopOps.RECHARGE_COST, 26, UiKit.ACCENT))
+		_content.add_child(_section(tr("SHOP_RECHARGE_SHORT"), UnitGlyphs.ICON_AETHER, ShopOps.RECHARGE_COST, RunState.AETHER, tr("SHOP_RECHARGE") % ShopOps.RECHARGE_COST))
 		var spells := HBoxContainer.new()
 		spells.add_theme_constant_override("separation", 8)
 		_content.add_child(spells)
@@ -78,7 +83,7 @@ func _rebuild() -> void:
 			b.disabled = ShopOps.recharge_reason(run, s) != ""
 			spells.add_child(b)
 
-	_content.add_child(UiKit.label(tr("SHOP_REWORK") % ShopOps.REWORK_COST, 26, UiKit.ACCENT))
+	_content.add_child(_section(tr("SHOP_REWORK_SHORT"), UnitGlyphs.ICON_PARCHMENT, ShopOps.REWORK_COST, RunState.PARCHMENT, tr("SHOP_REWORK") % ShopOps.REWORK_COST))
 	var rework := ReworkPanel.new()
 	rework.extra_reason = func(i: int, f: CodexOps.Form) -> String:
 		var r := ShopOps.rework_reason(db, run, visit, i, f)
@@ -90,6 +95,15 @@ func _rebuild() -> void:
 	var leave := UiKit.button(tr("SHOP_LEAVE"), Game.complete_node)
 	leave.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	_content.add_child(leave)
+
+
+## Заголовок раздела: «Ремонт  [капля] 1» с подсказкой полного правила.
+func _section(title: String, icon: StringName, cost: int, res: StringName, tip: String) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	row.add_child(UiKit.label(title, 26, UiKit.ACCENT))
+	row.add_child(UiKit.chip(icon, str(cost), UiKit.RESOURCE_COLORS[res], title, tip, 22))
+	return row
 
 
 func _row_button(text: String, cb: Callable) -> Button:

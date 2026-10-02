@@ -24,6 +24,11 @@ func _run() -> void:
 	var args := OS.get_cmdline_user_args()
 	var seed_value := int(args[0]) if args.size() > 0 else 7
 	_rng.seed = seed_value
+	# Свой профиль и сохранение не трогаем: автопрогон пишет в отдельный профиль.
+	Game.profile_path = "user://autoplay_profile.cfg"
+	SaveService.current_path = "user://autoplay_save.json"
+	Game.profile = ProfileState.new()
+	Settings.hints = false
 	Game.run = RunState.create(Game.defs, seed_value)
 	SaveService.save_run(Game.run)
 	Game.goto(Game.SCENE_MAP)
@@ -135,4 +140,5 @@ func _finish(ok: bool) -> void:
 		print(line)
 	print("AUTOPLAY %s за %.0f с" % ["OK" if ok else "FAIL", _elapsed()])
 	SaveService.delete_save()
+	DirAccess.remove_absolute(Game.profile_path)
 	get_tree().quit(0 if ok else 1)

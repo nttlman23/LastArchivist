@@ -16,6 +16,10 @@ func _ready() -> void:
 				Game.run.codex.cards.size(), UiKit.resources_text(Game.run.resources)], 20, UiKit.MUTED)
 		stats.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		box.add_child(stats)
+	var gained := UiKit.chip(UnitGlyphs.ICON_POINTS, tr("RUN_POINTS") % [Game.last_points, Game.profile.points], UiKit.ACCENT,
+			tr("META_POINTS"), tr("META_POINTS_TIP"), 26)
+	gained.alignment = BoxContainer.ALIGNMENT_CENTER
+	box.add_child(gained)
 	var b := UiKit.button(tr("RUN_TO_MENU"), _to_menu, 360)
 	b.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	box.add_child(b)

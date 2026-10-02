@@ -52,6 +52,7 @@ static func apply(state: BattleState, action: BattleAction) -> Array[BattleEvent
 		return events
 	if action.is_hero():
 		HeroActions.apply(state, action, events)
+		SchoolPassives.after_events(state, events)
 		if check_end(state, events):
 			state.active_uid = -1
 		return events
@@ -77,6 +78,7 @@ static func apply(state: BattleState, action: BattleAction) -> Array[BattleEvent
 			events.append(BattleEvent.new(BattleEvent.DEFENDED, {"uid": u.uid}))
 		BattleAction.Type.ABILITY:
 			Abilities.apply(state, u, action, events)
+	SchoolPassives.after_events(state, events)
 	# «Вперёд!» действует до конца хода стека; ожидание ход не заканчивает.
 	if action.type != BattleAction.Type.WAIT and u.has_status(UnitState.STATUS_ADVANCE):
 		u.statuses.erase(UnitState.STATUS_ADVANCE)

@@ -2,7 +2,7 @@ class_name RunState
 extends RefCounted
 ## Состояние забега. Сохраняется на чекпоинтах — при возврате на карту экспедиции.
 
-const SAVE_VERSION := 3
+const SAVE_VERSION := 4
 const REWARD_CHOICES := 3
 
 const INK := &"ink"
@@ -23,18 +23,43 @@ var pending_node := -1
 var pending_battle: StringName
 var pending_reward_card: StringName
 var battles_won := 0
+var elites_won := 0
+var school_id := DefsDB.DEFAULT_SCHOOL
+## Пул карт наград и лавки (с повторами для веса) и пул событий — фиксируются при старте забега.
+var card_pool: Array[StringName] = []
+var event_pool: Array[StringName] = []
 
 
-static func create(db: DefsDB, seed_value: int) -> RunState:
+## profile — открытия игрока (пулы карт и событий); без профиля доступно всё.
+static func create(db: DefsDB, seed_value: int, school_id: StringName = DefsDB.DEFAULT_SCHOOL, profile: ProfileState = null) -> RunState:
 	var run := RunState.new()
 	run.run_seed = seed_value
 	run.loot_rng.seed = hash("loot:%d" % seed_value)
-	for id in db.starting_codex:
+	run.school_id = school_id
+	var school := db.school(school_id)
+	for id in school.starting_codex:
 		run.codex.add(db, id)
 	for id in RESOURCE_IDS:
 		run.resources[id] = START_RESOURCES[id]
-	run.map = MapGenerator.generate(db, seed_value)
+	if profile:
+		run.card_pool = MetaRewards.card_pool(db, profile, school)
+		run.event_pool = MetaRewards.event_pool(db, profile)
+	else:
+		run.card_pool = db.memory_ids()
+		for id in school.favored_memories:
+			run.card_pool.append(id)
+		run.event_pool = db.event_ids()
+	run.map = MapGenerator.generate(db, seed_value, run.event_pool)
 	return run
+
+
+## Уникальные карты пула (для случайных карт событий и лавки).
+func pool_unique() -> Array[StringName]:
+	var result: Array[StringName] = []
+	for id in card_pool:
+		if not result.has(id):
+			result.append(id)
+	return result
 
 
 ## Сид, общий для всего содержимого острова (бой, лавка, событие) — повторный вход даёт то же самое.
@@ -107,7 +132,7 @@ func apply_spell_charges(charges: Array[int]) -> void:
 ## Случайные карты для награды (могут повторяться между боями, но не внутри выбора).
 ## guarantee_hero — среди них будет геройская карта, если её ещё нет в Кодексе.
 func roll_rewards(db: DefsDB, guarantee_hero: bool = false) -> Array[StringName]:
-	var pool := db.memory_ids()
+	var pool: Array[StringName] = card_pool.duplicate()
 	var result: Array[StringName] = []
 	if guarantee_hero:
 		for id in pool.duplicate():
@@ -115,10 +140,13 @@ func roll_rewards(db: DefsDB, guarantee_hero: bool = false) -> Array[StringName]
 				result.append(id)
 				pool.erase(id)
 				break
+	# Повторы в пуле дают вес, но в одном предложении карта не повторяется.
 	while result.size() < REWARD_CHOICES and not pool.is_empty():
 		var idx := loot_rng.randi_range(0, pool.size() - 1)
-		result.append(pool[idx])
-		pool.remove_at(idx)
+		var id: StringName = pool[idx]
+		result.append(id)
+		while pool.has(id):
+			pool.erase(id)
 	return result
 
 
@@ -143,6 +171,10 @@ func to_dict() -> Dictionary:
 		"pending_battle": String(pending_battle),
 		"pending_reward_card": String(pending_reward_card),
 		"battles_won": battles_won,
+		"elites_won": elites_won,
+		"school_id": String(school_id),
+		"card_pool": Array(card_pool).map(func(x: StringName) -> String: return String(x)),
+		"event_pool": Array(event_pool).map(func(x: StringName) -> String: return String(x)),
 	}
 
 
@@ -163,4 +195,10 @@ static func from_dict(d: Dictionary) -> RunState:
 	run.pending_battle = StringName(d["pending_battle"])
 	run.pending_reward_card = StringName(d["pending_reward_card"])
 	run.battles_won = int(d["battles_won"])
+	run.elites_won = int(d["elites_won"])
+	run.school_id = StringName(d["school_id"])
+	for id: String in d["card_pool"]:
+		run.card_pool.append(StringName(id))
+	for id: String in d["event_pool"]:
+		run.event_pool.append(StringName(id))
 	return run

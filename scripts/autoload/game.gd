@@ -10,6 +10,9 @@ const SCENE_EVENT := "res://scenes/event/event.tscn"
 const SCENE_SHOP := "res://scenes/shop/shop.tscn"
 const SCENE_HAVEN := "res://scenes/haven/haven.tscn"
 const SCENE_RUN_END := "res://scenes/run_end/run_end.tscn"
+const SCENE_SCHOOL := "res://scenes/school/school.tscn"
+const SCENE_META := "res://scenes/meta/meta.tscn"
+const SCENE_SETTINGS := "res://scenes/settings/settings.tscn"
 
 const FONT_SIZE := 22
 
@@ -22,10 +25,15 @@ var last_faded: Array[StringName] = []
 ## Ресурсы, полученные за последний бой.
 var last_rewards: Dictionary[StringName, int] = {}
 var run_won := false
+## Очки памяти, начисленные за последний завершённый забег.
+var last_points := 0
+var profile: ProfileState
+var profile_path := ProfileState.DEFAULT_PATH
 
 
 func _ready() -> void:
 	defs = DefsDB.load_default()
+	profile = ProfileState.load_or_new(profile_path)
 	var theme := Theme.new()
 	theme.default_font_size = FONT_SIZE
 	get_tree().root.theme = theme
@@ -59,12 +67,21 @@ func _smoke_test() -> void:
 	get_tree().quit(0 if ok else 1)
 
 
-func new_run() -> void:
+func new_run(school_id: StringName = DefsDB.DEFAULT_SCHOOL) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
-	run = RunState.create(defs, rng.seed)
+	run = RunState.create(defs, rng.seed, school_id, profile)
 	SaveService.save_run(run)
 	goto(SCENE_MAP)
+
+
+func save_profile() -> void:
+	profile.save(profile_path)
+
+
+## Пассивка школы текущего забега — для создания боя.
+func school_passive() -> StringName:
+	return defs.school(run.school_id).passive_id if run else &""
 
 
 func continue_run() -> bool:
@@ -123,6 +140,8 @@ func finish_battle(outcome: BattleState.Outcome, spell_charges: Array[int] = [],
 		_end_run(false)
 		return
 	run.battles_won += 1
+	if run.pending() and run.pending().type == MapState.NodeType.ELITE and run.pending_battle == &"":
+		run.elites_won += 1
 	run.apply_spell_charges(spell_charges)
 	var encounter := defs.encounter(run.current_encounter_id(defs))
 	last_faded = run.after_battle(defs, selected, erased)
@@ -169,5 +188,7 @@ func goto(scene: String) -> void:
 
 func _end_run(won: bool) -> void:
 	run_won = won
+	last_points = MetaRewards.finish_run(profile, run, won)
+	save_profile()
 	SaveService.delete_save()
 	goto(SCENE_RUN_END)

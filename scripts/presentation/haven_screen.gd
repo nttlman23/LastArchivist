@@ -15,6 +15,7 @@ func _ready() -> void:
 	UiKit.add_background(self)
 	_content = UiKit.centered_column(self, 18)
 	_show_choices()
+	Hints.show_hint(&"haven")
 
 
 func _clear() -> void:
@@ -27,11 +28,11 @@ func _show_choices() -> void:
 	_content.add_child(UiKit.label(tr("HAVEN_TITLE"), 44, UiKit.ACCENT))
 	_content.add_child(UiKit.label(tr("HAVEN_TEXT"), 22, UiKit.MUTED))
 	var repairs := ShopOps.haven_repairs(db, run)
-	var repair := UiKit.button(tr("HAVEN_REPAIR") % repairs, _repair, 640)
+	var repair := UiKit.icon_button(UnitGlyphs.ICON_HEAL, tr("HAVEN_REPAIR") % repairs, _repair, "", "", 640)
 	repair.disabled = repairs == 0
 	_content.add_child(repair)
-	_content.add_child(UiKit.button(tr("HAVEN_REWRITE"), _show_rewrite, 640))
-	var meditate := UiKit.button(tr("HAVEN_MEDITATE") % run.hero.spells.size(), _meditate, 640)
+	_content.add_child(UiKit.icon_button(UnitGlyphs.ICON_SPELL, tr("HAVEN_REWRITE"), _show_rewrite, "", "", 640))
+	var meditate := UiKit.icon_button(UnitGlyphs.ICON_AETHER, tr("HAVEN_MEDITATE") % run.hero.spells.size(), _meditate, "", "", 640)
 	meditate.disabled = run.hero.spells.is_empty()
 	_content.add_child(meditate)
 	_content.add_child(UiKit.button(tr("SHOP_LEAVE"), Game.complete_node, 640))
