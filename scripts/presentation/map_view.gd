@@ -41,6 +41,12 @@ var _pos: Dictionary[int, Vector2] = {}
 var _font: Font
 var _time := 0.0
 var _pulses: Array[Node2D] = []
+## Облака двумя слоями с параллаксом и свечение Разлома (SPEC_SPRINT6 4) — позади островов.
+var _clouds_far: Node2D
+var _clouds_near: Node2D
+var _rift_glow: Node2D
+const PARALLAX_FAR := 0.012
+const PARALLAX_NEAR := 0.035
 
 
 func setup(p_run: RunState) -> void:
@@ -54,7 +60,29 @@ func setup(p_run: RunState) -> void:
 			var h := hash("%d:%d" % [run.run_seed, n.id])
 			jitter = Vector2(((h & 0xff) / 255.0 - 0.5) * 2.0 * JITTER.x, (((h >> 8) & 0xff) / 255.0 - 0.5) * 2.0 * JITTER.y)
 		_pos[n.id] = Vector2(lane_x, -(n.layer - 1) * LAYER_SPACING) + jitter
+	if _clouds_far == null:
+		_clouds_far = _behind(_draw_clouds.bind(0, 0.045))
+		_clouds_near = _behind(_draw_clouds.bind(1, 0.07))
+		_rift_glow = _behind(_draw_rift_glow)
+	for n in run.map.nodes:
+		if n.type == MapState.NodeType.RIFT:
+			_rift_glow.position = _pos[n.id]
 	refresh()
+
+
+## Узел, рисующийся позади островов (show_behind_parent).
+func _behind(painter: Callable) -> Node2D:
+	var n := Node2D.new()
+	n.show_behind_parent = true
+	n.draw.connect(painter.bind(n))
+	add_child(n)
+	n.queue_redraw()
+	return n
+
+
+func _draw_rift_glow(ci: Node2D) -> void:
+	for i in 8:
+		ci.draw_circle(Vector2.ZERO, RIFT_R * (2.6 - i * 0.22), Color(0.6, 0.3, 0.9, 0.05))
 
 
 func node_pos(id: int) -> Vector2:
@@ -89,6 +117,12 @@ func _process(delta: float) -> void:
 	var a := 0.45 + 0.55 * (0.5 + 0.5 * sin(_time * 3.5))
 	for p in _pulses:
 		p.modulate.a = a
+	if _clouds_far:
+		var m := get_viewport().get_mouse_position() - get_viewport_rect().size * 0.5
+		_clouds_far.position = -m * PARALLAX_FAR
+		_clouds_near.position = -m * PARALLAX_NEAR
+		_rift_glow.modulate.a = 0.7 + 0.3 * sin(_time * 1.6)
+		_rift_glow.scale = Vector2.ONE * (1.0 + 0.04 * sin(_time * 1.6))
 
 
 func _draw_pulse_ring(ring: Node2D, id: int) -> void:
@@ -99,7 +133,6 @@ func _draw_pulse_ring(ring: Node2D, id: int) -> void:
 func _draw() -> void:
 	if run == null:
 		return
-	_draw_clouds()
 	var map := run.map
 	var path := _visited_edges()
 	var bridges := PackedVector2Array()
@@ -113,6 +146,8 @@ func _draw() -> void:
 				bridges.append_array(dashes)
 	draw_multiline(bridges, BRIDGE, 2.0)
 	if not done.is_empty():
+		# Пройденный путь светится: широкий мягкий слой и яркая середина.
+		draw_multiline(done, Color(BRIDGE_DONE, 0.18), 10.0)
 		draw_multiline(done, BRIDGE_DONE, 3.0)
 	if not hover_path.is_empty():
 		var lit := PackedVector2Array()
@@ -174,6 +209,9 @@ func _draw_island(n: MapState.MapNode, dim: bool) -> void:
 		var a := TAU * i / 20.0
 		top.append(c + Vector2(cos(a) * r, sin(a) * r * 0.45))
 	draw_colored_polygon(top, Color(col, alpha))
+	# Объём: светлая кромка сверху, тень под вершиной.
+	draw_polyline(_ellipse_arc(c + Vector2(0, -1), r * 0.9, PI * 1.08, PI * 1.92), Color(col.lightened(0.35), 0.8 * alpha), 3.0)
+	draw_polyline(_ellipse_arc(c + Vector2(0, 2), r * 0.92, PI * 0.1, PI * 0.9), Color(0, 0, 0, 0.25 * alpha), 3.0)
 	var icon_c := c + Vector2(0, -r * 0.55)
 	if n.type == MapState.NodeType.RIFT:
 		for i in 3:
@@ -192,17 +230,31 @@ func _draw_island(n: MapState.MapNode, dim: bool) -> void:
 		UnitGlyphs.draw_icon(self, UnitGlyphs.ICON_KILL, c + Vector2(-r * 0.95, -r * 0.45), 11, UiKit.BG_COLOR, CardAdvisor.RISK_COLORS[risks[n.id]])
 
 
-func _draw_clouds() -> void:
+## Дуга эллипса вершины острова (сплющена как сама вершина).
+static func _ellipse_arc(c: Vector2, r: float, from: float, to: float) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	for i in 13:
+		var a := lerpf(from, to, i / 12.0)
+		pts.append(c + Vector2(cos(a) * r, sin(a) * r * 0.45))
+	return pts
+
+
+## Облака слоя layer (дальний — больше и бледнее); рисуются один раз.
+func _draw_clouds(ci: Node2D, layer: int, alpha: float) -> void:
 	var rng := RandomNumberGenerator.new()
-	rng.seed = run.run_seed
-	for i in 14:
-		var c := Vector2(rng.randf_range(-640, 640), rng.randf_range(-LAYER_SPACING * 7.5, LAYER_SPACING * 0.8))
-		var w := rng.randf_range(90, 200)
-		var pts := PackedVector2Array()
-		for k in 16:
-			var a := TAU * k / 16.0
-			pts.append(c + Vector2(cos(a) * w, sin(a) * w * 0.22))
-		draw_colored_polygon(pts, Color(0.6, 0.65, 0.8, 0.05))
+	rng.seed = run.run_seed + layer * 977
+	for i in (9 if layer == 0 else 7):
+		var c := Vector2(rng.randf_range(-720, 720), rng.randf_range(-LAYER_SPACING * 7.8, LAYER_SPACING * 1.0))
+		var w := rng.randf_range(120, 260) if layer == 0 else rng.randf_range(80, 170)
+		# Облако из нескольких перекрывающихся эллипсов.
+		for blob in 3:
+			var bc := c + Vector2((blob - 1) * w * 0.45, absf(blob - 1.0) * w * 0.05)
+			var bw := w * (0.75 if blob != 1 else 1.0)
+			var pts := PackedVector2Array()
+			for k in 18:
+				var a := TAU * k / 18.0
+				pts.append(bc + Vector2(cos(a) * bw * 0.6, sin(a) * bw * 0.2))
+			ci.draw_colored_polygon(pts, Color(0.62, 0.66, 0.8, alpha))
 
 
 func _visited_edges() -> Array[Vector2i]:

@@ -125,4 +125,5 @@ static func chronicle_entry(run: RunState, outcome: String, points: int, db: Def
 		"encounter": encounter,
 		"codex": codex,
 		"points": points,
+		"lost": run.cards_lost,
 	}

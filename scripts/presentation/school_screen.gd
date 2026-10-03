@@ -58,9 +58,9 @@ func _school_card(school: SchoolDef) -> Button:
 	var open := MetaRewards.is_school_open(Game.profile, school)
 	var b := Button.new()
 	b.custom_minimum_size = Vector2(330, 300)
-	b.add_theme_stylebox_override("normal", UiKit.panel_style(UiKit.PANEL_COLOR, school.color.darkened(0.2), 3))
-	b.add_theme_stylebox_override("hover", UiKit.panel_style(UiKit.PANEL_COLOR.lightened(0.08), school.color, 3))
-	b.add_theme_stylebox_override("disabled", UiKit.panel_style(UiKit.PANEL_COLOR.darkened(0.2), Color(0.3, 0.3, 0.35), 2))
+	b.add_theme_stylebox_override("normal", UiKit.panel_style(UiKit.PANEL_COLOR, school.color.darkened(0.2), 3, true))
+	b.add_theme_stylebox_override("hover", UiKit.panel_style(UiKit.PANEL_COLOR.lightened(0.08), school.color, 3, true))
+	b.add_theme_stylebox_override("disabled", UiKit.panel_style(UiKit.PANEL_COLOR.darkened(0.2), Color(0.3, 0.3, 0.35), 2, true))
 	b.disabled = not open
 	var col := VBoxContainer.new()
 	col.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

@@ -246,7 +246,7 @@ func _toggle_legend() -> void:
 		_legend = null
 		return
 	_legend = PanelContainer.new()
-	_legend.add_theme_stylebox_override("panel", UiKit.panel_style(UiKit.BG_COLOR, UiKit.ACCENT, 2))
+	_legend.add_theme_stylebox_override("panel", UiKit.panel_style(UiKit.BG_COLOR, UiKit.ACCENT, 2, true))
 	_legend.position = Vector2(24, 76)
 	add_child(_legend)
 	var col := VBoxContainer.new()
@@ -297,7 +297,7 @@ func _toggle_codex() -> void:
 		_codex_overlay = null
 		return
 	_codex_overlay = PanelContainer.new()
-	_codex_overlay.add_theme_stylebox_override("panel", UiKit.panel_style(UiKit.BG_COLOR, UiKit.ACCENT, 2))
+	_codex_overlay.add_theme_stylebox_override("panel", UiKit.panel_style(UiKit.BG_COLOR, UiKit.ACCENT, 2, true))
 	_codex_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_codex_overlay.offset_left = 30
 	_codex_overlay.offset_top = 30

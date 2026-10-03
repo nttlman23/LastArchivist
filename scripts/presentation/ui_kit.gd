@@ -12,13 +12,135 @@ const MUTED := Color(0.65, 0.67, 0.72)
 const DANGER := Color(1.0, 0.45, 0.4)
 
 
-static func add_background(parent: Control) -> ColorRect:
+const BACKDROP_SHADER := preload("res://shaders/backdrop.gdshader")
+## Размер запекания фона — базовое разрешение проекта.
+const BAKE_SIZE := Vector2(1920, 1080)
+
+
+## Фон экрана (SPEC_SPRINT6 4): шейдер с шумом и виньеткой, медленный пепел в воздухе.
+## Цвет фона задаётся bg.color, как раньше.
+## Фон (SPEC_SPRINT6 4). plain — сплошной цвет (бой: пол рисует само поле, а полноэкранная
+## текстура при программной отрисовке стоит около 8 мс на кадр). Иначе шейдер рисуется один раз
+## во вспомогательном SubViewport, копируется в текстуру и кэшируется по цвету.
+## Возвращает прямоугольник фона: его color можно задать сразу после создания.
+static var _baked: Dictionary = {}
+
+
+static func add_background(parent: Control, plain: bool = false) -> ColorRect:
 	var bg := ColorRect.new()
 	bg.color = BG_COLOR
-	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	parent.add_child(bg)
+	if plain:
+		bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		parent.add_child(bg)
+		return bg
+	var tex := TextureRect.new()
+	tex.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tex.stretch_mode = TextureRect.STRETCH_SCALE
+	tex.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	parent.add_child(tex)
+	bg.size = BAKE_SIZE
+	var mat := ShaderMaterial.new()
+	mat.shader = BACKDROP_SHADER
+	mat.set_shader_parameter("size", BAKE_SIZE)
+	bg.material = mat
+	_bake.call_deferred(tex, bg)
+	if Settings.effects_full:
+		tex.add_child(ambient_ash(tex))
 	return bg
+
+
+static func _bake(tex: TextureRect, bg: ColorRect) -> void:
+	var key := bg.color.to_html()
+	if _baked.has(key):
+		tex.texture = _baked[key]
+		bg.free()
+		return
+	var vp := SubViewport.new()
+	vp.size = Vector2i(BAKE_SIZE)
+	vp.transparent_bg = false
+	vp.render_target_update_mode = SubViewport.UPDATE_ONCE
+	vp.add_child(bg)
+	tex.add_child(vp)
+	tex.texture = vp.get_texture()
+	await RenderingServer.frame_post_draw
+	if not is_instance_valid(tex):
+		return
+	var img := vp.get_texture().get_image()
+	if img and not img.is_empty():
+		_baked[key] = ImageTexture.create_from_image(img)
+		tex.texture = _baked[key]
+		vp.queue_free()
+
+
+## Редкий медленный пепел над фоном; область подгоняется под размер родителя.
+static func ambient_ash(host: Control) -> CPUParticles2D:
+	var p := CPUParticles2D.new()
+	p.texture = FxPool.dot_texture()
+	p.amount = 26
+	p.lifetime = 11.0
+	p.preprocess = 11.0
+	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	p.direction = Vector2(0.3, -1.0)
+	p.spread = 25.0
+	p.initial_velocity_min = 6.0
+	p.initial_velocity_max = 18.0
+	p.gravity = Vector2(3, -2)
+	p.scale_amount_min = 0.15
+	p.scale_amount_max = 0.45
+	var ramp := Gradient.new()
+	ramp.set_color(0, Color(0.75, 0.68, 0.6, 0.0))
+	ramp.add_point(0.2, Color(0.75, 0.68, 0.6, 0.35))
+	ramp.set_color(1, Color(0.6, 0.55, 0.5, 0.0))
+	p.color_ramp = ramp
+	var fit := func() -> void:
+		p.position = host.size * 0.5
+		p.emission_rect_extents = host.size * 0.5
+	host.resized.connect(fit)
+	fit.call()
+	return p
+
+
+const ROLE_COLORS := {
+	CardAdvisor.Role.MELEE: Color(0.85, 0.55, 0.4),
+	CardAdvisor.Role.RANGED: Color(0.55, 0.75, 0.95),
+	CardAdvisor.Role.SUPPORT: Color(0.5, 0.85, 0.55),
+	CardAdvisor.Role.FLYER: Color(0.8, 0.7, 1.0),
+	CardAdvisor.Role.HERO: Color(0.72, 0.5, 0.95),
+}
+
+
+static func role_color(db: DefsDB, memory_id: StringName) -> Color:
+	return ROLE_COLORS[CardAdvisor.role(db, memory_id)]
+
+
+## Круглый медальон карты: объёмный круг, рамка роли, силуэт; без существа — ромб-герб.
+class Medallion:
+	extends Control
+	var def_id: StringName
+	var body_color := Color.GRAY
+	var frame_color := Color.WHITE
+
+	func _draw() -> void:
+		var c := size * 0.5
+		var r := minf(size.x, size.y) * 0.46
+		draw_circle(c + Vector2(0, 3), r, Color(0, 0, 0, 0.35))
+		var pts := PackedVector2Array()
+		var cols := PackedColorArray()
+		for i in 28:
+			var dir := Vector2.from_angle(TAU * i / 28.0)
+			pts.append(c + dir * r)
+			cols.append(body_color.lightened(0.2) if dir.y < 0.0 else body_color.darkened(0.25 * dir.y))
+		draw_polygon(pts, cols)
+		if def_id != &"":
+			UnitGlyphs.draw_unit(self, def_id, c + Vector2(1, 2), r * 0.8, body_color, Color(0, 0, 0, 0.3))
+			UnitGlyphs.draw_unit(self, def_id, c, r * 0.8, body_color)
+			UnitGlyphs.draw_details(self, def_id, c, r * 0.8, body_color)
+		else:
+			UnitGlyphs.draw_icon(self, UnitGlyphs.ICON_SPELL, c, r * 0.6, Color(0, 0, 0, 0), UnitGlyphs.INK, false)
+		draw_arc(c, r, 0, TAU, 40, frame_color, 3.0)
+		draw_arc(c, r - 5, 0, TAU, 40, Color(frame_color, 0.35), 1.0)
 
 
 static func label(text: String, size: int = 0, color: Color = Color.WHITE) -> Label:
@@ -38,10 +160,28 @@ static func button(text: String, on_pressed: Callable, min_width: int = 260) -> 
 	b.custom_minimum_size = Vector2(min_width, 56)
 	b.pressed.connect(Audio.play.bind(&"ui_click"))
 	b.pressed.connect(on_pressed)
+	add_hover_lift(b)
 	return b
 
 
-static func panel_style(bg: Color, border: Color = Color.TRANSPARENT, border_width: int = 0) -> StyleBoxFlat:
+## Лёгкое увеличение при наведении (SPEC_SPRINT6 5); масштаб от центра.
+static func add_hover_lift(c: Control, amount: float = 0.02) -> void:
+	c.resized.connect(func() -> void: c.pivot_offset = c.size * 0.5)
+	c.mouse_entered.connect(_lift.bind(c, 1.0 + amount))
+	c.mouse_exited.connect(_lift.bind(c, 1.0))
+
+
+static func _lift(c: Control, k: float) -> void:
+	if k > 1.0 and c is BaseButton and (c as BaseButton).disabled:
+		return
+	c.create_tween().tween_property(c, "scale", Vector2.ONE * k, 0.08)
+
+
+## Панель. ornate — процедурная рамка с орнаментом (карты, плашки); иначе плоская:
+## крупные панели с текстурной рамкой заметно дороже при программной отрисовке.
+static func panel_style(bg: Color, border: Color = Color.TRANSPARENT, border_width: int = 0, ornate: bool = false) -> StyleBox:
+	if ornate and border.a > 0.0 and border_width > 0:
+		return UiTheme.ornate(bg, border, border_width)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = bg
 	sb.border_color = border
@@ -111,9 +251,11 @@ static func card_button(db: DefsDB, memory_id: StringName, durability: int = -1,
 	var detailed := Settings.detailed
 	var b := Button.new()
 	b.custom_minimum_size = Vector2(400, 235 if detailed else 168)
-	var normal := panel_style(PANEL_COLOR, Color(0.25, 0.27, 0.33), 2)
-	var hover := panel_style(PANEL_COLOR.lightened(0.08), Color(0.45, 0.48, 0.55), 2)
-	var pressed := panel_style(PANEL_COLOR.lightened(0.05), ACCENT, 3)
+	# Рамка цвета роли (ближний бой, стрелок, поддержка, летун, Архивариус).
+	var frame := role_color(db, memory_id)
+	var normal := panel_style(PANEL_COLOR, frame.darkened(0.35), 2, true)
+	var hover := panel_style(PANEL_COLOR.lightened(0.08), frame, 2, true)
+	var pressed := panel_style(PANEL_COLOR.lightened(0.05), ACCENT, 3, true)
 	b.add_theme_stylebox_override("normal", normal)
 	b.add_theme_stylebox_override("hover", hover)
 	b.add_theme_stylebox_override("pressed", pressed)
@@ -131,11 +273,15 @@ static func card_button(db: DefsDB, memory_id: StringName, durability: int = -1,
 	row.add_theme_constant_override("separation", 12)
 	margin.add_child(row)
 
-	var strip := ColorRect.new()
-	strip.color = db.unit(mem.unit_id).color if mem.is_unit() else HERO_CARD_COLOR
-	strip.custom_minimum_size = Vector2(10, 0)
-	strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(strip)
+	# Медальон с силуэтом существа (у геройской карты — герб Архивариуса).
+	var medal := Medallion.new()
+	medal.def_id = mem.unit_id if mem.is_unit() else &""
+	medal.body_color = db.unit(mem.unit_id).color if mem.is_unit() else HERO_CARD_COLOR
+	medal.frame_color = role_color(db, memory_id)
+	medal.custom_minimum_size = Vector2(76, 76)
+	medal.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	medal.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(medal)
 
 	var col := VBoxContainer.new()
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -144,7 +290,9 @@ static func card_button(db: DefsDB, memory_id: StringName, durability: int = -1,
 	var title := TranslationServer.translate(mem.name_key)
 	if level > 1:
 		title += "  " + TranslationServer.translate("CARD_LEVEL") % level
-	col.add_child(label(title, 24, ACCENT))
+	var title_label := label(title, 21, ACCENT)
+	title_label.clip_text = true
+	col.add_child(title_label)
 	var dur_color := DANGER if dur <= 1 else MUTED
 	if mem.is_unit() and not detailed:
 		# Коротко: численность, прочность точками, способность чипом, характеристики значками.

@@ -32,12 +32,17 @@ var profile: ProfileState
 var profile_path := ProfileState.DEFAULT_PATH
 
 
+const FADE_OUT := 0.12
+const FADE_IN := 0.16
+var _fade: ColorRect
+var _fade_tween: Tween
+
+
 func _ready() -> void:
 	defs = DefsDB.load_default()
 	profile = ProfileState.load_or_new(profile_path)
-	var theme := Theme.new()
-	theme.default_font_size = FONT_SIZE
-	get_tree().root.theme = theme
+	get_tree().root.theme = UiTheme.build(FONT_SIZE)
+	_build_fade()
 	Audio.play_music(&"menu")
 	if "--smoke" in OS.get_cmdline_user_args():
 		_smoke_test()
@@ -192,7 +197,28 @@ func to_main_menu() -> void:
 
 func goto(scene: String) -> void:
 	Audio.play_music(&"battle" if scene == SCENE_BATTLE else &"menu")
-	get_tree().change_scene_to_file.call_deferred(scene)
+	# Переход: затемнение, смена сцены, проявление (SPEC_SPRINT6 5).
+	if _fade_tween and _fade_tween.is_valid():
+		_fade_tween.kill()
+	_fade.visible = true
+	_fade_tween = create_tween()
+	_fade_tween.tween_property(_fade, "color:a", 1.0, FADE_OUT * (1.0 - _fade.color.a))
+	_fade_tween.tween_callback(get_tree().change_scene_to_file.bind(scene))
+	_fade_tween.tween_property(_fade, "color:a", 0.0, FADE_IN)
+	# Прозрачный полноэкранный прямоугольник тоже стоит времени — прячем.
+	_fade_tween.tween_callback(func() -> void: _fade.visible = false)
+
+
+func _build_fade() -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 100
+	add_child(layer)
+	_fade = ColorRect.new()
+	_fade.color = Color(0.02, 0.02, 0.03, 0.0)
+	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_fade.visible = false
+	layer.add_child(_fade)
 
 
 func _end_run(won: bool) -> void:

@@ -59,7 +59,9 @@ func _ready() -> void:
 
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	Audio.play_music(&"battle")
-	UiKit.add_background(self)
+	UiKit.add_background(self, true)
+	if Settings.effects_full:
+		add_child(UiKit.ambient_ash(self))
 	view = BattleView.new()
 	add_child(view)
 	view.setup(state, db)
@@ -85,7 +87,7 @@ func _show_objective_banner() -> void:
 	if state.commander_id != &"":
 		Hints.show_hint(&"commander")
 	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", UiKit.panel_style(UiKit.PANEL_COLOR, UiKit.OBJECTIVE_COLOR, 2))
+	panel.add_theme_stylebox_override("panel", UiKit.panel_style(UiKit.PANEL_COLOR, UiKit.OBJECTIVE_COLOR, 2, true))
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 8)
@@ -389,6 +391,8 @@ func _run_turns() -> void:
 	_busy = true
 	_enemy_zones = {}
 	view.threatened = {}
+	view.enemy_intents = {}
+	view._redraw_units()
 	while state.outcome == BattleState.Outcome.NONE and not _is_player_turn():
 		_refresh_hud()
 		await get_tree().create_timer(AI_DELAY).timeout
@@ -416,6 +420,8 @@ func _compute_threats() -> void:
 		if not ThreatMap.attackers_of(state, _enemy_zones, u, true).is_empty():
 			threatened[u.uid] = true
 	view.threatened = threatened
+	view.enemy_intents = EnemyIntents.predict(state)
+	view._redraw_units()
 	if not threatened.is_empty():
 		Hints.show_hint(&"threat")
 
@@ -574,6 +580,8 @@ func _update_hover() -> void:
 	view.shot_targets = {}
 	view.heat = {}
 	view.affected = {}
+	view.intent_hover = -1
+	view.intent_arrows_all = alt
 	_set_preview("", [])
 	if not _targeting.is_empty():
 		_set_preview(tr("TARGET_PROMPT") % _targeting["label"], [], tr("TARGET_PROMPT_SHORT") % _targeting["label"])
@@ -597,6 +605,16 @@ func _show_enemy_threat(enemy: UnitState) -> void:
 	view.threat = z.move
 	view.threat_attack = z.melee
 	view.shot_targets = ThreatMap.shot_targets(state, enemy)
+	view.intent_hover = enemy.uid
+	# Предполагаемое действие врага — чипом в строке превью.
+	var it: Dictionary = view.enemy_intents.get(enemy.uid, {})
+	if it.is_empty() or _pending:
+		return
+	var what := tr("INTENT_" + BattleAction.Type.keys()[int(it["type"])])
+	var target := state.get_unit(int(it["target"]))
+	if target:
+		what += " → " + UiKit.unit_name(db, target.def_id)
+	_set_preview(tr("INTENT_LONG") % what, [[BattleView.INTENT_ICONS.get(int(it["type"]), UnitGlyphs.ICON_MOVE), what, BattleView.THREAT_COLOR.lightened(0.2), tr("INTENT_TIP")]])
 
 
 ## Наведение на свой стек: кто из врагов его достаёт и сколько урона в худшем случае.
@@ -893,7 +911,7 @@ func _show_end() -> void:
 	var won := state.outcome == BattleState.Outcome.PLAYER_WON
 	Audio.play(&"victory" if won else &"defeat")
 	_end_panel = PanelContainer.new()
-	_end_panel.add_theme_stylebox_override("panel", UiKit.panel_style(UiKit.PANEL_COLOR, UiKit.ACCENT, 3))
+	_end_panel.add_theme_stylebox_override("panel", UiKit.panel_style(UiKit.PANEL_COLOR, UiKit.ACCENT, 3, true))
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 20)
 	box.alignment = BoxContainer.ALIGNMENT_CENTER

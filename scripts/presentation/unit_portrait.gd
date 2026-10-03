@@ -35,6 +35,7 @@ func _draw() -> void:
 	var r := minf(size.x, size.y) * 0.42
 	var center := size * Vector2(0.5, 0.44 if show_count else 0.5)
 	UnitGlyphs.draw_unit(self, def_id, center, r, body_color.darkened(0.15))
+	UnitGlyphs.draw_details(self, def_id, center, r, body_color.darkened(0.15))
 	if show_count:
 		var font := get_theme_default_font()
 		var fs := int(size.y * 0.24)

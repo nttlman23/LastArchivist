@@ -60,7 +60,7 @@ func _summary() -> HFlowContainer:
 			continue
 		var stats: Dictionary = Game.profile.school_stats.get(id, {"runs": 0, "wins": 0, "best": 0})
 		var panel := PanelContainer.new()
-		panel.add_theme_stylebox_override("panel", UiKit.panel_style(UiKit.PANEL_COLOR, school.color.darkened(0.2), 2))
+		panel.add_theme_stylebox_override("panel", UiKit.panel_style(UiKit.PANEL_COLOR, school.color.darkened(0.2), 2, true))
 		panel.custom_minimum_size = Vector2(300, 0)
 		var col := VBoxContainer.new()
 		col.add_theme_constant_override("separation", 6)
@@ -71,6 +71,14 @@ func _summary() -> HFlowContainer:
 		chips.add_child(UiKit.chip(UnitGlyphs.ICON_MOVE, str(stats["runs"]), UiKit.STAT_COLOR, tr("CHRONICLE_ATTEMPTS"), tr("CHRONICLE_ATTEMPTS_TIP"), 18))
 		chips.add_child(UiKit.chip(UnitGlyphs.ICON_RETALIATION, str(stats["wins"]), UiKit.ACCENT, tr("CHRONICLE_WINS"), tr("CHRONICLE_WINS_TIP"), 18))
 		chips.add_child(UiKit.chip(UnitGlyphs.ICON_ORDER, str(stats["best"]), UiKit.STAT_COLOR, tr("CHRONICLE_BEST"), tr("CHRONICLE_BEST_TIP"), 18))
+		# Лучший победный Кодекс — значком, состав в подсказке.
+		var best: Dictionary = stats.get("best_codex", {})
+		var body := tr("CHRONICLE_NO_BEST")
+		if not best.is_empty():
+			body = tr("CHRONICLE_BEST_CODEX_TIP") % [tr("DIFFICULTY_" + String(best.get("difficulty", "normal")).to_upper()),
+					int(best.get("lost", 0)), String(best.get("date", ""))] + "\n\n" + _codex_text(best.get("codex", []))
+		chips.add_child(UiKit.chip(UnitGlyphs.ICON_POINTS, "", UiKit.ACCENT if not best.is_empty() else UiKit.MUTED,
+				tr("CHRONICLE_BEST_CODEX"), body, 18))
 		col.add_child(chips)
 		row.add_child(panel)
 	return row

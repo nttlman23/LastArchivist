@@ -24,6 +24,8 @@ var pending_battle: StringName
 var pending_reward_card: StringName
 var battles_won := 0
 var elites_won := 0
+## Карт потеряно за забег (угасли или стёрты Разломом) — для «лучшего Кодекса».
+var cards_lost := 0
 var school_id := DefsDB.DEFAULT_SCHOOL
 ## Сложность забега (Difficulty).
 var difficulty := Difficulty.NORMAL
@@ -121,6 +123,7 @@ func after_battle(db: DefsDB, selected: Array[int], erased: Array[int] = []) -> 
 	for card in to_decay:
 		indices.append(codex.cards.find(card))
 	gone.append_array(codex.decay(indices))
+	cards_lost += gone.size()
 	return gone
 
 
@@ -176,6 +179,7 @@ func to_dict() -> Dictionary:
 		"pending_reward_card": String(pending_reward_card),
 		"battles_won": battles_won,
 		"elites_won": elites_won,
+		"cards_lost": cards_lost,
 		"school_id": String(school_id),
 		"difficulty": String(difficulty),
 		"card_pool": Array(card_pool).map(func(x: StringName) -> String: return String(x)),
@@ -201,6 +205,7 @@ static func from_dict(d: Dictionary) -> RunState:
 	run.pending_reward_card = StringName(d["pending_reward_card"])
 	run.battles_won = int(d["battles_won"])
 	run.elites_won = int(d["elites_won"])
+	run.cards_lost = int(d.get("cards_lost", 0))
 	run.school_id = StringName(d["school_id"])
 	run.difficulty = StringName(d["difficulty"])
 	for id: String in d["card_pool"]:

@@ -17,7 +17,7 @@ var _pending: Control
 func _ready() -> void:
 	layer = 100
 	_panel = PanelContainer.new()
-	_panel.add_theme_stylebox_override("panel", UiKit.panel_style(Color(0.08, 0.09, 0.13, 0.97), UiKit.ACCENT.darkened(0.3), 1))
+	_panel.add_theme_stylebox_override("panel", UiKit.panel_style(Color(0.08, 0.09, 0.13, 0.97), UiKit.ACCENT.darkened(0.3), 1, true))
 	_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel.visible = false
 	add_child(_panel)

@@ -594,3 +594,21 @@ LOG_OBJECTIVE_WIN,Цель боя выполнена
 PREP_OBJECTIVE,Цель:
 HINT_COMMANDER,"У врага есть командир: значок над целью показывает, что он сделает в конце раунда."
 HINT_OBJECTIVE,У этого боя особая цель — она в левом верхнем углу. Наведите на неё для подробностей.
+SETTINGS_ANIM_SPEED,Скорость анимаций
+SETTINGS_ANIM_SPEED_TIP,"Во сколько раз быстрее проигрываются ходы, удары и эффекты в бою."
+SETTINGS_SHAKE,Тряска камеры
+SETTINGS_SHAKE_TIP,Короткая тряска поля при сильных ударах и гибели существ.
+SETTINGS_EFFECTS,Полные эффекты
+SETTINGS_EFFECTS_TIP,"Частицы (пепел, искры, магия). Выключите для упрощённого режима — останутся только вспышки."
+INTENT_MOVE,Идёт
+INTENT_MELEE,Удар
+INTENT_SHOOT,Выстрел
+INTENT_WAIT,Ждёт
+INTENT_DEFEND,Защита
+INTENT_ABILITY,Способность
+INTENT_HERO,Действие
+INTENT_LONG,Предположительно: %s
+INTENT_TIP,"Что враг сделал бы, если бы ходил сейчас. Может измениться, если до его хода поле изменится. Alt — стрелки всех врагов."
+CHRONICLE_BEST_CODEX,Лучший Кодекс
+CHRONICLE_BEST_CODEX_TIP,"Победный Кодекс этой школы: %s, потеряно карт: %d, %s."
+CHRONICLE_NO_BEST,Побед этой школой пока нет.

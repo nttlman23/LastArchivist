@@ -114,6 +114,67 @@ static func draw_unit(ci: CanvasItem, def_id: StringName, c: Vector2, r: float, 
 			ci.draw_circle(c, r * 0.45, ink)
 
 
+## Второй тон силуэта (SPEC_SPRINT6 6): светлые и цветные акценты поверх тёмной фигуры.
+## Рисуется после draw_unit; light — блик в тон тела, ember/glow — свои цвета существа.
+static func draw_details(ci: CanvasItem, def_id: StringName, c: Vector2, r: float, body: Color) -> void:
+	var light := Color(body.lightened(0.55), 0.9 * body.a)
+	var w := maxf(1.5, r * 0.07)
+	var p := func(x: float, y: float) -> Vector2: return c + Vector2(x, y) * r
+	match def_id:
+		&"salt_guard":
+			for v: Vector2 in [Vector2(-0.3, -0.35), Vector2(0.3, -0.35), Vector2(0, 0.3)]:
+				ci.draw_circle(p.call(v.x, v.y), r * 0.06, light)
+			ci.draw_line(p.call(-0.55, -0.62), p.call(0.55, -0.62), light, w)
+		&"chronicler":
+			for i in 4:
+				ci.draw_line(p.call(0.2 + i * 0.08, -0.6 + i * 0.1), p.call(0.38 + i * 0.08, -0.7 + i * 0.1), light, w * 0.8)
+		&"ash_ghoul":
+			for x: float in [-0.38, -0.05, 0.28]:
+				ci.draw_circle(p.call(x, -0.62), r * 0.07, Color(1.0, 0.55, 0.25, body.a))
+		&"shard_archer":
+			ci.draw_line(p.call(-0.1, -0.8), p.call(-0.1, 0.8), Color(light, 0.7 * body.a), w * 0.7)
+			ci.draw_circle(p.call(0.62, 0.0), r * 0.08, Color(0.7, 0.9, 1.0, body.a))
+		&"storm_wyrm_echo":
+			for a: float in [0.3, 2.2, 4.1]:
+				var d := Vector2.from_angle(a)
+				ci.draw_line(c + d * r * 0.62, c + d * r * 0.82, Color(0.75, 0.9, 1.0, body.a), w)
+		&"rust_sentinel":
+			ci.draw_line(p.call(-0.15, -0.2), p.call(0.15, -0.2), Color(1.0, 0.75, 0.35, body.a), w * 1.4)
+			ci.draw_circle(p.call(0.3, 0.35), r * 0.08, Color(0.75, 0.38, 0.2, body.a))
+		&"faceless_choir":
+			for x: float in [-0.4, 0.0, 0.4]:
+				ci.draw_circle(p.call(x, -0.12), r * 0.05, light)
+		&"ash_priest":
+			ci.draw_circle(p.call(0, -0.62), r * 0.13, Color(1.0, 0.6, 0.2, body.a))
+			ci.draw_circle(p.call(0, -0.68), r * 0.07, Color(1.0, 0.9, 0.5, body.a))
+		&"tide_warden":
+			var wave := PackedVector2Array()
+			for k in 9:
+				wave.append(p.call(-0.6 + k * 0.15, 0.62 + 0.06 * sin(k * 1.8)))
+			ci.draw_polyline(wave, Color(0.6, 0.85, 1.0, body.a), w)
+		&"deep_jelly":
+			ci.draw_arc(p.call(-0.12, -0.05), r * 0.32, PI * 1.15, PI * 1.55, 8, light, w)
+		&"clock_turret":
+			ci.draw_circle(p.call(-0.1, 0.15), r * 0.07, Color(1.0, 0.8, 0.4, body.a))
+			ci.draw_circle(p.call(0.75, -0.6), r * 0.09, Color(1.0, 0.6, 0.3, body.a))
+		&"brass_tinker":
+			ci.draw_circle(p.call(0.38, -0.38), r * 0.08, light)
+			ci.draw_line(p.call(-0.45, 0.45), p.call(-0.1, 0.1), light, w * 0.7)
+		&"mirror_double":
+			for a: float in [0.6, 2.0, 3.4, 4.8]:
+				ci.draw_circle(p.call(0, -0.2) + Vector2.from_angle(a) * r * 0.48, r * 0.045, light)
+		&"face_thief":
+			ci.draw_line(p.call(-0.6, -0.3), p.call(0.6, -0.3), light, w)
+		&"archive_relic":
+			ci.draw_line(p.call(0.3, -0.45), p.call(0.3, 0.05), Color(0.85, 0.25, 0.2, body.a), w * 1.6)
+		&"rift_warden":
+			ci.draw_circle(c, r * 0.2, Color(0.8, 0.5, 1.0, 0.6 * body.a))
+			ci.draw_circle(c, r * 0.09, Color(1, 0.9, 1, body.a))
+		&"rift_ram":
+			ci.draw_line(p.call(-0.3, -0.45), p.call(0.1, -0.65), light, w)
+			ci.draw_circle(p.call(0.45, -0.25), r * 0.06, Color(0.85, 0.5, 1.0, body.a))
+
+
 ## Значок способности/состояния в круглом медальоне.
 ## ring = false — без медальона (значок крупнее; для текстур IconAtlas).
 static func draw_icon(ci: CanvasItem, kind: StringName, c: Vector2, r: float, bg: Color, fg: Color = Color.WHITE, ring: bool = true) -> void:

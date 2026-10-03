@@ -7,7 +7,9 @@ extends Node2D
 ## а повторный показ уже записанных команд почти бесплатен.
 ##   board   — сетка и препятствия, рисуется один раз;
 ##   overlay — подсветки (достижимость, путь, угроза, наведение), при смене подсветки;
-##   units   — фишки, при синхронизации и во время анимаций;
+##   units   — все фишки одним объектом отрисовки (при программной отрисовке отдельные узлы
+##             на фишку обходятся дорого); тела — запечённые текстуры, «дыхание» и поворот —
+##             трансформом при отрисовке; перерисовывается каждый кадр — это дёшево;
 ##   fx      — снаряд и всплывающий урон, только пока они есть;
 ##   marker  — маркер ходящего стека, пульсирует через modulate/position без перерисовки;
 ##   cursor  — иконка действия у курсора, двигается через position.
@@ -19,8 +21,24 @@ const LUNGE_TIME := 0.12
 const SHOT_TIME := 0.22
 const FADE_TIME := 0.3
 const FLOATER_TIME := 1.2
+const RING_TIME := 0.45
+## «Дыхание» фишек в покое (SPEC_SPRINT6 6).
+const BREATH := 0.02
+const BREATH_PERIOD := 2.6
+const RECOIL := 9.0
+const SHAKE_TIME := 0.3
+const SHAKE_MAX := 8.0
+const SHOT_ARC := 0.15
+const TRAIL_POINTS := 9
 
-const HEX_COLOR := Color(0.17, 0.19, 0.24)
+## Гекс полупрозрачный — сквозь него видны плиты арены.
+const HEX_COLOR := Color(0.17, 0.19, 0.24, 0.72)
+const BEVEL_LIGHT := Color(1, 1, 1, 0.09)
+const PLATE := Vector2(150, 96)
+const PLATE_GAP := 2.0
+const FLOOR_COLOR := Color(0.16, 0.155, 0.17)
+const FLOOR_SEAM := Color(0.075, 0.075, 0.09)
+const BEVEL_DARK := Color(0, 0, 0, 0.35)
 const HEX_LINE := Color(0.3, 0.33, 0.4)
 const OBSTACLE_COLOR := Color(0.32, 0.27, 0.22)
 const REACH_COLOR := Color(0.25, 0.42, 0.32)
@@ -71,6 +89,11 @@ var heat: Dictionary[Vector2i, int] = {}
 var threatened: Dictionary[int, bool] = {}
 ## Цели выстрела вражеского стрелка под курсором: uid -> дальний выстрел (урон снижен).
 var shot_targets: Dictionary[int, bool] = {}
+## Предполагаемые действия врагов (EnemyIntents.predict) — значок у каждого врага.
+var enemy_intents: Dictionary[int, Dictionary] = {}
+## Стрелка намерения: у врага под курсором или у всех (Alt).
+var intent_hover := -1
+var intent_arrows_all := false
 ## Стек, подсвеченный из полосы очереди (или -1).
 var highlight_uid := -1
 ## Затемнять клетки, недоступные для хода (во время хода игрока).
@@ -99,6 +122,21 @@ var _hex_inner: Dictionary[Vector2i, PackedVector2Array] = {}
 var _board: Layer
 var _overlay: Layer
 var _units: Layer
+## Куда смотрит фишка: 1 — вправо, -1 — влево.
+var _facing: Dictionary[int, float] = {}
+var _fx_pool: FxPool
+## Вспышки-кольца: {"pos", "color", "t", "r"}.
+var _rings: Array[Dictionary] = []
+## Рост временных стен: клетка -> 0..1.
+var _grow: Dictionary[Vector2i, float] = {}
+var _trail := PackedVector2Array()
+var _shake_t := 0.0
+var _shake_power := 0.0
+var _shake_base := Vector2.ZERO
+var _marker_pos := Vector2.ZERO
+var _marker_uid := -1
+## Сколько проигрываний событий идёт сейчас (фишки перерисовываются каждый кадр).
+var _playing := 0
 var _fx: Layer
 var _marker: Layer
 var _marker_arrow: Layer
@@ -151,6 +189,8 @@ func setup(p_state: BattleState, p_db: DefsDB) -> void:
 		_marker_arrow = _add_layer(_marker, _draw_marker_arrow)
 		_units = _add_layer(self, _draw_units)
 		_fx = _add_layer(self, _draw_fx)
+		_fx_pool = FxPool.new()
+		add_child(_fx_pool)
 		_cursor = CursorIcon.new()
 		_cursor.visible = false
 		add_child(_cursor)
@@ -167,9 +207,10 @@ func sync() -> void:
 		_pos[u.uid] = hex_center(u.hex)
 		_count[u.uid] = u.count
 		_alpha[u.uid] = 1.0 if u.is_alive() else 0.0
-	_units.queue_redraw()
+	_ensure_unit_nodes()
+	_redraw_units()
+	_update_units()
 	_overlay.queue_redraw()
-	_update_marker()
 
 
 func refresh_highlights() -> void:
@@ -218,31 +259,106 @@ func _add_layer(parent: Node, painter: Callable) -> Layer:
 
 func _process(delta: float) -> void:
 	_time += delta
-	_update_marker()
-	if not _floaters.is_empty():
+	_update_marker(delta)
+	_update_units()
+	var sp := Settings.anim_speed
+	if not _floaters.is_empty() or not _rings.is_empty() or not _trail.is_empty():
 		for f in _floaters:
-			f["t"] = float(f["t"]) + delta
+			f["t"] = float(f["t"]) + delta * sp
 		_floaters = _floaters.filter(func(f: Dictionary) -> bool: return float(f["t"]) < FLOATER_TIME)
+		for r in _rings:
+			r["t"] = float(r["t"]) + delta * sp
+		_rings = _rings.filter(func(r: Dictionary) -> bool: return float(r["t"]) < RING_TIME)
 		_fx.queue_redraw()
 	if not _flash.is_empty():
 		for uid in _flash.keys():
 			_flash[uid] -= delta
 			if _flash[uid] <= 0.0:
 				_flash.erase(uid)
-		_units.queue_redraw()
+			_redraw_unit(uid)
+	_update_shake(delta)
 
 
-## Маркер следует за ходящим стеком и пульсирует без перерисовки.
-func _update_marker() -> void:
+## Маркер перетекает к новому ходящему стеку и пульсирует без перерисовки.
+func _update_marker(delta: float = 0.0) -> void:
 	var active := state.active_unit()
 	_marker.visible = show_active and active != null and _pos.has(active.uid)
 	if not _marker.visible:
 		return
+	var target := _pos[active.uid]
+	if _marker_uid != active.uid and _marker_uid >= 0 and delta > 0.0:
+		_marker_pos = _marker_pos.lerp(target, minf(1.0, delta * 12.0 * Settings.anim_speed))
+		if _marker_pos.distance_to(target) < 1.5:
+			_marker_uid = active.uid
+	else:
+		_marker_pos = target
+		_marker_uid = active.uid
 	var pulse := 0.5 + 0.5 * sin(_time * 4.0)
-	_marker.position = _pos[active.uid]
+	_marker.position = _marker_pos
 	_marker.modulate.a = 0.55 + 0.45 * pulse
 	_marker.scale = Vector2.ONE * (1.0 + 0.05 * pulse)
 	_marker_arrow.position.y = -6.0 * pulse
+
+
+# --- Узлы фишек ----------------------------------------------------------------
+
+func _ensure_unit_nodes() -> void:
+	for u in state.units:
+		if not _facing.has(u.uid):
+			_facing[u.uid] = 1.0 if u.side == UnitState.Side.PLAYER else -1.0
+
+
+## Слой фишек: во время анимаций — каждый кадр, в покое — каждый третий («дыхание» медленное,
+## а запись слоя стоит ~1 мс).
+func _update_units() -> void:
+	if _playing > 0 or Engine.get_process_frames() % 3 == 0:
+		_units.queue_redraw()
+
+
+func _redraw_units() -> void:
+	_units.queue_redraw()
+
+
+func _redraw_unit(_uid: int) -> void:
+	_units.queue_redraw()
+
+
+func _face(uid: int, dx: float) -> void:
+	if absf(dx) > 1.0:
+		_facing[uid] = signf(dx)
+
+
+# --- Эффекты --------------------------------------------------------------------
+
+func _ring(pos: Vector2, color: Color, radius: float = UNIT_RADIUS * 1.8) -> void:
+	_rings.append({"pos": pos, "color": color, "t": 0.0, "r": radius})
+
+
+## Тряска поля: сила 0..1 от доли потерь стека.
+func _shake(power: float) -> void:
+	if not Settings.screen_shake or power <= 0.0:
+		return
+	if _shake_t <= 0.0:
+		_shake_base = position
+	_shake_t = SHAKE_TIME
+	_shake_power = maxf(_shake_power if _shake_t > 0.0 else 0.0, clampf(power, 0.15, 1.0))
+
+
+func _update_shake(delta: float) -> void:
+	if _shake_t <= 0.0:
+		return
+	_shake_t -= delta
+	if _shake_t <= 0.0:
+		position = _shake_base
+		_shake_power = 0.0
+		return
+	var k := _shake_t / SHAKE_TIME * _shake_power * SHAKE_MAX
+	position = _shake_base + Vector2(sin(_time * 71.0), cos(_time * 53.0)) * k
+
+
+## Таймер с учётом скорости анимаций.
+func _timer(t: float) -> SceneTreeTimer:
+	return get_tree().create_timer(t / Settings.anim_speed)
 
 
 # --- Проигрывание событий ---------------------------------------------------
@@ -274,6 +390,7 @@ static func sound_for(e: BattleEvent) -> StringName:
 
 
 func play(events: Array[BattleEvent]) -> void:
+	_playing += 1
 	for e in events:
 		var sound := sound_for(e)
 		if sound != &"":
@@ -284,33 +401,59 @@ func play(events: Array[BattleEvent]) -> void:
 			BattleEvent.ATTACKED:
 				await _play_attack(e.data)
 			BattleEvent.DIED:
-				await _tween_value(func(v: float) -> void: _alpha[int(e.data["uid"])] = v, 1.0, 0.0, FADE_TIME, _units)
+				# Гибель: рассыпается пеплом (иллюзия — стеклом).
+				var uid: int = e.data["uid"]
+				var dead := state.get_unit(uid)
+				if _pos.has(uid):
+					_fx_pool.burst(FxPool.GLASS if dead and dead.illusion else FxPool.ASH, _pos[uid])
+				_shake(0.6)
+				await _tween_value(func(v: float) -> void: _alpha[uid] = v, 1.0, 0.0, FADE_TIME, null)
 			BattleEvent.PUSHED:
 				var uid: int = e.data["uid"]
 				var from := hex_center(e.data["from"])
 				var to := hex_center(e.data["to"])
-				await _tween_value(func(t: float) -> void: _pos[uid] = from.lerp(to, t), 0.0, 1.0, STEP_TIME * 1.5, _units)
+				await _tween_value(func(t: float) -> void: _pos[uid] = from.lerp(to, t), 0.0, 1.0, STEP_TIME * 1.5, null)
 			BattleEvent.HEALED:
 				var uid: int = e.data["uid"]
 				_count[uid] = _count.get(uid, 0) + int(e.data["revived"])
 				_float_text(uid, "+%d" % int(e.data["amount"]), HEAL_COLOR)
-				_units.queue_redraw()
-				await get_tree().create_timer(0.3).timeout
+				if _pos.has(uid):
+					_fx_pool.burst(FxPool.HEAL, _pos[uid])
+				_redraw_units()
+				await _timer(0.3).timeout
 			BattleEvent.DAMAGED:
 				var uid: int = e.data["uid"]
 				_count[uid] = maxi(0, _count.get(uid, 0) - int(e.data["killed"]))
 				_flash[uid] = 0.25
-				_float_text(uid, _damage_text(e.data["damage"], e.data["killed"]), DAMAGE_COLOR)
-				_units.queue_redraw()
-				await get_tree().create_timer(0.25).timeout
+				_float_text(uid, _damage_text(e.data["damage"], e.data["killed"]), DAMAGE_COLOR, 0.0, int(e.data["killed"]))
+				if _pos.has(uid):
+					_fx_pool.burst(FxPool.SPARK, _pos[uid])
+				_redraw_units()
+				await _timer(0.25).timeout
 			BattleEvent.ABILITY_USED, BattleEvent.HERO_ACTED:
 				# Название способности/приказа/заклинания над тем, кто действует (или над целью).
 				var who: int = e.data["uid"] if e.data.has("uid") else int(e.data["target"])
 				var label: String = event_label.call(e)
+				var magic := NAME_COLOR if e.type == BattleEvent.ABILITY_USED else Color(0.75, 0.6, 1.0)
+				var at := _pos[who] if _pos.has(who) else (hex_center(e.data["hex"]) if e.data.has("hex") and _hex_fill.has(e.data["hex"]) else Vector2.INF)
+				if at != Vector2.INF:
+					_ring(at, magic)
+					_fx_pool.burst(FxPool.MAGIC, at, magic)
 				if label != "" and _pos.has(who):
 					_float_text(who, label, NAME_COLOR, -26.0)
-					await get_tree().create_timer(0.35).timeout
-			BattleEvent.OBSTACLE_ADDED, BattleEvent.OBSTACLE_EXPIRED:
+					await _timer(0.35).timeout
+			BattleEvent.OBSTACLE_ADDED:
+				# Стена «вырастает», вода расходится кругами.
+				var hex: Vector2i = e.data["hex"]
+				if e.data.get("water", false):
+					_ring(hex_center(hex), WAVE_COLOR, HEX_SIZE * 1.6)
+					_fx_pool.burst(FxPool.RIPPLE, hex_center(hex), WAVE_COLOR)
+					_overlay.queue_redraw()
+				else:
+					await _tween_value(func(v: float) -> void: _grow[hex] = v, 0.0, 1.0, 0.25, _overlay, Tween.EASE_OUT, Tween.TRANS_BACK)
+					_grow.erase(hex)
+					_overlay.queue_redraw()
+			BattleEvent.OBSTACLE_EXPIRED:
 				_overlay.queue_redraw()
 			BattleEvent.SUMMONED:
 				# Новый стек: добавить в отображение и проявить.
@@ -318,7 +461,11 @@ func play(events: Array[BattleEvent]) -> void:
 				var u := state.get_unit(uid)
 				_pos[uid] = hex_center(u.hex)
 				_count[uid] = u.count
-				await _tween_value(func(v: float) -> void: _alpha[uid] = v, 0.0, 1.0, FADE_TIME, _units)
+				_alpha[uid] = 0.0
+				_ensure_unit_nodes()
+				_ring(_pos[uid], Color(0.8, 0.85, 1.0))
+				_fx_pool.burst(FxPool.RIPPLE, _pos[uid], Color(0.8, 0.85, 1.0))
+				await _tween_value(func(v: float) -> void: _alpha[uid] = v, 0.0, 1.0, FADE_TIME, null)
 			BattleEvent.COMMANDER_INTENT:
 				_overlay.queue_redraw()
 			BattleEvent.COMMANDER_ACTED:
@@ -327,39 +474,43 @@ func play(events: Array[BattleEvent]) -> void:
 				var uid: int = e.data["target"]
 				var pos := _pos[uid] if _pos.has(uid) else hex_center(e.data["hex"])
 				_floaters.append({"text": label, "pos": pos + Vector2(0, -26), "t": 0.0, "color": _commander_color()})
+				_ring(pos, _commander_color())
+				_fx_pool.burst(FxPool.MAGIC, pos, _commander_color())
 				_overlay.queue_redraw()
-				await get_tree().create_timer(0.45).timeout
+				await _timer(0.45).timeout
 			BattleEvent.OBJECTIVE_PROGRESS:
 				_overlay.queue_redraw()
 			BattleEvent.RIFT_MARKED:
 				_float_text(int(e.data["uid"]), event_label.call(e), RIFT_COLOR, -26.0)
-				_units.queue_redraw()
-				await get_tree().create_timer(0.5).timeout
+				_redraw_units()
+				await _timer(0.5).timeout
 			BattleEvent.ERASED:
 				var uid: int = e.data["uid"]
 				_float_text(uid, event_label.call(e), RIFT_COLOR, -26.0)
 				_flash[uid] = 0.4
-				await _tween_value(func(v: float) -> void: _alpha[uid] = v, 1.0, 0.0, FADE_TIME * 2.0, _units)
+				_ring(_pos[uid], RIFT_COLOR)
+				_fx_pool.burst(FxPool.MAGIC, _pos[uid], RIFT_COLOR)
+				await _tween_value(func(v: float) -> void: _alpha[uid] = v, 1.0, 0.0, FADE_TIME * 2.0, null)
+	_playing -= 1
 	sync()
 
 
-func _float_text(uid: int, text: String, color: Color, rise: float = 0.0) -> void:
-	_floaters.append({"text": text, "pos": _pos[uid] + Vector2(0, rise), "t": 0.0, "color": color})
+func _float_text(uid: int, text: String, color: Color, rise: float = 0.0, kills: int = 0) -> void:
+	_floaters.append({"text": text, "pos": _pos[uid] + Vector2(0, rise), "t": 0.0, "color": color, "kills": kills})
 
 
-static func _damage_text(damage: int, killed: int) -> String:
-	var text := "-%d" % damage
-	if killed > 0:
-		text += "  †%d" % killed
-	return text
+## Урон для всплывающего текста; погибшие рисуются отдельно черепом.
+static func _damage_text(damage: int, _killed: int = 0) -> String:
+	return "-%d" % damage
 
 
 func _play_move(uid: int, path: Array) -> void:
 	for i in range(1, path.size()):
 		var from := hex_center(path[i - 1])
 		var to := hex_center(path[i])
+		_face(uid, to.x - from.x)
 		var time := STEP_TIME * (HexGrid.distance(path[i - 1], path[i]))
-		await _tween_value(func(t: float) -> void: _pos[uid] = from.lerp(to, t), 0.0, 1.0, time, _units)
+		await _tween_value(func(t: float) -> void: _pos[uid] = from.lerp(to, t), 0.0, 1.0, time, null)
 
 
 func _play_attack(d: Dictionary) -> void:
@@ -367,33 +518,58 @@ func _play_attack(d: Dictionary) -> void:
 	var target: int = d["target"]
 	var from := _pos[attacker]
 	var to := _pos[target]
+	_face(attacker, to.x - from.x)
 	if d["ranged"]:
-		_projectile_from = from
-		_projectile_to = to
-		await _tween_value(func(t: float) -> void: _projectile_t = t, 0.0, 1.0, SHOT_TIME, _fx)
+		var height := from.distance_to(to) * SHOT_ARC
+		_trail = PackedVector2Array()
+		await _tween_value(_shot_step.bind(from, to, height), 0.0, 1.0, SHOT_TIME, _fx)
 		_projectile_t = -1.0
+		_trail = PackedVector2Array()
 		_fx.queue_redraw()
 		Audio.play(&"impact")
 	else:
 		var lunge := from.lerp(to, 0.35)
-		await _tween_value(func(t: float) -> void: _pos[attacker] = from.lerp(lunge, t), 0.0, 1.0, LUNGE_TIME, _units)
-		_pos[attacker] = from
+		await _tween_value(func(t: float) -> void: _pos[attacker] = from.lerp(lunge, t), 0.0, 1.0, LUNGE_TIME, null, Tween.EASE_OUT, Tween.TRANS_QUAD)
+		_tween_value(func(t: float) -> void: _pos[attacker] = lunge.lerp(from, t), 0.0, 1.0, LUNGE_TIME, null)
+	var before: int = _count.get(target, 1)
 	_count[target] = maxi(0, _count[target] - int(d["killed"]))
 	_flash[target] = 0.25
-	_floaters.append({"text": _damage_text(d["damage"], d["killed"]), "pos": to, "t": 0.0, "color": DAMAGE_COLOR})
-	_units.queue_redraw()
-	await get_tree().create_timer(0.25).timeout
+	_fx_pool.burst(FxPool.SPARK, from.lerp(to, 0.75) if not d["ranged"] else to)
+	_floaters.append({"text": _damage_text(d["damage"]), "pos": to, "t": 0.0, "color": DAMAGE_COLOR, "kills": int(d["killed"])})
+	if int(d["killed"]) > 0:
+		_shake(float(d["killed"]) / maxi(1, before))
+	_redraw_unit(target)
+	# Отдача: цель отшатывается от удара и возвращается.
+	var away := (to - from).normalized() * RECOIL
+	await _tween_value(func(t: float) -> void: _pos[target] = to + away * sin(t * PI), 0.0, 1.0, 0.18, null)
+	_pos[target] = to
+	await _timer(0.1).timeout
 
 
-func _tween_value(setter: Callable, from: float, to: float, time: float, layer: CanvasItem) -> void:
+func _shot_step(t: float, from: Vector2, to: Vector2, height: float) -> void:
+	_projectile_t = t
+	_trail.append(_shot_point(from, to, height, t))
+	if _trail.size() > TRAIL_POINTS:
+		_trail.remove_at(0)
+
+
+## Точка полёта снаряда по дуге.
+static func _shot_point(from: Vector2, to: Vector2, height: float, t: float) -> Vector2:
+	return from.lerp(to, t) + Vector2(0, -height * sin(t * PI))
+
+
+func _tween_value(setter: Callable, from: float, to: float, time: float, layer: CanvasItem,
+		ease_type: Tween.EaseType = Tween.EASE_IN_OUT, trans: Tween.TransitionType = Tween.TRANS_LINEAR) -> void:
 	var tw := create_tween()
-	tw.tween_method(_tween_step.bind(setter, layer), from, to, time)
+	tw.tween_method(_tween_step.bind(setter, layer), from, to, time / Settings.anim_speed).set_ease(ease_type).set_trans(trans)
 	await tw.finished
 
 
+## layer — слой для перерисовки на каждом шаге; null — без перерисовки (позиция и прозрачность фишек).
 func _tween_step(value: float, setter: Callable, layer: CanvasItem) -> void:
 	setter.call(value)
-	layer.queue_redraw()
+	if layer:
+		layer.queue_redraw()
 
 
 # --- Слои --------------------------------------------------------------------
@@ -418,20 +594,65 @@ class FillBatch:
 			RenderingServer.canvas_item_add_triangle_array(ci.get_canvas_item(), indices, points, colors)
 
 
+## Пол арены: каменные плиты рядами со сдвигом, оттенок по хешу, края темнеют.
+## Одна заливка статичного слоя — без текстуры, дёшево при программной отрисовке.
+func _draw_floor(fills: FillBatch) -> void:
+	var size := board_size()
+	var origin := Vector2(-HexGrid.SQRT3 * HEX_SIZE * 0.5, -HEX_SIZE)
+	var margin := Vector2(PLATE.x * 1.5, PLATE.y * 1.5)
+	var from := origin - margin
+	var to := origin + size + margin
+	var center := origin + size * 0.5
+	var reach := (to - from).length() * 0.5
+	fills.add(PackedVector2Array([from, Vector2(to.x, from.y), to, Vector2(from.x, to.y)]), FLOOR_SEAM)
+	var row := 0
+	var y := from.y
+	while y < to.y:
+		var x := from.x - (PLATE.x * 0.5 if row % 2 == 1 else 0.0)
+		while x < to.x:
+			var h := absi(hash(Vector2i(int(x), int(y)))) % 1000 / 1000.0
+			var col := FLOOR_COLOR.lightened(h * 0.12).darkened((1.0 - h) * 0.1)
+			# Края пола уходят в темноту — вместо виньетки.
+			var fade := clampf((Vector2(x, y) + PLATE * 0.5 - center).length() / reach, 0.0, 1.0)
+			col = col.lerp(UiKit.BG_COLOR, smoothstep(0.45, 1.0, fade))
+			var a := Vector2(x + PLATE_GAP, y + PLATE_GAP)
+			var b := Vector2(x + PLATE.x - PLATE_GAP, y + PLATE.y - PLATE_GAP)
+			fills.add(PackedVector2Array([a, Vector2(b.x, a.y), b, Vector2(a.x, b.y)]), col)
+			x += PLATE.x
+		y += PLATE.y
+		row += 1
+
+
 func _draw_board(ci: CanvasItem) -> void:
 	var fills := FillBatch.new()
+	_draw_floor(fills)
 	var outlines := PackedVector2Array()
+	var light := PackedVector2Array()
+	var dark := PackedVector2Array()
 	for hex in _hex_fill:
 		var pts := _hex_fill[hex]
+		var c := hex_center(hex)
 		fills.add(pts, OBSTACLE_COLOR if state.obstacles.has(hex) else HEX_COLOR)
 		for i in 6:
 			outlines.append(pts[i])
 			outlines.append(pts[(i + 1) % 6])
+			# Фаска: верхние кромки светлее, нижние темнее.
+			var a := c.lerp(pts[i], 0.9)
+			var b := c.lerp(pts[(i + 1) % 6], 0.9)
+			if (a.y + b.y) * 0.5 < c.y:
+				light.append_array([a, b])
+			else:
+				dark.append_array([a, b])
 		if state.obstacles.has(hex):
-			fills.add(_rock(hex_center(hex)), OBSTACLE_COLOR.darkened(0.35))
+			# Камень: тень, тело, блик.
+			fills.add(_rock(c + Vector2(4, 6)), Color(0, 0, 0, 0.35))
+			fills.add(_rock(c), OBSTACLE_COLOR.darkened(0.35))
+			fills.add(PackedVector2Array([c + Vector2(-12, -9), c + Vector2(3, -17), c + Vector2(14, -6), c + Vector2(-2, -4)]), OBSTACLE_COLOR.lightened(0.15))
 	fills.draw(ci)
 	# Все контуры одним вызовом.
 	ci.draw_multiline(outlines, HEX_LINE, 1.5)
+	ci.draw_multiline(light, BEVEL_LIGHT, 3.0)
+	ci.draw_multiline(dark, BEVEL_DARK, 3.0)
 
 
 func _draw_overlay(ci: CanvasItem) -> void:
@@ -439,10 +660,11 @@ func _draw_overlay(ci: CanvasItem) -> void:
 	var wall_dark := TEMP_WALL_COLOR.darkened(0.3)
 	for hex in state.temp_obstacles:
 		var c := hex_center(hex)
+		var g: float = _grow.get(hex, 1.0)
 		fills.add(_hex_fill[hex], OBSTACLE_COLOR.lerp(TEMP_WALL_COLOR, 0.5))
-		fills.add(PackedVector2Array([c + Vector2(-26, 14), c + Vector2(-26, -10), c + Vector2(26, -10), c + Vector2(26, 14)]), wall_dark)
+		fills.add(PackedVector2Array([c + g * Vector2(-26, 14), c + g * Vector2(-26, -10), c + g * Vector2(26, -10), c + g * Vector2(26, 14)]), wall_dark)
 		for x: float in [-26.0, -9.0, 8.0]:
-			fills.add(PackedVector2Array([c + Vector2(x, -18), c + Vector2(x + 10, -18), c + Vector2(x + 10, -10), c + Vector2(x, -10)]), wall_dark)
+			fills.add(PackedVector2Array([c + g * Vector2(x, -18), c + g * Vector2(x + 10, -18), c + g * Vector2(x + 10, -10), c + g * Vector2(x, -10)]), wall_dark)
 	for hex in state.water:
 		fills.add(_hex_fill[hex], WATER_COLOR)
 	for hex in state.hold_hexes:
@@ -507,11 +729,57 @@ func _draw_overlay(ci: CanvasItem) -> void:
 				var p := _pos[uid] + Vector2(UNIT_RADIUS * 0.7, -UNIT_RADIUS * 0.7)
 				ci.draw_circle(p, 12, BADGE_BG)
 				ci.draw_string(_font, p + Vector2(-12, 6), "½", HORIZONTAL_ALIGNMENT_CENTER, 24, 17, THREAT_COLOR)
+	_draw_intent_arrows(ci)
 	if highlight_uid >= 0 and _pos.has(highlight_uid):
 		ci.draw_arc(_pos[highlight_uid], UNIT_RADIUS + 10, 0, TAU, 40, HIGHLIGHT_COLOR, 3.0)
 	for uid in affected:
 		if _pos.has(uid):
 			ci.draw_arc(_pos[uid], UNIT_RADIUS + 12, 0, TAU, 32, AFFECTED_ALLY if affected[uid] else AFFECTED_ENEMY, 3.0)
+
+
+const INTENT_ICONS := {
+	BattleAction.Type.MOVE: UnitGlyphs.ICON_MOVE,
+	BattleAction.Type.MELEE: UnitGlyphs.ICON_MELEE,
+	BattleAction.Type.SHOOT: UnitGlyphs.ICON_RANGED,
+	BattleAction.Type.ABILITY: UnitGlyphs.ICON_ABILITY,
+	BattleAction.Type.DEFEND: UnitGlyphs.ICON_DEFEND,
+	BattleAction.Type.WAIT: UnitGlyphs.ICON_WAIT,
+}
+
+
+## Куда направлено намерение врага: позиция цели или клетки; Vector2.INF — некуда.
+func intent_point(uid: int) -> Vector2:
+	var it: Dictionary = enemy_intents.get(uid, {})
+	if it.is_empty():
+		return Vector2.INF
+	var t := int(it["target"])
+	if t >= 0 and _pos.has(t):
+		return _pos[t]
+	var h: Vector2i = it["hex"]
+	return hex_center(h) if _hex_fill.has(h) else Vector2.INF
+
+
+## Изогнутые стрелки от врага к цели его предполагаемого действия.
+func _draw_intent_arrows(ci: CanvasItem) -> void:
+	for uid in enemy_intents:
+		if not intent_arrows_all and uid != intent_hover:
+			continue
+		if not _pos.has(uid):
+			continue
+		var to := intent_point(uid)
+		if to == Vector2.INF:
+			continue
+		var from := _pos[uid]
+		var mid := (from + to) * 0.5 + (to - from).orthogonal().normalized() * minf(60.0, from.distance_to(to) * 0.2)
+		var pts := PackedVector2Array()
+		for i in 17:
+			var t := i / 16.0
+			pts.append(from.lerp(mid, t).lerp(mid.lerp(to, t), t))
+		var col := Color(THREAT_COLOR, 0.85 if uid == intent_hover else 0.55)
+		ci.draw_polyline(pts, col, 3.0)
+		var dir := (pts[16] - pts[14]).normalized()
+		var tip := to - dir * (UNIT_RADIUS * 0.7)
+		ci.draw_colored_polygon(PackedVector2Array([tip, tip - dir * 14 + dir.orthogonal() * 8, tip - dir * 14 - dir.orthogonal() * 8]), col)
 
 
 func _commander_color() -> Color:
@@ -555,24 +823,34 @@ func _draw_marker_arrow(ci: CanvasItem) -> void:
 	ci.draw_colored_polygon(PackedVector2Array([tip, tip + Vector2(-12, -16), tip + Vector2(12, -16)]), ACTIVE_RING)
 
 
-func _draw_units(ci: CanvasItem) -> void:
-	for u in state.units:
-		if _alpha.get(u.uid, 0.0) > 0.0:
-			_draw_unit(ci, u)
-
-
 func _draw_fx(ci: CanvasItem) -> void:
-	if _projectile_t >= 0.0:
-		var p := _projectile_from.lerp(_projectile_to, _projectile_t)
-		var dir := (_projectile_to - _projectile_from).normalized()
-		ci.draw_line(p - dir * 22, p, UiKit.ACCENT, 4.0)
+	for r in _rings:
+		var k := float(r["t"]) / RING_TIME
+		var col: Color = r["color"]
+		var radius := lerpf(UNIT_RADIUS * 0.6, float(r["r"]), 1.0 - pow(1.0 - k, 3.0))
+		ci.draw_arc(r["pos"], radius, 0, TAU, 40, Color(col, 1.0 - k), 5.0 * (1.0 - k) + 1.0)
+	if _trail.size() >= 2:
+		for i in range(1, _trail.size()):
+			var a := float(i) / _trail.size()
+			ci.draw_line(_trail[i - 1], _trail[i], Color(UiKit.ACCENT, a), 1.0 + 4.0 * a)
+		ci.draw_circle(_trail[_trail.size() - 1], 4.0, Color(1, 0.95, 0.75))
 	for f in _floaters:
 		var t := float(f["t"])
+		# «Пружина»: число вспухает и оседает в первые доли секунды.
+		var pop := 1.0 + 0.35 * maxf(0.0, 1.0 - t / 0.15)
+		var size := int(28 * pop)
 		var pos: Vector2 = f["pos"] + Vector2(-30, -UNIT_RADIUS - 10 - 40 * t)
 		var col: Color = f.get("color", DAMAGE_COLOR)
 		col.a = clampf(1.6 - t * 1.4, 0, 1)
-		ci.draw_string_outline(_font, pos, f["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, 28, 6, Color(0, 0, 0, col.a))
-		ci.draw_string(_font, pos, f["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, 28, col)
+		ci.draw_string_outline(_font, pos, f["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, size, 7, Color(0, 0, 0, col.a))
+		ci.draw_string(_font, pos, f["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
+		var kills := int(f.get("kills", 0))
+		if kills > 0:
+			var w := _font.get_string_size(f["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+			var ip := pos + Vector2(w + 16, -size * 0.35)
+			UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_KILL, ip, 11, Color(0, 0, 0, 0.6 * col.a), Color(1, 1, 1, col.a))
+			ci.draw_string_outline(_font, ip + Vector2(13, size * 0.35), str(kills), HORIZONTAL_ALIGNMENT_LEFT, -1, size - 4, 6, Color(0, 0, 0, col.a))
+			ci.draw_string(_font, ip + Vector2(13, size * 0.35), str(kills), HORIZONTAL_ALIGNMENT_LEFT, -1, size - 4, col)
 
 
 func _rock(c: Vector2) -> PackedVector2Array:
@@ -601,10 +879,109 @@ static func status_icons(u: UnitState) -> Array:
 	return list
 
 
-func _draw_unit(ci: CanvasItem, u: UnitState) -> void:
+## Тело фишки: круг с объёмом, кольцо стороны, силуэт. Рисуется в начале координат узла;
+## «дыхание» и поворот — масштабом узла.
+## Фишка целиком: тело (зеркально, если смотрит влево), затем значки без поворота.
+## Тела фишек запекаются в текстуры: при программной отрисовке каждый вызов дорог,
+## а тело (круг, кольцо, тень, силуэт, акценты) — десяток вызовов. Ключ — вид, сторона, иллюзия.
+## Пока текстура не готова (и в headless, где запечь нельзя) тело рисуется напрямую.
+const BODY_TEX := 96
+static var _body_tex: Dictionary = {}
+
+
+func _draw_units(ci: CanvasItem) -> void:
+	for u in state.units:
+		var a: float = _alpha.get(u.uid, 0.0)
+		if a > 0.0 and _pos.has(u.uid):
+			_draw_unit_node(ci, u, a * (ILLUSION_ALPHA if u.illusion else 1.0))
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## Фишка: тело (зеркально, если смотрит влево, с «дыханием»), вспышка, метки, значки.
+func _draw_unit_node(ci: CanvasItem, u: UnitState, alpha: float) -> void:
+	var pos := _pos[u.uid]
+	var breath := 1.0 + BREATH * sin(_time * TAU / BREATH_PERIOD + u.uid * 1.7)
+	var tex := _body_texture(u)
+	ci.draw_set_transform(pos, 0.0, Vector2(_facing.get(u.uid, 1.0) * breath, breath))
+	if tex:
+		ci.draw_texture(tex, -Vector2.ONE * BODY_TEX * 0.5, Color(1, 1, 1, alpha))
+	else:
+		_draw_unit_body(ci, u, alpha)
+	ci.draw_set_transform(pos, 0.0, Vector2.ONE)
+	if _flash.has(u.uid):
+		ci.draw_circle(Vector2.ZERO, UNIT_RADIUS, Color(1, 1, 1, 0.55 * alpha * clampf(_flash[u.uid] / 0.25, 0.0, 1.0)))
+	_draw_unit_marks(ci, u, alpha)
+	_draw_unit_badges(ci, u, alpha)
+
+
+func _body_key(u: UnitState) -> String:
+	return "%s|%d|%s" % [u.def_id, u.side, u.illusion]
+
+
+func _body_texture(u: UnitState) -> Texture2D:
+	var key := _body_key(u)
+	if _body_tex.has(key):
+		return _body_tex[key] as Texture2D
+	_body_tex[key] = null
+	_bake_body.call_deferred(key, u)
+	return null
+
+
+func _bake_body(key: String, u: UnitState) -> void:
+	var vp := SubViewport.new()
+	vp.size = Vector2i(BODY_TEX, BODY_TEX)
+	vp.transparent_bg = true
+	vp.render_target_update_mode = SubViewport.UPDATE_ONCE
+	var painter := _add_layer(vp, func(ci: CanvasItem) -> void: _draw_unit_body(ci, u, 1.0))
+	painter.position = Vector2.ONE * BODY_TEX * 0.5
+	add_child(vp)
+	await RenderingServer.frame_post_draw
+	var img := vp.get_texture().get_image()
+	vp.queue_free()
+	if img == null or img.is_empty():
+		return
+	_body_tex[key] = ImageTexture.create_from_image(img)
+	_redraw_units()
+
+
+## Метки поверх тела (не запекаются): Разлом, мишень цели.
+func _draw_unit_marks(ci: CanvasItem, u: UnitState, alpha: float) -> void:
+	if u.has_status(UnitState.STATUS_RIFT_MARKED):
+		ci.draw_arc(Vector2.ZERO, UNIT_RADIUS + 9, 0, TAU, 32, Color(RIFT_COLOR, alpha), 3.0)
+	if u.is_boss and state.objective == ObjectiveRule.ASSASSINATE:
+		# Мишень цели «Уничтожить цель».
+		ci.draw_arc(Vector2.ZERO, UNIT_RADIUS + 6, 0, TAU, 32, Color(TARGET_MARK, alpha), 2.5)
+		for d: Vector2 in [Vector2.UP, Vector2.DOWN, Vector2.LEFT, Vector2.RIGHT]:
+			ci.draw_line(d * (UNIT_RADIUS + 1), d * (UNIT_RADIUS + 12), Color(TARGET_MARK, alpha), 3.0)
+
+
+func _draw_unit_body(ci: CanvasItem, u: UnitState, alpha: float) -> void:
+	var c := Vector2.ZERO
+	var is_player := u.side == UnitState.Side.PLAYER
+	var side_color := UiKit.PLAYER_COLOR if is_player else UiKit.ENEMY_COLOR
+	var body := db.unit(u.def_id).color
+	body.a = alpha
+	var ink := Color(UnitGlyphs.INK, alpha)
+	var ring := Color(side_color, alpha)
+
+	_shaded_circle(ci, c, UNIT_RADIUS, body)
+	if u.illusion:
+		# Иллюзия: пунктирное кольцо.
+		for i in 12:
+			var a0 := TAU * i / 12.0
+			ci.draw_arc(c, UNIT_RADIUS, a0, a0 + TAU / 24.0, 4, Color(side_color, alpha), SIDE_RING_WIDTH)
+	else:
+		ci.draw_arc(c, UNIT_RADIUS, 0, TAU, 32, ring, SIDE_RING_WIDTH + (0.0 if is_player else 1.0))
+	# Двухтоновый силуэт: мягкая тень, затем сам силуэт.
+	UnitGlyphs.draw_unit(ci, u.def_id, c + Vector2(1.5, 2.5), UNIT_RADIUS * 0.82, body, Color(0, 0, 0, 0.3))
+	UnitGlyphs.draw_unit(ci, u.def_id, c, UNIT_RADIUS * 0.82, body, ink)
+	UnitGlyphs.draw_details(ci, u.def_id, c, UNIT_RADIUS * 0.82, body)
+
+
+## Значки, численность и полоска здоровья — не поворачиваются и не «дышат».
+func _draw_unit_badges(ci: CanvasItem, u: UnitState, alpha: float) -> void:
 	var k := 1.3 if Settings.large_icons else 1.0
-	var c: Vector2 = _pos[u.uid]
-	var alpha: float = _alpha[u.uid] * (ILLUSION_ALPHA if u.illusion else 1.0)
+	var c := Vector2.ZERO
 	var is_player := u.side == UnitState.Side.PLAYER
 	var side_color := UiKit.PLAYER_COLOR if is_player else UiKit.ENEMY_COLOR
 	var body := db.unit(u.def_id).color
@@ -616,22 +993,6 @@ func _draw_unit(ci: CanvasItem, u: UnitState) -> void:
 	var fg := Color(1, 1, 1, alpha)
 	var bg := Color(BADGE_BG, alpha)
 
-	ci.draw_circle(c, UNIT_RADIUS, body)
-	if u.illusion:
-		# Иллюзия: пунктирное кольцо.
-		for i in 12:
-			var a0 := TAU * i / 12.0
-			ci.draw_arc(c, UNIT_RADIUS, a0, a0 + TAU / 24.0, 4, Color(side_color, _alpha[u.uid]), SIDE_RING_WIDTH)
-	else:
-		ci.draw_arc(c, UNIT_RADIUS, 0, TAU, 32, ring, SIDE_RING_WIDTH)
-	if u.has_status(UnitState.STATUS_RIFT_MARKED):
-		ci.draw_arc(c, UNIT_RADIUS + 9, 0, TAU, 32, Color(RIFT_COLOR, alpha), 3.0)
-	if u.is_boss and state.objective == ObjectiveRule.ASSASSINATE:
-		# Мишень цели «Уничтожить цель».
-		ci.draw_arc(c, UNIT_RADIUS + 6, 0, TAU, 32, Color(TARGET_MARK, alpha), 2.5)
-		for d: Vector2 in [Vector2.UP, Vector2.DOWN, Vector2.LEFT, Vector2.RIGHT]:
-			ci.draw_line(c + d * (UNIT_RADIUS + 1), c + d * (UNIT_RADIUS + 12), Color(TARGET_MARK, alpha), 3.0)
-	UnitGlyphs.draw_unit(ci, u.def_id, c, UNIT_RADIUS * 0.82, body, ink)
 
 	# Постоянные свойства по бокам: стрелок (с выстрелами) слева, летун справа, способность снизу слева.
 	var badge_r := 11.0 * k
@@ -649,11 +1010,15 @@ func _draw_unit(ci: CanvasItem, u: UnitState) -> void:
 		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_ABILITY, pos, badge_r, bg, Color(UiKit.ACCENT if ready else UiKit.MUTED, alpha))
 		if not ready:
 			_outlined(ci, pos + Vector2(-8 * k, 6 * k), str(u.ability_cd), HORIZONTAL_ALIGNMENT_CENTER, 16 * k, font_size, fg, alpha)
+	if enemy_intents.has(u.uid):
+		# Предполагаемое действие врага — снизу справа.
+		var kind: int = enemy_intents[u.uid]["type"]
+		UnitGlyphs.draw_icon(ci, INTENT_ICONS.get(kind, UnitGlyphs.ICON_MOVE), c + Vector2(UNIT_RADIUS + 2, UNIT_RADIUS - 10), badge_r, bg, Color(THREAT_COLOR.lightened(0.2), alpha))
 	if threatened.has(u.uid):
 		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_THREAT, c + Vector2(UNIT_RADIUS + 2, UNIT_RADIUS - 10), badge_r, bg, Color(UiKit.DANGER, alpha))
 	if u.illusion:
 		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_MASK, c + Vector2(UNIT_RADIUS + 2, UNIT_RADIUS - 10 - (2.2 * badge_r if threatened.has(u.uid) else 0.0)),
-				badge_r, bg, Color(0.85, 0.85, 1.0, _alpha[u.uid]))
+				badge_r, bg, Color(0.85, 0.85, 1.0, alpha))
 
 	# Временные состояния — рядом над фишкой, не больше трёх, остальное «+N».
 	var statuses := status_icons(u)
@@ -687,6 +1052,18 @@ func _draw_unit(ci: CanvasItem, u: UnitState) -> void:
 	var bar := Rect2(top + Vector2(0, bh + tip + 1), Vector2(bw, 4))
 	ci.draw_rect(bar, Color(0.1, 0.1, 0.1, alpha))
 	ci.draw_rect(Rect2(bar.position, Vector2(bar.size.x * hp_ratio, bar.size.y)), Color(Color(0.4, 0.85, 0.4).lerp(UiKit.DANGER, 1.0 - hp_ratio), alpha))
+
+
+## Круг с объёмом: светлее сверху-слева, темнее снизу-справа, блик.
+func _shaded_circle(ci: CanvasItem, c: Vector2, r: float, color: Color) -> void:
+	var pts := PackedVector2Array()
+	var cols := PackedColorArray()
+	for i in 28:
+		var dir := Vector2.from_angle(TAU * i / 28.0)
+		pts.append(c + dir * r)
+		cols.append(color.lightened(0.18) if dir.dot(Vector2(-0.6, -0.8)) > 0.0 else color.darkened(0.22 * -dir.dot(Vector2(-0.6, -0.8))))
+	ci.draw_polygon(pts, cols)
+	ci.draw_arc(c, r * 0.78, deg_to_rad(200), deg_to_rad(250), 10, Color(1, 1, 1, 0.22 * color.a), r * 0.12)
 
 
 func _outlined(ci: CanvasItem, pos: Vector2, text: String, align: HorizontalAlignment, width: float, font_size: int, color: Color, alpha: float) -> void:

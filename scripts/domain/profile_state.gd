@@ -36,7 +36,26 @@ func record_run(entry: Dictionary) -> void:
 	if entry.get("outcome", "") == OUTCOME_WON:
 		stats["wins"] = int(stats["wins"]) + 1
 	stats["best"] = maxi(int(stats["best"]), int(entry.get("layer", 0)))
+	if entry.get("outcome", "") == OUTCOME_WON and is_better_codex(entry, stats.get("best_codex", {})):
+		stats["best_codex"] = {
+			"codex": entry.get("codex", []), "difficulty": entry.get("difficulty", "normal"),
+			"lost": int(entry.get("lost", 0)), "date": entry.get("date", ""),
+		}
 	school_stats[school] = stats
+
+
+const DIFFICULTY_RANK := {"easy": 0, "normal": 1, "hard": 2}
+
+
+## Лучший победный Кодекс (SPEC_SPRINT6 8): выше сложность, затем меньше потерь, затем новее.
+static func is_better_codex(entry: Dictionary, best: Dictionary) -> bool:
+	if best.is_empty():
+		return true
+	var a := int(DIFFICULTY_RANK.get(String(entry.get("difficulty", "normal")), 1))
+	var b := int(DIFFICULTY_RANK.get(String(best.get("difficulty", "normal")), 1))
+	if a != b:
+		return a > b
+	return int(entry.get("lost", 0)) <= int(best.get("lost", 0))
 
 
 func is_unlocked(id: StringName) -> bool:

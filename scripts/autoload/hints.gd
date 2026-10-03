@@ -16,7 +16,7 @@ var _current := &""
 func _ready() -> void:
 	layer = 90
 	_panel = PanelContainer.new()
-	_panel.add_theme_stylebox_override("panel", UiKit.panel_style(Color(0.1, 0.12, 0.18, 0.97), UiKit.ACCENT, 2))
+	_panel.add_theme_stylebox_override("panel", UiKit.panel_style(Color(0.1, 0.12, 0.18, 0.97), UiKit.ACCENT, 2, true))
 	_panel.visible = false
 	add_child(_panel)
 	var col := VBoxContainer.new()
