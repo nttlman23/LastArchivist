@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MemoryCardDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/memory_card_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"face_thieves"
+name_key = "MEM_FACE_THIEVES"
+kind = 0
+unit_id = &"face_thief"
+count = 12
+max_durability = 2
+spell_id = &"ash_record"
+upgrade_id = &"up_attack"

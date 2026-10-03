@@ -56,6 +56,44 @@ static func draw_unit(ci: CanvasItem, def_id: StringName, c: Vector2, r: float, 
 			_masks(ci, c, r, ink, body)
 		&"ash_priest":
 			_chalice(ci, c, r, ink)
+		&"tide_warden":
+			# Трезубец.
+			ci.draw_line(c + Vector2(0, -0.55) * r, c + Vector2(0, 0.85) * r, ink, maxf(2.0, r * 0.14))
+			ci.draw_line(c + Vector2(-0.45, -0.25) * r, c + Vector2(0.45, -0.25) * r, ink, maxf(2.0, r * 0.12))
+			for x: float in [-0.45, 0.0, 0.45]:
+				_poly(ci, c, r, [Vector2(x - 0.1, -0.25), Vector2(x, -0.85), Vector2(x + 0.1, -0.25)], ink)
+		&"deep_jelly":
+			# Медуза: купол и щупальца.
+			ci.draw_arc(c + Vector2(0, 0.05) * r, r * 0.55, PI, TAU, 16, ink, maxf(3.0, r * 0.5))
+			for x: float in [-0.35, 0.0, 0.35]:
+				var pts := PackedVector2Array()
+				for k in 6:
+					pts.append(c + Vector2(x + 0.1 * sin(k * 1.4), 0.1 + k * 0.14) * r)
+				ci.draw_polyline(pts, ink, maxf(2.0, r * 0.1))
+		&"clock_turret":
+			# Шестерня со стволом.
+			ci.draw_circle(c + Vector2(-0.1, 0.15) * r, r * 0.42, ink)
+			for k in 8:
+				var a := TAU * k / 8.0
+				ci.draw_line(c + Vector2(-0.1, 0.15) * r + Vector2.from_angle(a) * r * 0.4,
+						c + Vector2(-0.1, 0.15) * r + Vector2.from_angle(a) * r * 0.6, ink, maxf(2.0, r * 0.14))
+			ci.draw_circle(c + Vector2(-0.1, 0.15) * r, r * 0.15, body)
+			ci.draw_line(c + Vector2(0.1, -0.05) * r, c + Vector2(0.75, -0.6) * r, ink, maxf(3.0, r * 0.2))
+		&"brass_tinker":
+			# Гаечный ключ.
+			ci.draw_line(c + Vector2(-0.55, 0.55) * r, c + Vector2(0.25, -0.25) * r, ink, maxf(3.0, r * 0.22))
+			ci.draw_arc(c + Vector2(0.38, -0.38) * r, r * 0.28, deg_to_rad(-200), deg_to_rad(60), 12, ink, maxf(3.0, r * 0.18))
+		&"mirror_double":
+			# Ручное зеркало с отражением.
+			ci.draw_circle(c + Vector2(0, -0.2) * r, r * 0.48, ink)
+			ci.draw_circle(c + Vector2(0, -0.2) * r, r * 0.32, body)
+			ci.draw_line(c + Vector2(-0.12, -0.38) * r, c + Vector2(0.1, -0.05) * r, ink, maxf(1.5, r * 0.08))
+			ci.draw_line(c + Vector2(0, 0.28) * r, c + Vector2(0, 0.85) * r, ink, maxf(3.0, r * 0.18))
+		&"face_thief":
+			# Полумаска с прорезями.
+			_poly(ci, c, r, [Vector2(-0.75, -0.35), Vector2(0.75, -0.35), Vector2(0.6, 0.25), Vector2(0.15, 0.35), Vector2(0, 0.15), Vector2(-0.15, 0.35), Vector2(-0.6, 0.25)], ink)
+			_poly(ci, c, r, [Vector2(-0.5, -0.12), Vector2(-0.15, -0.12), Vector2(-0.22, 0.02), Vector2(-0.45, 0.02)], body)
+			_poly(ci, c, r, [Vector2(0.5, -0.12), Vector2(0.15, -0.12), Vector2(0.22, 0.02), Vector2(0.45, 0.02)], body)
 		&"rift_warden":
 			for i in 3:
 				ci.draw_arc(c, r * (0.25 + 0.22 * i), i * 1.1, i * 1.1 + PI * 1.5, 20, ink, maxf(2.0, r * 0.12))

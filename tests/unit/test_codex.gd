@@ -8,12 +8,12 @@ func before_all() -> void:
 
 
 func test_defs_loaded() -> void:
-	assert_eq(db.units.size(), 10)
-	assert_eq(db.memories.size(), 8)
+	assert_eq(db.units.size(), 16)
+	assert_eq(db.memories.size(), 14)
 	assert_eq(db.encounters.size(), 15)
-	assert_eq(db.abilities.size(), 10)
+	assert_eq(db.abilities.size(), 16)
 	assert_eq(db.events.size(), 8)
-	assert_eq(db.spells.size(), 7)
+	assert_eq(db.spells.size(), 10)
 	assert_eq(db.orders.size(), 3)
 	assert_eq(db.upgrades.size(), 7)
 	for u: UnitDef in db.units.values():

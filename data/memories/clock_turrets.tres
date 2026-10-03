@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MemoryCardDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/memory_card_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"clock_turrets"
+name_key = "MEM_CLOCK_TURRETS"
+kind = 0
+unit_id = &"clock_turret"
+count = 7
+max_durability = 4
+spell_id = &"barrier_spell"
+upgrade_id = &"up_shots"

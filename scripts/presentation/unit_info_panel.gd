@@ -64,7 +64,7 @@ func show_unit(db: DefsDB, u: UnitState, header: String, header_color: Color = U
 	if u == null:
 		return
 	var snapshot := [u.uid, u.def_id, u.count, u.top_hp, u.shots_left, u.retaliated, u.defending, u.waited,
-			u.ability_cd, u.statuses.duplicate(), u.defense, u.attack, u.speed, header, Settings.detailed]
+			u.ability_cd, u.statuses.duplicate(), u.defense, u.attack, u.speed, header, Settings.detailed, u.illusion]
 	if snapshot == _shown:
 		return
 	_shown = snapshot
@@ -175,6 +175,12 @@ static func chips_of(db: DefsDB, u: UnitState) -> Array:
 		list.append([UnitGlyphs.ICON_ORDER, "+2", UiKit.ACCENT, t.call("ORDER_ADVANCE"), t.call("STATUS_ADVANCE")])
 	if u.fury > 0:
 		list.append([UnitGlyphs.ICON_MELEE, "+%d" % u.fury, UiKit.DANGER, t.call("CHIP_ASH_FURY"), t.call("STATUS_ASH_FURY")])
+	if u.illusion:
+		list.append([UnitGlyphs.ICON_MARK, t.call("CHIP_ILLUSION"), Color(0.8, 0.8, 1.0), t.call("CHIP_ILLUSION"), t.call("STATUS_ILLUSION")])
+	if u.speed <= 0:
+		list.append([UnitGlyphs.ICON_SPEED, t.call("CHIP_IMMOBILE"), UiKit.MUTED, t.call("CHIP_IMMOBILE"), t.call("STATUS_IMMOBILE")])
+	if u.construct:
+		list.append([UnitGlyphs.ICON_ARMOR, "", UiKit.STAT_COLOR, t.call("CHIP_CONSTRUCT"), t.call("STATUS_CONSTRUCT")])
 	return list
 
 

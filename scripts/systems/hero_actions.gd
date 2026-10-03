@@ -14,6 +14,10 @@ const CHAIN_SPELL := &"chain_spell"
 const RUST_ARMOR := &"rust_armor"
 const SHARD_RAIN := &"shard_rain"
 const ECHO_SPELL := &"echo_spell"
+# Спринт 4, этап B.
+const WHIRLPOOL := &"whirlpool"
+const BARRIER := &"barrier_spell"
+const MIRAGE := &"mirage"
 
 const CHAIN_FACTORS: Array[float] = [0.5, 0.25]
 const NO_HEX := Vector2i(-1, -1)
@@ -21,11 +25,11 @@ const NO_HEX := Vector2i(-1, -1)
 
 static func target_kind(id: StringName) -> Targeting.Kind:
 	match id:
-		ADVANCE, CLOSE_RANKS, ROYAL, HUNGER, RUST_ARMOR:
+		ADVANCE, CLOSE_RANKS, ROYAL, HUNGER, RUST_ARMOR, MIRAGE:
 			return Targeting.Kind.ALLY
 		ASH_RECORD, CHAIN_SPELL:
 			return Targeting.Kind.ENEMY
-		SALT_WALL, SHARD_RAIN:
+		SALT_WALL, SHARD_RAIN, WHIRLPOOL, BARRIER:
 			return Targeting.Kind.HEX
 	return Targeting.Kind.NONE
 
@@ -76,12 +80,14 @@ static func validate(state: BattleState, action: BattleAction) -> bool:
 			return _is_side(t, UnitState.Side.ENEMY)
 		HUNGER, RUST_ARMOR:
 			return _is_side(t, UnitState.Side.PLAYER)
-		SALT_WALL:
+		SALT_WALL, BARRIER:
 			if not state.is_free(action.dest):
 				return false
 			return action.dest2 == NO_HEX or (HexGrid.are_adjacent(action.dest, action.dest2) and state.is_free(action.dest2))
-		SHARD_RAIN:
+		SHARD_RAIN, WHIRLPOOL:
 			return state.grid.in_bounds(action.dest)
+		MIRAGE:
+			return _is_side(t, UnitState.Side.PLAYER) and not t.illusion and Abilities.illusion_hex(state, t, t) != NO_HEX
 		ECHO_SPELL:
 			return true
 	return false
@@ -129,10 +135,16 @@ static func apply(state: BattleState, action: BattleAction, events: Array[Battle
 		RUST_ARMOR:
 			t.defense += power
 			BattleResolver.add_status(t, UnitState.STATUS_RUST_ARMOR, UnitState.PERMANENT, events)
-		SALT_WALL:
+		SALT_WALL, BARRIER:
 			BattleResolver.add_temp_obstacle(state, action.dest, power, events)
 			if action.dest2 != NO_HEX:
 				BattleResolver.add_temp_obstacle(state, action.dest2, power, events)
+		WHIRLPOOL:
+			for h in Abilities.flood_area(state, action.dest):
+				state.water[h] = power
+			events.append(BattleEvent.new(BattleEvent.OBSTACLE_ADDED, {"hex": action.dest, "rounds": power, "water": true}))
+		MIRAGE:
+			Abilities.summon_illusion(state, t, Abilities.illusion_hex(state, t, t), power / 100.0, events)
 		SHARD_RAIN:
 			var victims: Array[UnitState] = state.neighbors_of(action.dest)
 			var center := state.unit_at(action.dest)

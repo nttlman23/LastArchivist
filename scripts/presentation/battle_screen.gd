@@ -61,6 +61,8 @@ func _ready() -> void:
 	_layout()
 
 	var events := BattleResolver.begin(state)
+	# Начало боя может добавить стеки (иллюзия «Масок») — показать их сразу.
+	view.sync()
 	_log_events(events)
 	_run_turns()
 
@@ -484,7 +486,7 @@ func _target_at(local: Vector2, hex: Vector2i) -> BattleAction:
 			if unit and a.target_uid == unit.uid:
 				return a
 		elif a.dest == hex:
-			if a.ref_id == HeroActions.SALT_WALL:
+			if a.ref_id == HeroActions.SALT_WALL or a.ref_id == HeroActions.BARRIER:
 				# Вторая клетка стены — в сторону курсора.
 				var copy := BattleAction.spell(a.slot, a.ref_id, -1, hex,
 						HeroActions.salt_wall_second(state, hex, local - view.hex_center(hex)))
@@ -659,6 +661,8 @@ func _log_events(events: Array[BattleEvent]) -> void:
 				line = tr("LOG_HEALED") % [_name(e.data["uid"]), int(e.data["amount"]), int(e.data["revived"])]
 			BattleEvent.PUSHED:
 				line = tr("LOG_PUSHED") % _name(e.data["uid"])
+			BattleEvent.SUMMONED:
+				line = tr("LOG_SUMMONED") % _name(e.data["uid"])
 			BattleEvent.ABILITY_USED:
 				line = tr("LOG_ABILITY") % [_name(e.data["uid"]), tr(db.ability(e.data["ability"]).name_key)]
 			BattleEvent.HERO_ACTED:

@@ -4,18 +4,18 @@
 
 [resource]
 script = ExtResource("1")
-id = &"rust_sentinel"
-name_key = "UNIT_RUST_SENTINEL"
-hp = 35
-attack = 6
-defense = 11
-dmg_min = 3
-dmg_max = 6
-speed = 3
-initiative = 5
+id = &"tide_warden"
+name_key = "UNIT_TIDE_WARDEN"
+hp = 22
+attack = 7
+defense = 9
+dmg_min = 2
+dmg_max = 4
+speed = 4
+initiative = 7
 is_ranged = false
 shots = 0
 is_flying = false
-ability_id = &"cover"
-construct = true
-color = Color(0.7, 0.4, 0.25, 1)
+ability_id = &"undertow"
+construct = false
+color = Color(0.3, 0.6, 0.85, 1)

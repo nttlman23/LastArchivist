@@ -24,6 +24,7 @@ static func start_round(state: BattleState) -> Array[BattleEvent]:
 			u.ability_cd -= 1
 		_tick_statuses(u, events)
 	_tick_obstacles(state, events)
+	SchoolPassives.on_round_start(state, events)
 	state.hero_actions_left = BattleState.HERO_ACTIONS_PER_ROUND
 	order.sort_custom(_main_phase_before)
 	state.queue.clear()
@@ -48,6 +49,13 @@ static func _tick_statuses(u: UnitState, events: Array[BattleEvent]) -> void:
 
 
 static func _tick_obstacles(state: BattleState, events: Array[BattleEvent]) -> void:
+	for hex in state.water.keys():
+		var w: int = state.water[hex] - 1
+		if w <= 0:
+			state.water.erase(hex)
+			events.append(BattleEvent.new(BattleEvent.OBSTACLE_EXPIRED, {"hex": hex, "water": true}))
+		else:
+			state.water[hex] = w
 	for hex in state.temp_obstacles.keys():
 		var left: int = state.temp_obstacles[hex] - 1
 		if left <= 0:

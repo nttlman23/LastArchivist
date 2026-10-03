@@ -10,6 +10,7 @@ const DEFEND_MULTIPLIER := 1.3
 const LONG_RANGE := 5
 const HALF := 0.5
 const MARK_BONUS := 1.5
+const ILLUSION_DAMAGE := 2.0
 ## При большом стеке бросаем один раз и умножаем, как в HoMM3.
 const SUM_ROLL_LIMIT := 10
 
@@ -35,6 +36,8 @@ static func multiplier(attacker: UnitState, defender: UnitState, ranged: bool) -
 		m *= HALF
 	if defender.has_status(UnitState.STATUS_MARKED):
 		m *= MARK_BONUS
+	if defender.illusion:
+		m *= ILLUSION_DAMAGE
 	return m
 
 

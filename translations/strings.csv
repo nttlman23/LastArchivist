@@ -431,3 +431,40 @@ PASSIVE_ASH_SACRIFICE,Пепельная жертва
 PASSIVE_TIDE_CURRENT,Течение
 PASSIVE_SYNOD_REPAIR,Ремонт
 PASSIVE_GARDEN_MASKS,Маски
+UNIT_TIDE_WARDEN,Приливный Страж
+UNIT_DEEP_JELLY,Глубинная Медуза
+UNIT_CLOCK_TURRET,Заводная Турель
+UNIT_BRASS_TINKER,Медный Ремонтник
+UNIT_MIRROR_DOUBLE,Зеркальный Двойник
+UNIT_FACE_THIEF,Похититель Лиц
+MEM_TIDE_WARDENS,Приливные Стражи
+MEM_DEEP_JELLIES,Глубинные Медузы
+MEM_CLOCK_TURRETS,Заводные Турели
+MEM_BRASS_TINKERS,Медные Ремонтники
+MEM_MIRROR_DOUBLES,Зеркальные Двойники
+MEM_FACE_THIEVES,Похитители Лиц
+ABIL_UNDERTOW,Отлив
+ABIL_UNDERTOW_DESC,Вместо хода: притягивает врага с прямой в 2–4 клетках вплотную к себе и бьёт без ответа.
+ABIL_FLOOD,Разлив
+ABIL_FLOOD_DESC,Вместо хода: клетка в 4 клетках и соседние — вязкая вода на 2 раунда. Вошедший в воду заканчивает перемещение (летунам не мешает).
+ABIL_OVERCLOCK,Перегрев
+ABIL_OVERCLOCK_DESC,Вместо хода: два выстрела подряд; если цель пала после первого — второй по ближайшему врагу.
+ABIL_TINKER,Механик
+ABIL_TINKER_DESC,Вместо хода: починить союзный конструкт на 40 ОЗ или поставить барьер из двух клеток на 3 раунда рядом с собой.
+ABIL_REFLECT,Отражение
+ABIL_REFLECT_DESC,Вместо хода: иллюзия союзного отряда с половиной численности. Иллюзии получают двойной урон и исчезают после боя.
+ABIL_STEAL,Кража
+ABIL_STEAL_DESC,Вместо хода: применяет способность выбранного врага от своего лица по лучшей цели.
+SPELL_WHIRLPOOL,Водоворот
+SPELL_WHIRLPOOL_DESC,Клетка и соседние — вязкая вода на 2 раунда.
+SPELL_BARRIER_SPELL,Барьер
+SPELL_BARRIER_SPELL_DESC,Стена на двух соседних клетках на 3 раунда.
+SPELL_MIRAGE,Мираж
+SPELL_MIRAGE_DESC,Иллюзия союзного отряда с половиной численности.
+CHIP_ILLUSION,Иллюзия
+STATUS_ILLUSION,"Иллюзия: получает двойной урон, без способностей, исчезает после боя, карты не имеет."
+CHIP_IMMOBILE,Неподвижен
+STATUS_IMMOBILE,Не перемещается: стреляет или бьёт соседей с места.
+CHIP_CONSTRUCT,Конструкт
+STATUS_CONSTRUCT,Конструкт Синода: его чинят «Механик» и пассивка «Ремонт».
+LOG_SUMMONED,Появляется иллюзия: %s

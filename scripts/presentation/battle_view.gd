@@ -31,6 +31,8 @@ const THREAT_COLOR := Color(1.0, 0.35, 0.3, 0.8)
 const TARGET_COLOR := Color(1, 0.3, 0.25)
 const BADGE_BG := Color(0.1, 0.11, 0.15)
 const TEMP_WALL_COLOR := Color(0.62, 0.66, 0.72)
+const WATER_COLOR := Color(0.25, 0.45, 0.75, 0.55)
+const ILLUSION_ALPHA := 0.55
 const TARGET_HEX_COLOR := Color(0.62, 0.4, 0.95, 0.45)
 const AFFECTED_ALLY := Color(1, 0.3, 0.25)
 const AFFECTED_ENEMY := Color(0.95, 0.8, 0.4)
@@ -228,6 +230,7 @@ const EVENT_SOUNDS := {
 	BattleEvent.ABILITY_USED: &"ability",
 	BattleEvent.ERASED: &"erase",
 	BattleEvent.RIFT_MARKED: &"order",
+	BattleEvent.SUMMONED: &"spell",
 }
 
 
@@ -279,6 +282,13 @@ func play(events: Array[BattleEvent]) -> void:
 					await get_tree().create_timer(0.35).timeout
 			BattleEvent.OBSTACLE_ADDED, BattleEvent.OBSTACLE_EXPIRED:
 				_overlay.queue_redraw()
+			BattleEvent.SUMMONED:
+				# Новый стек: добавить в отображение и проявить.
+				var uid: int = e.data["uid"]
+				var u := state.get_unit(uid)
+				_pos[uid] = hex_center(u.hex)
+				_count[uid] = u.count
+				await _tween_value(func(v: float) -> void: _alpha[uid] = v, 0.0, 1.0, FADE_TIME, _units)
 			BattleEvent.RIFT_MARKED:
 				_float_text(int(e.data["uid"]), event_label.call(e), RIFT_COLOR, -26.0)
 				_units.queue_redraw()
@@ -391,6 +401,8 @@ func _draw_overlay(ci: CanvasItem) -> void:
 		fills.add(PackedVector2Array([c + Vector2(-26, 14), c + Vector2(-26, -10), c + Vector2(26, -10), c + Vector2(26, 14)]), wall_dark)
 		for x: float in [-26.0, -9.0, 8.0]:
 			fills.add(PackedVector2Array([c + Vector2(x, -18), c + Vector2(x + 10, -18), c + Vector2(x + 10, -10), c + Vector2(x, -10)]), wall_dark)
+	for hex in state.water:
+		fills.add(_hex_fill[hex], WATER_COLOR)
 	for hex in targets:
 		fills.add(_hex_fill[hex], TARGET_HEX_COLOR)
 	for hex in reachable:
@@ -455,7 +467,7 @@ func _rock(c: Vector2) -> PackedVector2Array:
 
 func _draw_unit(ci: CanvasItem, u: UnitState) -> void:
 	var c: Vector2 = _pos[u.uid]
-	var alpha: float = _alpha[u.uid]
+	var alpha: float = _alpha[u.uid] * (ILLUSION_ALPHA if u.illusion else 1.0)
 	var side_color := UiKit.PLAYER_COLOR if u.side == UnitState.Side.PLAYER else UiKit.ENEMY_COLOR
 	var body := db.unit(u.def_id).color
 	if _flash.has(u.uid):

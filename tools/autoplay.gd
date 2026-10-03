@@ -1,7 +1,7 @@
 extends Node
 ## Сквозной прогон экспедиции через настоящие экраны: карта → острова (бой, событие, лавка, гавань) → разлом → итог.
 ## За игрока: AI отрядов и HeroAi в бою, MapAi на карте; после боя чередуются формы переработки.
-## Запуск: godot --path . res://tools/autoplay.tscn [-- seed]  (можно с --headless)
+## Запуск: godot --path . res://tools/autoplay.tscn [-- seed [school_id]]  (можно с --headless)
 ## Печатает AUTOPLAY OK/FAIL и путь забега.
 
 const TIMEOUT_SEC := 900.0
@@ -29,7 +29,9 @@ func _run() -> void:
 	SaveService.current_path = "user://autoplay_save.json"
 	Game.profile = ProfileState.new()
 	Settings.hints = false
-	Game.run = RunState.create(Game.defs, seed_value)
+	var school := StringName(args[1]) if args.size() > 1 else DefsDB.DEFAULT_SCHOOL
+	_log.append("школа: %s" % school)
+	Game.run = RunState.create(Game.defs, seed_value, school, Game.profile)
 	SaveService.save_run(Game.run)
 	Game.goto(Game.SCENE_MAP)
 	while _elapsed() < TIMEOUT_SEC:

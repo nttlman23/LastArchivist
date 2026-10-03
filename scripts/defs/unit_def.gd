@@ -15,4 +15,6 @@ extends Resource
 @export var shots: int = 0
 @export var is_flying := false
 @export var ability_id: StringName
+## Конструкт Машинного Синода (пассивка «Ремонт»).
+@export var construct := false
 @export var color := Color.WHITE

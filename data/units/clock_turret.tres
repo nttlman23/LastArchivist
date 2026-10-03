@@ -4,18 +4,18 @@
 
 [resource]
 script = ExtResource("1")
-id = &"rust_sentinel"
-name_key = "UNIT_RUST_SENTINEL"
-hp = 35
-attack = 6
-defense = 11
+id = &"clock_turret"
+name_key = "UNIT_CLOCK_TURRET"
+hp = 30
+attack = 8
+defense = 9
 dmg_min = 3
-dmg_max = 6
-speed = 3
-initiative = 5
-is_ranged = false
-shots = 0
+dmg_max = 5
+speed = 0
+initiative = 6
+is_ranged = true
+shots = 12
 is_flying = false
-ability_id = &"cover"
+ability_id = &"overclock"
 construct = true
-color = Color(0.7, 0.4, 0.25, 1)
+color = Color(0.72, 0.62, 0.4, 1)

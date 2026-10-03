@@ -6,7 +6,9 @@ extends RefCounted
 
 ## Начинает бой: первый раунд и первый ход.
 static func begin(state: BattleState) -> Array[BattleEvent]:
-	var events := TurnManager.start_round(state)
+	var events: Array[BattleEvent] = []
+	SchoolPassives.on_battle_start(state, events)
+	events.append_array(TurnManager.start_round(state))
 	events.append_array(TurnManager.advance(state))
 	return events
 
@@ -137,6 +139,8 @@ static func strike(state: BattleState, attacker: UnitState, target: UnitState, r
 
 ## Фиксированный урон без атаки (заклинания): защита не учитывается, ответа нет.
 static func deal_damage(target: UnitState, amount: int, source: StringName, events: Array[BattleEvent]) -> void:
+	if target.illusion:
+		amount = roundi(amount * DamageCalc.ILLUSION_DAMAGE)
 	var killed := target.take_damage(amount)
 	events.append(BattleEvent.new(BattleEvent.DAMAGED, {"uid": target.uid, "damage": amount, "killed": killed, "source": source}))
 	if not target.is_alive():

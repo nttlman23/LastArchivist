@@ -13,6 +13,8 @@ var grid := HexGrid.new()
 var obstacles: Dictionary[Vector2i, bool] = {}
 ## Временные стены: клетка -> оставшиеся раунды.
 var temp_obstacles: Dictionary[Vector2i, int] = {}
+## Вязкая вода (Орден Приливов): вошедший стек заканчивает перемещение. Клетка -> раунды.
+var water: Dictionary[Vector2i, int] = {}
 var units: Array[UnitState] = []
 var round_number := 0
 ## uid стеков, которые ещё ходят в этом раунде (основная фаза).
@@ -77,6 +79,12 @@ static func create(db: DefsDB, encounter: EncounterDef, codex: CodexState, selec
 			s.boss_uid = e.uid
 			e.is_boss = true
 	return s
+
+
+## Новый uid для стека, появившегося в бою (иллюзии).
+func take_uid() -> int:
+	_next_uid += 1
+	return _next_uid - 1
 
 
 func add_unit(def: UnitDef, side: int, count: int, hex: Vector2i) -> UnitState:
@@ -176,6 +184,9 @@ func to_dict() -> Dictionary:
 	var temp: Array = []
 	for h in temp_obstacles:
 		temp.append([h.x, h.y, temp_obstacles[h]])
+	var wet: Array = []
+	for h in water:
+		wet.append([h.x, h.y, water[h]])
 	var us: Array = []
 	for u in units:
 		us.append(u.to_dict())
@@ -189,7 +200,7 @@ func to_dict() -> Dictionary:
 	for id in ability_cooldowns:
 		cds[String(id)] = ability_cooldowns[id]
 	return {
-		"width": grid.width, "height": grid.height, "obstacles": obs, "temp_obstacles": temp, "units": us,
+		"width": grid.width, "height": grid.height, "obstacles": obs, "temp_obstacles": temp, "water": wet, "units": us,
 		"round": round_number, "queue": queue.duplicate(), "wait_queue": wait_queue.duplicate(),
 		"active_uid": active_uid, "outcome": outcome, "max_rounds": max_rounds,
 		"objective": String(objective),
@@ -207,6 +218,8 @@ static func from_dict(d: Dictionary) -> BattleState:
 		s.obstacles[Vector2i(int(h[0]), int(h[1]))] = true
 	for h: Array in d["temp_obstacles"]:
 		s.temp_obstacles[Vector2i(int(h[0]), int(h[1]))] = int(h[2])
+	for h: Array in d.get("water", []):
+		s.water[Vector2i(int(h[0]), int(h[1]))] = int(h[2])
 	for ud: Dictionary in d["units"]:
 		s.units.append(UnitState.from_dict(ud))
 	s.round_number = int(d["round"])

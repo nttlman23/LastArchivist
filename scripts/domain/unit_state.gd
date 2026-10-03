@@ -44,6 +44,12 @@ var ability_cd := 0
 var is_boss := false
 ## Стаки «Пепельной жертвы» (+атака за погибших союзников).
 var fury := 0
+## Конструкт (Машинный Синод).
+var construct := false
+## Иллюзия (Сад Лиц): двойной урон, без карты, исчезает после боя.
+var illusion := false
+## Способность, временно заимствованная «Кражей».
+var borrowed_ability: StringName
 
 var retaliated := false
 var waited := false
@@ -71,6 +77,7 @@ static func from_def(def: UnitDef, p_uid: int, p_side: int, p_count: int, p_hex:
 	u.is_flying = def.is_flying
 	u.shots_left = def.shots
 	u.ability_id = def.ability_id
+	u.construct = def.construct
 	return u
 
 
@@ -95,6 +102,15 @@ func has_status(id: StringName) -> bool:
 
 func ability_ready() -> bool:
 	return ability_id != &"" and ability_cd <= 0
+
+
+## Лечит без воскрешения: не выше нынешней численности.
+func heal_no_revive(amount: int) -> int:
+	if not is_alive():
+		return 0
+	var before := total_hp()
+	_set_total_hp(mini(before + amount, count * hp))
+	return total_hp() - before
 
 
 ## Наносит урон стеку, возвращает число погибших существ.
@@ -136,7 +152,7 @@ func to_dict() -> Dictionary:
 		"hex": [hex.x, hex.y], "count": count, "start_count": start_count, "top_hp": top_hp, "card_index": card_index,
 		"hp": hp, "attack": attack, "defense": defense, "dmg_min": dmg_min, "dmg_max": dmg_max,
 		"speed": speed, "initiative": initiative, "is_ranged": is_ranged, "is_flying": is_flying,
-		"shots_left": shots_left, "ability_id": String(ability_id), "ability_cd": ability_cd, "is_boss": is_boss, "fury": fury,
+		"shots_left": shots_left, "ability_id": String(ability_id), "ability_cd": ability_cd, "is_boss": is_boss, "fury": fury, "construct": construct, "illusion": illusion,
 		"retaliated": retaliated, "waited": waited, "defending": defending, "statuses": st,
 	}
 
@@ -166,6 +182,8 @@ static func from_dict(d: Dictionary) -> UnitState:
 	u.ability_cd = int(d["ability_cd"])
 	u.is_boss = bool(d.get("is_boss", false))
 	u.fury = int(d.get("fury", 0))
+	u.construct = bool(d.get("construct", false))
+	u.illusion = bool(d.get("illusion", false))
 	u.retaliated = bool(d["retaliated"])
 	u.waited = bool(d["waited"])
 	u.defending = bool(d["defending"])

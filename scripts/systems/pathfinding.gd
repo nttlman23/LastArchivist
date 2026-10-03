@@ -33,6 +33,8 @@ static func bfs(state: BattleState, start: Vector2i, max_steps: int = -1) -> Res
 		var d := res.dist[cur]
 		if max_steps >= 0 and d >= max_steps:
 			continue
+		if cur != start and state.water.has(cur):
+			continue
 		for n in state.grid.neighbors(cur):
 			if res.dist.has(n) or not state.is_free(n):
 				continue

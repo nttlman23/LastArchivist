@@ -29,7 +29,7 @@ static func choose_action(state: BattleState, uid: int) -> BattleAction:
 	var best: BattleAction = null
 	var best_score := 0.0
 	for c: Array in candidates:
-		if float(c[1]) > best_score:
+		if float(c[1]) > best_score and BattleResolver.validate(state, c[0]):
 			best_score = c[1]
 			best = c[0]
 	if best:
