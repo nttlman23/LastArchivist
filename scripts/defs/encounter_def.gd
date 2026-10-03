@@ -28,3 +28,12 @@ extends Resource
 @export var reinforce_ids: Array[StringName] = []
 @export var reinforce_counts: Array[int] = []
 @export var reinforce_rounds: Array[int] = []
+
+# Второй акт (SPEC_SPRINT7): номер акта, постоянная вода, течения, собственный командир босса.
+@export var act: int = 1
+@export var water_hexes: Array[Vector2i] = []
+## Течения: клетки и направления (0..5, как HexGrid.CUBE_DIRS) — параллельные массивы.
+@export var current_hexes: Array[Vector2i] = []
+@export var current_dirs: Array[int] = []
+## Босс со своими намерениями (CommanderDef); не зависит от сложности.
+@export var boss_commander: StringName

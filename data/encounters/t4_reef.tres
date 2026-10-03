@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"t4_reef"
+name_key = "ENC_T4_REEF"
+unit_ids = Array[StringName]([&"siren", &"ink_kraken", &"deep_eel"])
+counts = Array[int]([4, 2, 10])
+obstacles = Array[Vector2i]([])
+tier = 4
+elite = false
+boss = false
+act = 2
+water_hexes = Array[Vector2i]([Vector2i(3, 3), Vector2i(3, 5), Vector2i(7, 3), Vector2i(7, 5)])
+current_hexes = Array[Vector2i]([Vector2i(5, 1), Vector2i(5, 7)])
+current_dirs = Array[int]([0, 3])

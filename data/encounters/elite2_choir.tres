@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"elite2_choir"
+name_key = "ENC_ELITE2_CHOIR"
+unit_ids = Array[StringName]([&"siren", &"drowned_scribe", &"deep_eel"])
+counts = Array[int]([7, 10, 12])
+obstacles = Array[Vector2i]([])
+tier = 5
+elite = true
+boss = false
+act = 2
+water_hexes = Array[Vector2i]([Vector2i(4, 4), Vector2i(6, 4)])
+current_hexes = Array[Vector2i]([Vector2i(5, 2), Vector2i(5, 6)])
+current_dirs = Array[int]([0, 0])

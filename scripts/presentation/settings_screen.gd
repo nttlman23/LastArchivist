@@ -11,6 +11,7 @@ func _ready() -> void:
 	box.add_child(_toggle(tr("SETTINGS_DETAILED"), tr("SETTINGS_DETAILED_TIP"), Settings.detailed, Settings.set_detailed))
 	box.add_child(_toggle(tr("SETTINGS_HINTS"), tr("SETTINGS_HINTS_TIP"), Settings.hints, Settings.set_hints))
 	box.add_child(_toggle(tr("SETTINGS_LARGE_ICONS"), tr("SETTINGS_LARGE_ICONS_TIP"), Settings.large_icons, Settings.set_large_icons))
+	box.add_child(_toggle(tr("SETTINGS_SHOW_INTENTS"), tr("SETTINGS_SHOW_INTENTS_TIP"), Settings.show_intents, Settings.set_show_intents))
 	box.add_child(_speed_row())
 	box.add_child(_toggle(tr("SETTINGS_SHAKE"), tr("SETTINGS_SHAKE_TIP"), Settings.screen_shake, Settings.set_screen_shake))
 	box.add_child(_toggle(tr("SETTINGS_EFFECTS"), tr("SETTINGS_EFFECTS_TIP"), Settings.effects_full, Settings.set_effects_full))

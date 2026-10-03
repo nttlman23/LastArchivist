@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"t4_shallows"
+name_key = "ENC_T4_SHALLOWS"
+unit_ids = Array[StringName]([&"abyss_warden", &"drowned_scribe", &"deep_eel"])
+counts = Array[int]([3, 7, 8])
+obstacles = Array[Vector2i]([])
+tier = 4
+elite = false
+boss = false
+act = 2
+water_hexes = Array[Vector2i]([Vector2i(4, 2), Vector2i(5, 2), Vector2i(4, 6), Vector2i(5, 6)])
+current_hexes = Array[Vector2i]([Vector2i(5, 4), Vector2i(6, 4)])
+current_dirs = Array[int]([3, 3])

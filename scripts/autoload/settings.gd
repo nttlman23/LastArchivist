@@ -13,6 +13,8 @@ var detailed := false
 var hints := true
 ## Крупные значки и числа на поле боя (SPEC_SPRINT5 3).
 var large_icons := false
+## Значки намерений врагов постоянно (иначе — по наведению и Alt), SPEC_SPRINT7 7.
+var show_intents := false
 ## Подача (SPEC_SPRINT6 3): скорость анимаций, тряска камеры, полные эффекты (частицы).
 const ANIM_SPEEDS: Array[float] = [1.0, 1.5, 2.0]
 var anim_speed := 1.0
@@ -32,6 +34,12 @@ func set_detailed(value: bool) -> void:
 
 func set_hints(value: bool) -> void:
 	hints = value
+	save_settings()
+	changed.emit()
+
+
+func set_show_intents(value: bool) -> void:
+	show_intents = value
 	save_settings()
 	changed.emit()
 
@@ -66,6 +74,7 @@ func load_settings() -> void:
 		detailed = bool(cfg.get_value(SECTION, "detailed", detailed))
 		hints = bool(cfg.get_value(SECTION, "hints", hints))
 		large_icons = bool(cfg.get_value(SECTION, "large_icons", large_icons))
+		show_intents = bool(cfg.get_value(SECTION, "show_intents", show_intents))
 		anim_speed = float(cfg.get_value(SECTION, "anim_speed", anim_speed))
 		if not ANIM_SPEEDS.has(anim_speed):
 			anim_speed = 1.0
@@ -80,6 +89,7 @@ func save_settings() -> void:
 	cfg.set_value(SECTION, "detailed", detailed)
 	cfg.set_value(SECTION, "hints", hints)
 	cfg.set_value(SECTION, "large_icons", large_icons)
+	cfg.set_value(SECTION, "show_intents", show_intents)
 	cfg.set_value(SECTION, "anim_speed", anim_speed)
 	cfg.set_value(SECTION, "screen_shake", screen_shake)
 	cfg.set_value(SECTION, "effects_full", effects_full)

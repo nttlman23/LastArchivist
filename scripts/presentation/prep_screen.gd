@@ -35,7 +35,7 @@ func _ready() -> void:
 		title = tr("PREP_TITLE_BATTLE") % [encounter.tier, tr(encounter.name_key)]
 	box.add_child(UiKit.label(title, 40, UiKit.DANGER if encounter.boss else UiKit.ACCENT))
 	if encounter.boss:
-		box.add_child(UiKit.label(tr("PREP_RIFT_WARNING"), 0, UiKit.DANGER))
+		box.add_child(UiKit.label(tr("PREP_RIFT_WARNING" if encounter.act == 1 else "PREP_ABYSS_WARNING"), 0, UiKit.DANGER))
 	var enemies: Array[String] = []
 	for i in encounter.unit_ids.size():
 		enemies.append("%d × %s" % [Difficulty.enemy_count(run.difficulty, encounter.counts[i]), UiKit.unit_name(db, encounter.unit_ids[i])])

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="UnitDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/unit_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"siren"
+name_key = "UNIT_SIREN"
+hp = 20
+attack = 8
+defense = 6
+dmg_min = 4
+dmg_max = 7
+speed = 7
+initiative = 11
+is_ranged = false
+shots = 0
+is_flying = true
+ability_id = &"siren_call"
+color = Color(0.55, 0.78, 0.82, 1)

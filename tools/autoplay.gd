@@ -46,7 +46,7 @@ func _run() -> void:
 			Game.SCENE_MAP:
 				var id := MapAi.choose_node(Game.defs, Game.run, _rng)
 				var n := Game.run.map.node(id)
-				_log.append("слой %d: %s" % [n.layer, MapState.NodeType.keys()[n.type]])
+				_log.append("акт %d, слой %d: %s" % [Game.run.act, n.layer, MapState.NodeType.keys()[n.type]])
 				scene._travel(id)
 			Game.SCENE_PREP:
 				scene._on_start()
@@ -65,8 +65,14 @@ func _run() -> void:
 			Game.SCENE_HAVEN:
 				MapAi.haven(Game.defs, Game.run)
 				Game.complete_node()
+			Game.SCENE_CAMP:
+				# Привал: ремонт, если есть что чинить, иначе дар-пассивка.
+				var options := CampOps.options(Game.run)
+				var choice: Dictionary = options[0] if CampOps.reason(Game.defs, Game.run, options[0]) == "" else options[3]
+				_log.append("  привал: %s %s" % [choice["kind"], choice["id"]])
+				scene._choose(choice)
 			Game.SCENE_RUN_END:
-				_log.append("итог: %s, слой %d, побед %d" % ["победа" if Game.run_won else "поражение", Game.run.map.current_layer(), Game.run.battles_won])
+				_log.append("итог: %s, слой %d, побед %d" % ["победа" if Game.run_won else "поражение", Game.run.total_layer(), Game.run.battles_won])
 				_finish(true)
 				return
 		await _wait_scene_change(scene)

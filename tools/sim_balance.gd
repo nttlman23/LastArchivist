@@ -19,6 +19,7 @@ func _init() -> void:
 	for s in db.schools_sorted():
 		profile.unlocked.append(MetaRewards.school_unlock_id(s.id))
 	var won := 0
+	var act2 := 0
 	var layers_sum := 0
 	var res_sum := {RunState.INK: 0, RunState.PARCHMENT: 0, RunState.AETHER: 0}
 	var deaths := {}
@@ -29,13 +30,16 @@ func _init() -> void:
 		var result := _play(run, rng)
 		if result == "won":
 			won += 1
+		if run.act >= 2:
+			act2 += 1
 		else:
 			deaths[result] = deaths.get(result, 0) + 1
-		layers_sum += run.map.current_layer()
+		layers_sum += run.total_layer()
 		for id in res_sum:
 			res_sum[id] += run.resources[id]
 	print("Школа: %s, сложность: %s" % [school_id, difficulty])
-	print("Экспедиций: %d, пройдено полностью: %d (%.0f%%), средний слой %.1f" % [runs, won, 100.0 * won / runs, float(layers_sum) / runs])
+	print("Экспедиций: %d, дошли до 2-го акта: %d (%.0f%%), пройдено полностью: %d (%.0f%%), средний слой %.1f" % [
+		runs, act2, 100.0 * act2 / runs, won, 100.0 * won / runs, float(layers_sum) / runs])
 	print("Поражения: %s" % deaths)
 	for key in stats.keys():
 		var s: Array = stats[key]
@@ -53,10 +57,19 @@ func _play(run: RunState, rng: RandomNumberGenerator) -> String:
 		match node.type:
 			MapState.NodeType.BATTLE, MapState.NodeType.ELITE, MapState.NodeType.RIFT:
 				var key := "rift" if node.type == MapState.NodeType.RIFT else ("elite" if node.type == MapState.NodeType.ELITE else "tier%d" % db.encounter(node.content).tier)
+				if run.act >= 2 and key in ["rift", "elite"]:
+					key += "2"
 				if not _battle(run, rng, key, node.type == MapState.NodeType.ELITE):
 					return "бой:" + key
 				if node.type == MapState.NodeType.RIFT:
-					return "won"
+					if run.act >= 2:
+						return "won"
+					# Привал: ремонт, если есть что чинить, иначе пассивка-дар.
+					var options := CampOps.options(run)
+					var choice: Dictionary = options[0] if CampOps.reason(db, run, options[0]) == "" else options[3]
+					CampOps.apply(db, run, choice)
+					MapActions.begin_act(db, run, 2)
+					continue
 			MapState.NodeType.EVENT:
 				var r := MapAi.event(db, run, id, rng)
 				if r.battle_tier > 0:

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="UnitDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/unit_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"abyss_lord"
+name_key = "UNIT_ABYSS_LORD"
+hp = 320
+attack = 14
+defense = 12
+dmg_min = 18
+dmg_max = 26
+speed = 3
+initiative = 8
+is_ranged = false
+shots = 0
+is_flying = false
+ability_id = &"undertow"
+color = Color(0.15, 0.35, 0.45, 1)

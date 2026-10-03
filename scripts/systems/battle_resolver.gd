@@ -171,6 +171,7 @@ static func add_temp_obstacle(state: BattleState, hex: Vector2i, rounds: int, ev
 static func check_end(state: BattleState, events: Array[BattleEvent]) -> bool:
 	if state.outcome != BattleState.Outcome.NONE:
 		return true
+	BossRule.check(state, events)
 	var outcome := ObjectiveRule.evaluate(state)
 	if outcome == BattleState.Outcome.NONE:
 		return false

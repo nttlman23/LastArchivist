@@ -14,6 +14,7 @@ const SCENE_SCHOOL := "res://scenes/school/school.tscn"
 const SCENE_META := "res://scenes/meta/meta.tscn"
 const SCENE_SETTINGS := "res://scenes/settings/settings.tscn"
 const SCENE_CHRONICLE := "res://scenes/chronicle/chronicle.tscn"
+const SCENE_CAMP := "res://scenes/camp/camp.tscn"
 
 const FONT_SIZE := 22
 
@@ -105,6 +106,14 @@ func new_run(school_id: StringName = DefsDB.DEFAULT_SCHOOL, difficulty: StringNa
 	goto(SCENE_MAP)
 
 
+## Выбор на привале и начало второго акта.
+func leave_camp(option: Dictionary) -> void:
+	CampOps.apply(defs, run, option)
+	MapActions.begin_act(defs, run, 2, profile)
+	SaveService.save_run(run)
+	goto(SCENE_MAP)
+
+
 func save_profile() -> void:
 	profile.save(profile_path)
 
@@ -118,7 +127,7 @@ func continue_run() -> bool:
 	run = SaveService.load_run()
 	if run == null:
 		return false
-	goto(SCENE_MAP)
+	goto(SCENE_CAMP if run.at_camp else SCENE_MAP)
 	return true
 
 
@@ -176,7 +185,14 @@ func finish_battle(outcome: BattleState.Outcome, spell_charges: Array[int] = [],
 	var encounter := defs.encounter(run.current_encounter_id(defs))
 	last_faded = run.after_battle(defs, selected, erased)
 	if encounter.boss:
-		_end_run(true)
+		if run.act == 1:
+			# Разлом закрыт — привал перед вторым актом (SPEC_SPRINT7 3).
+			MapActions.complete(run)
+			run.at_camp = true
+			SaveService.save_run(run)
+			goto(SCENE_CAMP)
+		else:
+			_end_run(true)
 		return
 	last_rewards = MapActions.battle_rewards(encounter)
 	var bonus := BattleSetup.objective_bonus(run, encounter)

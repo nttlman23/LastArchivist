@@ -39,6 +39,12 @@ const PLATE := Vector2(150, 96)
 const PLATE_GAP := 2.0
 const FLOOR_COLOR := Color(0.16, 0.155, 0.17)
 const FLOOR_SEAM := Color(0.075, 0.075, 0.09)
+## Затопленные хранилища (SPEC_SPRINT7 4): сине-зелёные плиты и гексы.
+const FLOODED_FLOOR := Color(0.1, 0.16, 0.17)
+const FLOODED_SEAM := Color(0.04, 0.07, 0.08)
+const FLOODED_HEX := Color(0.12, 0.18, 0.2)
+const CURRENT_COLOR := Color(0.55, 0.9, 1.0, 0.75)
+const INK_COLOR := Color(0.12, 0.06, 0.18, 0.65)
 const BEVEL_DARK := Color(0, 0, 0, 0.35)
 const HEX_LINE := Color(0.3, 0.33, 0.4)
 const OBSTACLE_COLOR := Color(0.32, 0.27, 0.22)
@@ -378,6 +384,7 @@ const EVENT_SOUNDS := {
 	BattleEvent.ABILITY_USED: &"ability",
 	BattleEvent.ERASED: &"erase",
 	BattleEvent.RIFT_MARKED: &"order",
+	BattleEvent.PHASE_CHANGED: &"erase",
 	BattleEvent.SUMMONED: &"spell",
 	BattleEvent.COMMANDER_ACTED: &"spell",
 	BattleEvent.OBJECTIVE_PROGRESS: &"order",
@@ -457,7 +464,7 @@ func play(events: Array[BattleEvent]) -> void:
 					await _tween_value(func(v: float) -> void: _grow[hex] = v, 0.0, 1.0, 0.25, _overlay, Tween.EASE_OUT, Tween.TRANS_BACK)
 					_grow.erase(hex)
 					_overlay.queue_redraw()
-			BattleEvent.OBSTACLE_EXPIRED:
+			BattleEvent.OBSTACLE_EXPIRED, BattleEvent.ROUND_STARTED:
 				_overlay.queue_redraw()
 			BattleEvent.SUMMONED:
 				# Новый стек: добавить в отображение и проявить.
@@ -484,6 +491,16 @@ func play(events: Array[BattleEvent]) -> void:
 				await _timer(0.45).timeout
 			BattleEvent.OBJECTIVE_PROGRESS:
 				_overlay.queue_redraw()
+			BattleEvent.PHASE_CHANGED:
+				# Вторая фаза босса: поле затапливает, течения разворачиваются.
+				var uid: int = e.data["uid"]
+				if _pos.has(uid):
+					_float_text(uid, event_label.call(e), RIFT_COLOR, -26.0)
+					_ring(_pos[uid], WAVE_COLOR, HEX_SIZE * 4.0)
+					_fx_pool.burst(FxPool.RIPPLE, _pos[uid], WAVE_COLOR)
+				_shake(1.0)
+				_overlay.queue_redraw()
+				await _timer(0.8).timeout
 			BattleEvent.RIFT_MARKED:
 				_float_text(int(e.data["uid"]), event_label.call(e), RIFT_COLOR, -26.0)
 				_redraw_units()
@@ -608,7 +625,8 @@ func _draw_floor(fills: FillBatch) -> void:
 	var to := origin + size + margin
 	var center := origin + size * 0.5
 	var reach := (to - from).length() * 0.5
-	fills.add(PackedVector2Array([from, Vector2(to.x, from.y), to, Vector2(from.x, to.y)]), FLOOR_SEAM)
+	var flooded := state.biome == &"flooded"
+	fills.add(PackedVector2Array([from, Vector2(to.x, from.y), to, Vector2(from.x, to.y)]), FLOODED_SEAM if flooded else FLOOR_SEAM)
 	# Плиты, целиком скрытые под гексами, не рисуются.
 	var hidden := Rect2(origin + Vector2.ONE * HEX_SIZE, size - Vector2.ONE * HEX_SIZE * 2.0)
 	var row := 0
@@ -617,7 +635,7 @@ func _draw_floor(fills: FillBatch) -> void:
 		var x := from.x - (PLATE.x * 0.5 if row % 2 == 1 else 0.0)
 		while x < to.x:
 			var h := absi(hash(Vector2i(int(x), int(y)))) % 1000 / 1000.0
-			var col := FLOOR_COLOR.lightened(h * 0.12).darkened((1.0 - h) * 0.1)
+			var col := (FLOODED_FLOOR if flooded else FLOOR_COLOR).lightened(h * 0.12).darkened((1.0 - h) * 0.1)
 			# Края пола уходят в темноту — вместо виньетки.
 			var fade := clampf((Vector2(x, y) + PLATE * 0.5 - center).length() / reach, 0.0, 1.0)
 			col = col.lerp(UiKit.BG_COLOR, smoothstep(0.45, 1.0, fade))
@@ -639,7 +657,7 @@ func _draw_board(ci: CanvasItem) -> void:
 	for hex in _hex_fill:
 		var pts := _hex_fill[hex]
 		var c := hex_center(hex)
-		fills.add(pts, OBSTACLE_COLOR if state.obstacles.has(hex) else HEX_COLOR)
+		fills.add(pts, OBSTACLE_COLOR if state.obstacles.has(hex) else (FLOODED_HEX if state.biome == &"flooded" else HEX_COLOR))
 		for i in 6:
 			outlines.append(pts[i])
 			outlines.append(pts[(i + 1) % 6])
@@ -708,7 +726,27 @@ func _draw_overlay(ci: CanvasItem) -> void:
 	if not waves.is_empty():
 		ci.draw_multiline(waves, WAVE_COLOR, 2.0)
 	for hex in state.water:
-		_draw_rounds(ci, hex_center(hex) + Vector2(14, -14), state.water[hex], WAVE_COLOR)
+		# Постоянная вода — без счётчика.
+		if state.water[hex] != BattleState.WATER_PERMANENT:
+			_draw_rounds(ci, hex_center(hex) + Vector2(14, -14), state.water[hex], WAVE_COLOR)
+	# Чернильное облако: тёмная клетка, капли, раунды.
+	for hex in state.ink:
+		ci.draw_colored_polygon(_hex_fill[hex], INK_COLOR)
+		for d: Vector2 in [Vector2(-14, -6), Vector2(10, 4), Vector2(-2, 14)]:
+			ci.draw_circle(hex_center(hex) + d, 5.0, Color(0.05, 0.02, 0.08, 0.9))
+		_draw_rounds(ci, hex_center(hex) + Vector2(14, -14), state.ink[hex], Color(0.8, 0.6, 1.0))
+	# Течения: стрелки по направлению — древки одним вызовом, наконечники одной заливкой.
+	if not state.currents.is_empty():
+		var shafts := PackedVector2Array()
+		var heads := FillBatch.new()
+		for hex in state.currents:
+			var c := hex_center(hex)
+			var dir := (hex_center(HexGrid.step(hex, state.currents[hex])) - c).normalized()
+			var tip := c + dir * 18
+			shafts.append_array([c - dir * 18, tip])
+			heads.add(PackedVector2Array([tip + dir * 6, tip - dir * 6 + dir.orthogonal() * 8, tip - dir * 6 - dir.orthogonal() * 8]), CURRENT_COLOR)
+		ci.draw_multiline(shafts, CURRENT_COLOR, 3.0)
+		heads.draw(ci)
 	for hex in state.temp_obstacles:
 		ci.draw_polyline(_hex_inner[hex], TEMP_WALL_COLOR.lightened(0.2), 2.5)
 		_draw_rounds(ci, hex_center(hex) + Vector2(0, 30), state.temp_obstacles[hex], Color.WHITE)
@@ -808,9 +846,14 @@ func _draw_intent(ci: CanvasItem) -> void:
 		if not _hex_fill.has(h):
 			return
 		c = hex_center(h)
+	# Пунктирное кольцо одним вызовом.
+	var dashes := PackedVector2Array()
 	for i in 10:
 		var a0 := TAU * i / 10.0
-		ci.draw_arc(c, UNIT_RADIUS + 14, a0, a0 + TAU / 20.0, 4, color, 3.0)
+		for k in 3:
+			dashes.append(c + Vector2.from_angle(a0 + TAU / 60.0 * k) * (UNIT_RADIUS + 14))
+			dashes.append(c + Vector2.from_angle(a0 + TAU / 60.0 * (k + 1)) * (UNIT_RADIUS + 14))
+	ci.draw_multiline(dashes, color, 3.0)
 	UnitGlyphs.draw_icon(ci, CommanderActions.ICONS.get(id, UnitGlyphs.ICON_SPELL), c + Vector2(UNIT_RADIUS * 0.75, -UNIT_RADIUS - 14), 13, BADGE_BG, color)
 
 
@@ -1013,7 +1056,7 @@ func _draw_unit_badges(ci: CanvasItem, u: UnitState, alpha: float) -> void:
 		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_ABILITY, pos, badge_r, bg, Color(UiKit.ACCENT if ready else UiKit.MUTED, alpha))
 		if not ready:
 			_outlined(ci, pos + Vector2(-8 * k, 6 * k), str(u.ability_cd), HORIZONTAL_ALIGNMENT_CENTER, 16 * k, font_size, fg, alpha)
-	if enemy_intents.has(u.uid):
+	if enemy_intents.has(u.uid) and (Settings.show_intents or intent_arrows_all or u.uid == intent_hover):
 		# Предполагаемое действие врага — снизу справа.
 		var kind: int = enemy_intents[u.uid]["type"]
 		UnitGlyphs.draw_icon(ci, INTENT_ICONS.get(kind, UnitGlyphs.ICON_MOVE), c + Vector2(UNIT_RADIUS + 2, UNIT_RADIUS - 10), badge_r, bg, Color(THREAT_COLOR.lightened(0.2), alpha))

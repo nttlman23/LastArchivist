@@ -23,6 +23,7 @@ const SUMMONED := &"summoned"               # {uid, source} — появилас
 const COMMANDER_INTENT := &"commander_intent"  # {action, target, hex} — намерение на конец раунда
 const COMMANDER_ACTED := &"commander_acted"    # {action, target, hex}
 const OBJECTIVE_PROGRESS := &"objective_progress"  # {count, need} — раунд на точках засчитан
+const PHASE_CHANGED := &"phase_changed"  # {uid, phase} — босс перешёл в новую фазу
 const DAMAGED := &"damaged"                 # {uid, damage, killed, source} — урон без атаки (заклинания, рикошеты)
 
 var type: StringName

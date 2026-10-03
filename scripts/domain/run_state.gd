@@ -3,7 +3,7 @@ extends RefCounted
 ## Состояние забега. Сохраняется на чекпоинтах — при возврате на карту экспедиции.
 
 ## Версия формата; более старые (от SaveMigrations.MIN_VERSION) переводятся миграциями.
-const SAVE_VERSION := 6
+const SAVE_VERSION := 7
 const REWARD_CHOICES := 3
 
 const INK := &"ink"
@@ -30,6 +30,12 @@ var cards_lost := 0
 var school_id := DefsDB.DEFAULT_SCHOOL
 ## Сложность забега (Difficulty).
 var difficulty := Difficulty.NORMAL
+## Акт (SPEC_SPRINT7): 1 — до Разлома, 2 — Затопленные хранилища.
+var act := 1
+## Разлом закрыт, ждёт выбор на привале (сохранение посреди привала возвращает на него).
+var at_camp := false
+## Дары-пассивки привала (CampOps.GIFTS).
+var gifts: Array[StringName] = []
 ## Пул карт наград и лавки (с повторами для веса) и пул событий — фиксируются при старте забега.
 var card_pool: Array[StringName] = []
 var event_pool: Array[StringName] = []
@@ -49,15 +55,20 @@ static func create(db: DefsDB, seed_value: int, school_id: StringName = DefsDB.D
 	for id in RESOURCE_IDS:
 		run.resources[id] = Difficulty.start_resource(difficulty, START_RESOURCES[id])
 	if profile:
-		run.card_pool = MetaRewards.card_pool(db, profile, school)
+		run.card_pool = MetaRewards.card_pool(db, profile, school, 1)
 		run.event_pool = MetaRewards.event_pool(db, profile)
 	else:
-		run.card_pool = db.memory_ids()
+		run.card_pool = db.pool_memory_ids(1)
 		for id in school.favored_memories:
 			run.card_pool.append(id)
 		run.event_pool = db.event_ids()
 	run.map = MapGenerator.generate(db, seed_value, run.event_pool)
 	return run
+
+
+## Слой забега сквозь акты: второй акт продолжает счёт после Разлома (слои 9–16).
+func total_layer() -> int:
+	return (act - 1) * (MapState.LAYERS + 1) + map.current_layer()
 
 
 ## Уникальные карты пула (для случайных карт событий и лавки).
@@ -183,6 +194,9 @@ func to_dict() -> Dictionary:
 		"cards_lost": cards_lost,
 		"school_id": String(school_id),
 		"difficulty": String(difficulty),
+		"act": act,
+		"at_camp": at_camp,
+		"gifts": Array(gifts).map(func(x: StringName) -> String: return String(x)),
 		"card_pool": Array(card_pool).map(func(x: StringName) -> String: return String(x)),
 		"event_pool": Array(event_pool).map(func(x: StringName) -> String: return String(x)),
 	}
@@ -191,7 +205,7 @@ func to_dict() -> Dictionary:
 ## Поля, без которых сохранение не читается.
 const REQUIRED_KEYS: Array[String] = ["run_seed", "codex", "hero", "loot_rng_seed", "loot_rng_state", "map", "resources",
 		"pending_node", "pending_battle", "pending_reward_card", "battles_won", "elites_won", "cards_lost",
-		"school_id", "difficulty", "card_pool", "event_pool"]
+		"school_id", "difficulty", "act", "at_camp", "gifts", "card_pool", "event_pool"]
 
 
 static func from_dict(d: Dictionary) -> RunState:
@@ -215,6 +229,10 @@ static func from_dict(d: Dictionary) -> RunState:
 	run.cards_lost = int(d["cards_lost"])
 	run.school_id = StringName(d["school_id"])
 	run.difficulty = StringName(d["difficulty"])
+	run.act = int(d["act"])
+	run.at_camp = bool(d["at_camp"])
+	for g: String in d["gifts"]:
+		run.gifts.append(StringName(g))
 	for id: String in d["card_pool"]:
 		run.card_pool.append(StringName(id))
 	for id: String in d["event_pool"]:

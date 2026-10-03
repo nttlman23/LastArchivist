@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"t4_scriptorium"
+name_key = "ENC_T4_SCRIPTORIUM"
+unit_ids = Array[StringName]([&"drowned_scribe", &"abyss_warden", &"ink_kraken"])
+counts = Array[int]([10, 3, 2])
+obstacles = Array[Vector2i]([])
+tier = 4
+elite = false
+boss = false
+act = 2
+water_hexes = Array[Vector2i]([Vector2i(5, 3), Vector2i(5, 4), Vector2i(5, 5)])
+current_hexes = Array[Vector2i]([Vector2i(3, 4), Vector2i(7, 4)])
+current_dirs = Array[int]([0, 3])

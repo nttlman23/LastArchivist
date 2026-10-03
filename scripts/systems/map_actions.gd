@@ -14,6 +14,23 @@ static func reachable(run: RunState) -> Array[int]:
 	return run.map.next_of(run.map.current)
 
 
+## Начало акта act: новая карта, пул карт акта (SPEC_SPRINT7 2). Кодекс и ресурсы — как были.
+static func begin_act(db: DefsDB, run: RunState, act: int, profile: ProfileState = null) -> void:
+	run.act = act
+	run.at_camp = false
+	run.pending_node = -1
+	run.pending_battle = &""
+	run.pending_reward_card = &""
+	run.map = MapGenerator.generate(db, run.run_seed, run.event_pool, act)
+	var school := db.school(run.school_id)
+	if profile:
+		run.card_pool = MetaRewards.card_pool(db, profile, school, act)
+	else:
+		run.card_pool = db.pool_memory_ids(act)
+		for id in school.favored_memories:
+			run.card_pool.append(id)
+
+
 ## Путь по мостам от текущего острова до target (без текущего, с target); пусто — не дойти.
 static func path_to(run: RunState, target: int) -> Array[int]:
 	var start := run.map.current

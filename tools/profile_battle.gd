@@ -68,6 +68,19 @@ func _run() -> void:
 		await get_tree().process_frame
 	_report()
 
+	# Бой второго акта: вода, течения, босс с намерениями (SPEC_SPRINT7 10).
+	screen = await _open_battle(&"abyss")
+	await _measure("battle_act2_idle")
+	_reset("battle_act2_fight")
+	t0 = Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < PHASE_TIME * 2000 and screen.state.outcome == BattleState.Outcome.NONE:
+		if not screen._busy and screen._is_player_turn():
+			var s2: BattleState = screen.state
+			var hero2 := HeroAi.choose(s2) if s2.can_hero_act() else null
+			screen._player_act(hero2 if hero2 else AiController.choose_action(s2, s2.active_uid))
+		await get_tree().process_frame
+	_report()
+
 	Game.goto(Game.SCENE_MAP)
 	await get_tree().create_timer(1.0).timeout
 	await _measure("map_idle")

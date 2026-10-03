@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="UnitDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/unit_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"drowned_scribe"
+name_key = "UNIT_DROWNED_SCRIBE"
+hp = 14
+attack = 9
+defense = 6
+dmg_min = 3
+dmg_max = 6
+speed = 4
+initiative = 9
+is_ranged = true
+shots = 10
+is_flying = false
+ability_id = &"wet_ink"
+color = Color(0.35, 0.55, 0.6, 1)

@@ -20,6 +20,10 @@ const OVERCLOCK := &"overclock"
 const TINKER := &"tinker"
 const REFLECT := &"reflect"
 const STEAL := &"steal"
+# Спринт 7: враги Затопленных хранилищ.
+const WET_INK := &"wet_ink"
+const INK_CLOUD := &"ink_cloud"
+const SIREN_CALL := &"siren_call"
 
 const DEFAULT_COOLDOWN := 2
 const DEVOUR_HEAL := 0.5
@@ -42,6 +46,15 @@ const FLOOD_ROUNDS := 2
 const TINKER_HEAL := 40
 const BARRIER_ROUNDS := 3
 const REFLECT_SHARE := 0.5
+const SOAK_ROUNDS := 2
+const INK_RANGE := 4
+const INK_ROUNDS := 2
+const CALL_MIN := 2
+const CALL_MAX := 6
+const CALL_STEPS := 2
+const CALL_SHOOTER_SCORE := 25.0
+const CALL_SCORE := 8.0
+const INK_PER_SHOOTER := 22.0
 ## Способности, которые нельзя украсть.
 const UNSTEALABLE: Array[StringName] = [&"", ECHO, STEAL, RIFT_TEAR]
 
@@ -72,11 +85,11 @@ static func _is_copy(u: UnitState) -> bool:
 
 static func target_kind(id: StringName) -> Targeting.Kind:
 	match id:
-		MARK, DEVOUR, SHARD_VOLLEY, CHAIN_LIGHTNING, RAM, UNDERTOW, OVERCLOCK, STEAL:
+		MARK, DEVOUR, SHARD_VOLLEY, CHAIN_LIGHTNING, RAM, UNDERTOW, OVERCLOCK, STEAL, WET_INK, SIREN_CALL:
 			return Targeting.Kind.ENEMY
 		RESTORE, REFLECT, TINKER:
 			return Targeting.Kind.ALLY
-		COVER, RIFT_TEAR, FLOOD:
+		COVER, RIFT_TEAR, FLOOD, INK_CLOUD:
 			return Targeting.Kind.HEX
 	return Targeting.Kind.NONE
 
@@ -153,6 +166,12 @@ static func validate(state: BattleState, u: UnitState, action: BattleAction) -> 
 					and not target.is_boss and not target.inert and illusion_hex(state, target, u) != NO_HEX
 		STEAL:
 			return _is_enemy(u, target) and not steal_options(state, u, target).is_empty()
+		WET_INK:
+			return _is_enemy(u, target) and not target.has_status(UnitState.STATUS_MARKED)
+		INK_CLOUD:
+			return state.grid.in_bounds(action.dest) and HexGrid.distance(u.hex, action.dest) <= INK_RANGE
+		SIREN_CALL:
+			return _is_enemy(u, target) and not target.inert and not call_path(state, u, target).is_empty()
 	return false
 
 
@@ -223,9 +242,23 @@ static func apply(state: BattleState, u: UnitState, action: BattleAction, events
 			target.hex = path[-1]
 			events.append(BattleEvent.new(BattleEvent.PUSHED, {"uid": target.uid, "from": from, "to": target.hex}))
 			BattleResolver.strike(state, u, target, false, false, events)
+		WET_INK:
+			BattleResolver.add_status(target, UnitState.STATUS_MARKED, UnitState.PERMANENT, events)
+			BattleResolver.add_status(target, UnitState.STATUS_SOAKED, SOAK_ROUNDS, events)
+		INK_CLOUD:
+			for h in flood_area(state, action.dest):
+				state.ink[h] = INK_ROUNDS
+			events.append(BattleEvent.new(BattleEvent.OBSTACLE_ADDED, {"hex": action.dest, "rounds": INK_ROUNDS, "ink": true}))
+		SIREN_CALL:
+			var from := target.hex
+			for h in call_path(state, u, target):
+				target.hex = h
+				events.append(BattleEvent.new(BattleEvent.PUSHED, {"uid": target.uid, "from": from, "to": h}))
+				from = h
 		FLOOD:
 			for h in flood_area(state, action.dest):
-				state.water[h] = FLOOD_ROUNDS
+				if state.water.get(h, 0) != BattleState.WATER_PERMANENT:
+					state.water[h] = FLOOD_ROUNDS
 			events.append(BattleEvent.new(BattleEvent.OBSTACLE_ADDED, {"hex": action.dest, "rounds": FLOOD_ROUNDS, "water": true}))
 		OVERCLOCK:
 			# Два выстрела: по цели, второй — по ней же или по ближайшему врагу, если цель пала.
@@ -294,6 +327,26 @@ static func undertow_path(state: BattleState, u: UnitState, target: UnitState) -
 
 
 ## Клетки «Разлива»: центр и соседи, кроме препятствий.
+## «Зов»: до CALL_STEPS шагов цели к сирене по свободным клеткам (каждый шаг — ближе).
+static func call_path(state: BattleState, u: UnitState, target: UnitState) -> Array[Vector2i]:
+	var path: Array[Vector2i] = []
+	var dist := HexGrid.distance(u.hex, target.hex)
+	if dist < CALL_MIN or dist > CALL_MAX:
+		return path
+	var cur := target.hex
+	for i in CALL_STEPS:
+		var best := cur
+		for n in state.grid.neighbors(cur):
+			if state.is_free(n) and HexGrid.distance(n, u.hex) < HexGrid.distance(best, u.hex) \
+					and HexGrid.distance(n, u.hex) >= 1:
+				best = n
+		if best == cur:
+			break
+		path.append(best)
+		cur = best
+	return path
+
+
 static func flood_area(state: BattleState, hex: Vector2i) -> Array[Vector2i]:
 	var area: Array[Vector2i] = []
 	for h in [hex] + Array(state.grid.neighbors(hex)):
@@ -493,6 +546,20 @@ static func ai_score(state: BattleState, u: UnitState, action: BattleAction) -> 
 			if target.is_ranged:
 				score += PUSH_SHOOTER_BONUS
 			return score
+		WET_INK:
+			var idle := not u.can_shoot() or state.is_blocked(u)
+			return (MARK_SCORE_IDLE if idle else MARK_SCORE) + (3.0 if target.effective_initiative() >= u.initiative else 0.0)
+		INK_CLOUD:
+			var shooters := 0
+			for h in flood_area(state, action.dest):
+				var o := state.unit_at(h)
+				if o and o.side != u.side and o.can_shoot():
+					shooters += 1
+				elif o and o.side == u.side and o.can_shoot():
+					shooters -= 1
+			return INK_PER_SHOOTER * shooters if shooters > 0 else 0.0
+		SIREN_CALL:
+			return CALL_SHOOTER_SCORE if target.is_ranged else CALL_SCORE
 		FLOOD:
 			if _can_attack(state, u):
 				return 0.0

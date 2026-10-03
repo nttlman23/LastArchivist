@@ -14,6 +14,9 @@ const STATUS_SHIELD_WALL := &"shield_wall"
 const STATUS_RUST_ARMOR := &"rust_armor"
 const STATUS_RIFT_MARKED := &"rift_marked"
 const STATUS_ASH_FURY := &"ash_fury"
+## «Мокрые чернила» (Утопленный летописец): −2 к инициативе.
+const STATUS_SOAKED := &"soaked"
+const SOAKED_INITIATIVE := 2
 const ADVANCE_BONUS := 2
 
 var uid: int
@@ -95,6 +98,11 @@ func total_hp() -> int:
 
 
 ## Скорость перемещения с учётом приказа «Вперёд!».
+## Инициатива с учётом состояний — для очереди ходов.
+func effective_initiative() -> int:
+	return initiative - (SOAKED_INITIATIVE if has_status(STATUS_SOAKED) else 0)
+
+
 func move_speed() -> int:
 	return speed + (ADVANCE_BONUS if has_status(STATUS_ADVANCE) else 0)
 

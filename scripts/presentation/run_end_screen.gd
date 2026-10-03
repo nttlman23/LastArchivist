@@ -12,7 +12,7 @@ func _ready() -> void:
 	text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(text)
 	if Game.run:
-		var stats := UiKit.label(tr("RUN_STATS") % [Game.run.map.current_layer(), MapState.LAYERS, Game.run.battles_won,
+		var stats := UiKit.label(tr("RUN_STATS") % [Game.run.total_layer(), 2 * (MapState.LAYERS + 1), Game.run.battles_won,
 				Game.run.codex.cards.size(), UiKit.resources_text(Game.run.resources)], 20, UiKit.MUTED)
 		stats.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		box.add_child(stats)

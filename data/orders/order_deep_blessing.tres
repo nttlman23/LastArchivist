@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="OrderDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/order_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"order_deep_blessing"
+name_key = "ORDER_DEEP_BLESSING"
+desc_key = "ORDER_DEEP_BLESSING_DESC"
+target = 1

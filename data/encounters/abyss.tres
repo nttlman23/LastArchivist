@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"abyss"
+name_key = "ENC_ABYSS"
+unit_ids = Array[StringName]([&"abyss_lord", &"abyss_warden", &"drowned_scribe", &"siren"])
+counts = Array[int]([1, 4, 8, 3])
+obstacles = Array[Vector2i]([])
+tier = 5
+elite = false
+boss = true
+act = 2
+water_hexes = Array[Vector2i]([Vector2i(4, 3), Vector2i(4, 5)])
+current_hexes = Array[Vector2i]([Vector2i(6, 3), Vector2i(6, 5), Vector2i(3, 4)])
+current_dirs = Array[int]([3, 3, 0])
+boss_commander = &"abyss_lord_cmd"

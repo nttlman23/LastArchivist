@@ -104,6 +104,48 @@ static func draw_unit(ci: CanvasItem, def_id: StringName, c: Vector2, r: float, 
 				var y := 0.45 - i * 0.38
 				_poly(ci, c, r, [Vector2(-0.7 + i * 0.08, y - 0.15), Vector2(0.7 - i * 0.05, y - 0.15), Vector2(0.7 - i * 0.05, y + 0.15), Vector2(-0.7 + i * 0.08, y + 0.15)], ink)
 				ci.draw_line(c + Vector2(-0.5 + i * 0.08, y) * r, c + Vector2(0.5 - i * 0.05, y) * r, body, maxf(1.5, r * 0.06))
+		&"drowned_scribe":
+			# Свиток под каплей.
+			_poly(ci, c, r, [Vector2(-0.6, 0.0), Vector2(0.6, 0.0), Vector2(0.6, 0.7), Vector2(-0.6, 0.7)], ink)
+			ci.draw_line(c + Vector2(-0.75, 0.0) * r, c + Vector2(0.75, 0.0) * r, ink, maxf(2.0, r * 0.16))
+			var drop := PackedVector2Array([c + Vector2(0, -0.85) * r])
+			for k in 9:
+				var a := PI * k / 8.0
+				drop.append(c + Vector2(cos(a) * 0.3, -0.35 + sin(a) * 0.3) * r)
+			ci.draw_colored_polygon(drop, ink)
+		&"abyss_warden":
+			# Шлем с гребнем.
+			_poly(ci, c, r, [Vector2(-0.6, 0.75), Vector2(-0.6, -0.15), Vector2(-0.3, -0.55), Vector2(0.3, -0.55), Vector2(0.6, -0.15), Vector2(0.6, 0.75)], ink)
+			_poly(ci, c, r, [Vector2(-0.4, 0.05), Vector2(0.4, 0.05), Vector2(0.4, 0.2), Vector2(-0.4, 0.2)], body)
+			_poly(ci, c, r, [Vector2(-0.08, -0.55), Vector2(0.08, -0.55), Vector2(0.15, -0.95), Vector2(-0.15, -0.95)], ink)
+		&"ink_kraken":
+			# Голова спрута и щупальца.
+			ci.draw_circle(c + Vector2(0, -0.3) * r, r * 0.42, ink)
+			for x: float in [-0.5, -0.2, 0.2, 0.5]:
+				var pts := PackedVector2Array()
+				for k in 6:
+					pts.append(c + Vector2(x + 0.12 * sin(k * 1.3 + x * 4.0), 0.05 + k * 0.15) * r)
+				ci.draw_polyline(pts, ink, maxf(2.0, r * 0.12))
+			ci.draw_circle(c + Vector2(-0.15, -0.35) * r, r * 0.07, body)
+			ci.draw_circle(c + Vector2(0.15, -0.35) * r, r * 0.07, body)
+		&"siren":
+			# Хвост и плавник.
+			_poly(ci, c, r, [Vector2(-0.2, -0.75), Vector2(0.25, -0.6), Vector2(0.3, 0.1), Vector2(0.1, 0.55), Vector2(-0.15, 0.2)], ink)
+			_poly(ci, c, r, [Vector2(0.1, 0.5), Vector2(0.7, 0.85), Vector2(0.2, 0.35), Vector2(-0.3, 0.85)], ink)
+			ci.draw_circle(c + Vector2(0.0, -0.75) * r, r * 0.22, ink)
+		&"deep_eel":
+			# Изогнутый угорь.
+			var pts := PackedVector2Array()
+			for k in 12:
+				var t := k / 11.0
+				pts.append(c + Vector2(-0.75 + 1.5 * t, 0.3 * sin(t * TAU)) * r)
+			ci.draw_polyline(pts, ink, maxf(3.0, r * 0.28))
+			ci.draw_circle(pts[pts.size() - 1], r * 0.2, ink)
+		&"abyss_lord":
+			# Корона над водоворотом.
+			for i in 3:
+				ci.draw_arc(c + Vector2(0, 0.25) * r, r * (0.18 + 0.18 * i), i * 1.3, i * 1.3 + PI * 1.4, 18, ink, maxf(2.0, r * 0.1))
+			_poly(ci, c, r, [Vector2(-0.6, -0.25), Vector2(-0.6, -0.8), Vector2(-0.3, -0.5), Vector2(0, -0.9), Vector2(0.3, -0.5), Vector2(0.6, -0.8), Vector2(0.6, -0.25)], ink)
 		&"rift_warden":
 			for i in 3:
 				ci.draw_arc(c, r * (0.25 + 0.22 * i), i * 1.1, i * 1.1 + PI * 1.5, 20, ink, maxf(2.0, r * 0.12))

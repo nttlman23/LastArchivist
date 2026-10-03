@@ -5,6 +5,8 @@ extends RefCounted
 const POINTS_PER_LAYER := 1
 const POINTS_PER_ELITE := 2
 const POINTS_FOR_RIFT := 5
+## Босс второго акта (SPEC_SPRINT7 2).
+const POINTS_FOR_ACT2_BOSS := 8
 
 enum Kind { SCHOOL, CARD, EVENT }
 
@@ -18,8 +20,10 @@ const CATALOG := [
 
 
 static func points_for_run(run: RunState, won: bool) -> int:
-	var layer := run.map.current_layer()
-	var base := maxi(0, layer - 1) * POINTS_PER_LAYER + run.elites_won * POINTS_PER_ELITE + (POINTS_FOR_RIFT if won else 0)
+	var layer := run.total_layer()
+	var rift := won or run.act >= 2
+	var base := maxi(0, layer - 1) * POINTS_PER_LAYER + run.elites_won * POINTS_PER_ELITE \
+			+ (POINTS_FOR_RIFT if rift else 0) + (POINTS_FOR_ACT2_BOSS if won else 0)
 	return Difficulty.points(run.difficulty, base, won)
 
 
@@ -61,7 +65,7 @@ static func buy(db: DefsDB, profile: ProfileState, unlock: Dictionary) -> bool:
 
 
 ## Пул карт наград и лавки: открытые карты + карты существ открытых школ; любимые карты школы — ×2.
-static func card_pool(db: DefsDB, profile: ProfileState, school: SchoolDef) -> Array[StringName]:
+static func card_pool(db: DefsDB, profile: ProfileState, school: SchoolDef, act: int = 1) -> Array[StringName]:
 	var locked: Array[StringName] = []
 	for u in CATALOG:
 		if u["kind"] == Kind.CARD and not profile.is_unlocked(u["id"]):
@@ -70,7 +74,7 @@ static func card_pool(db: DefsDB, profile: ProfileState, school: SchoolDef) -> A
 		if not is_school_open(profile, s):
 			locked.append_array(s.own_memories)
 	var pool: Array[StringName] = []
-	for id in db.memory_ids():
+	for id in db.pool_memory_ids(act):
 		if locked.has(id):
 			continue
 		pool.append(id)
@@ -98,7 +102,7 @@ static func finish_run(profile: ProfileState, run: RunState, won: bool, db: Defs
 	profile.runs += 1
 	if won:
 		profile.wins += 1
-	profile.best_layer = maxi(profile.best_layer, run.map.current_layer())
+	profile.best_layer = maxi(profile.best_layer, run.total_layer())
 	profile.record_run(chronicle_entry(run, ProfileState.OUTCOME_WON if won else ProfileState.OUTCOME_LOST, gained, db))
 	return gained
 
@@ -120,7 +124,8 @@ static func chronicle_entry(run: RunState, outcome: String, points: int, db: Def
 		"date": "%04d-%02d-%02d" % [date["year"], date["month"], date["day"]],
 		"school": String(run.school_id),
 		"difficulty": String(run.difficulty),
-		"layer": run.map.current_layer(),
+		"layer": run.total_layer(),
+		"act": run.act,
 		"outcome": outcome,
 		"encounter": encounter,
 		"codex": codex,

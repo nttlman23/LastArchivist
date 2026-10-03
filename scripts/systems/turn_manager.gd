@@ -22,6 +22,7 @@ static func start_round(state: BattleState) -> Array[BattleEvent]:
 			return events
 	if ObjectiveRule.on_round_start(state, events):
 		return events
+	_apply_currents(state, events)
 	var order := state.alive_all()
 	for u in order:
 		u.retaliated = false
@@ -44,6 +45,23 @@ static func start_round(state: BattleState) -> Array[BattleEvent]:
 	return events
 
 
+## Течения: стек на клетке течения сносит на одну клетку по стрелке, если она свободна.
+## Летуны не сносятся. Порядок — по uid, чтобы не зависеть от порядка словаря.
+static func _apply_currents(state: BattleState, events: Array[BattleEvent]) -> void:
+	if state.currents.is_empty():
+		return
+	var movers := state.alive_all()
+	movers.sort_custom(func(a: UnitState, b: UnitState) -> bool: return a.uid < b.uid)
+	for u in movers:
+		if u.is_flying or u.inert or not state.currents.has(u.hex):
+			continue
+		var to := HexGrid.step(u.hex, state.currents[u.hex])
+		if state.is_free(to):
+			var from := u.hex
+			u.hex = to
+			events.append(BattleEvent.new(BattleEvent.PUSHED, {"uid": u.uid, "from": from, "to": to, "current": true}))
+
+
 static func _tick_statuses(u: UnitState, events: Array[BattleEvent]) -> void:
 	for id in u.statuses.keys():
 		var left: int = u.statuses[id]
@@ -58,7 +76,16 @@ static func _tick_statuses(u: UnitState, events: Array[BattleEvent]) -> void:
 
 
 static func _tick_obstacles(state: BattleState, events: Array[BattleEvent]) -> void:
+	for hex in state.ink.keys():
+		var k: int = state.ink[hex] - 1
+		if k <= 0:
+			state.ink.erase(hex)
+			events.append(BattleEvent.new(BattleEvent.OBSTACLE_EXPIRED, {"hex": hex, "ink": true}))
+		else:
+			state.ink[hex] = k
 	for hex in state.water.keys():
+		if state.water[hex] == BattleState.WATER_PERMANENT:
+			continue
 		var w: int = state.water[hex] - 1
 		if w <= 0:
 			state.water.erase(hex)
@@ -137,16 +164,16 @@ static func _sorted_wait(state: BattleState) -> Array[UnitState]:
 
 
 static func _main_phase_before(a: UnitState, b: UnitState) -> bool:
-	if a.initiative != b.initiative:
-		return a.initiative > b.initiative
+	if a.effective_initiative() != b.effective_initiative():
+		return a.effective_initiative() > b.effective_initiative()
 	if a.side != b.side:
 		return a.side < b.side
 	return a.uid < b.uid
 
 
 static func _wait_phase_before(a: UnitState, b: UnitState) -> bool:
-	if a.initiative != b.initiative:
-		return a.initiative < b.initiative
+	if a.effective_initiative() != b.effective_initiative():
+		return a.effective_initiative() < b.effective_initiative()
 	if a.side != b.side:
 		return a.side < b.side
 	return a.uid < b.uid

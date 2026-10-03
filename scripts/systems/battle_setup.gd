@@ -6,8 +6,10 @@ extends RefCounted
 
 static func for_run(db: DefsDB, run: RunState, selected: Array[int]) -> BattleState:
 	var enc := db.encounter(run.current_encounter_id(db))
-	return BattleState.create(db, enc, run.codex, selected, run.battle_seed(), run.hero,
+	var s := BattleState.create(db, enc, run.codex, selected, run.battle_seed(), run.hero,
 			db.school(run.school_id).passive_id, run.difficulty, Difficulty.commander_for(db, run, enc))
+	CampOps.apply_gifts(run, s)
+	return s
 
 
 ## Цель боя с учётом сложности: на «Легко» — всегда «уничтожить всех».

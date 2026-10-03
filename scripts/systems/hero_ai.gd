@@ -71,6 +71,10 @@ static func _order_score(state: BattleState, a: BattleAction) -> float:
 				t.statuses.erase(UnitState.STATUS_ADVANCE)
 				if reaches:
 					return ADVANCE_SCORE
+		HeroActions.DEEP_BLESSING:
+			var missing := t.start_count * t.hp - t.total_hp()
+			if missing >= HeroActions.BLESSING_HEAL * 0.75:
+				return float(mini(missing, HeroActions.BLESSING_HEAL))
 		HeroActions.ROYAL:
 			if AiController.can_attack_now(state, t):
 				return ROYAL_SCORE

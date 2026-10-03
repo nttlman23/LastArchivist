@@ -16,9 +16,19 @@ static func migrate(d: Dictionary) -> Dictionary:
 		match v:
 			5:
 				out = _v5_to_v6(out)
+			6:
+				out = _v6_to_v7(out)
 		v += 1
 		out["version"] = v
 	return out
+
+
+## v7: второй акт — забег из старого сохранения идёт в первом акте, даров нет.
+static func _v6_to_v7(d: Dictionary) -> Dictionary:
+	d["act"] = 1
+	d["at_camp"] = false
+	d["gifts"] = []
+	return d
 
 
 ## v6: счётчик потерянных карт (лучший Кодекс) — обязательное поле.

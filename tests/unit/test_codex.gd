@@ -8,14 +8,14 @@ func before_all() -> void:
 
 
 func test_defs_loaded() -> void:
-	assert_eq(db.units.size(), 17)
-	assert_eq(db.memories.size(), 14)
-	assert_eq(db.encounters.size(), 21)
-	assert_eq(db.commanders.size(), 3)
-	assert_eq(db.abilities.size(), 16)
+	assert_eq(db.units.size(), 23)
+	assert_eq(db.memories.size(), 16)
+	assert_eq(db.encounters.size(), 31)
+	assert_eq(db.commanders.size(), 4)
+	assert_eq(db.abilities.size(), 19)
 	assert_eq(db.events.size(), 8)
 	assert_eq(db.spells.size(), 10)
-	assert_eq(db.orders.size(), 3)
+	assert_eq(db.orders.size(), 4)
 	assert_eq(db.upgrades.size(), 7)
 	for u: UnitDef in db.units.values():
 		assert_true(u.inert or db.abilities.has(u.ability_id), "у %s есть способность" % u.id)

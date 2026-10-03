@@ -13,8 +13,18 @@ var grid := HexGrid.new()
 var obstacles: Dictionary[Vector2i, bool] = {}
 ## Временные стены: клетка -> оставшиеся раунды.
 var temp_obstacles: Dictionary[Vector2i, int] = {}
-## Вязкая вода (Орден Приливов): вошедший стек заканчивает перемещение. Клетка -> раунды.
+## Вязкая вода (Орден Приливов): вошедший стек заканчивает перемещение. Клетка -> раунды;
+## WATER_PERMANENT — постоянная вода Затопленных хранилищ.
 var water: Dictionary[Vector2i, int] = {}
+const WATER_PERMANENT := -1
+## Течения (второй акт): клетка -> направление (0..5); в начале раунда сносят стек на клетку.
+var currents: Dictionary[Vector2i, int] = {}
+## Чернильное облако: стрелки на этих клетках не стреляют. Клетка -> раунды.
+var ink: Dictionary[Vector2i, int] = {}
+## Биом поля (палитра): &"archive" или &"flooded".
+var biome := &"archive"
+## Босс второго акта перешёл во вторую фазу.
+var boss_phase := 1
 var units: Array[UnitState] = []
 var round_number := 0
 ## uid стеков, которые ещё ходят в этом раунде (основная фаза).
@@ -57,6 +67,8 @@ var reinforcements: Array[Dictionary] = []
 # Вражеский командир (CommanderActions): заряды действий и намерение на конец раунда.
 var commander_id: StringName
 var commander_charges: Dictionary[StringName, int] = {}
+## Шаблон стека для «Призыва» босса (UnitState.to_dict) или пусто.
+var summon_template: Dictionary = {}
 var intent: Dictionary = {}
 
 
@@ -72,7 +84,13 @@ static func create(db: DefsDB, encounter: EncounterDef, codex: CodexState, selec
 		s.ability_cooldowns[id] = db.abilities[id].cooldown
 	for h in encounter.obstacles:
 		s.obstacles[h] = true
-	s.rift = encounter.boss
+	# Правило «Стирание» — только у Разлома (босс первого акта).
+	s.rift = encounter.boss and encounter.act == 1
+	s.biome = &"flooded" if encounter.act >= 2 else &"archive"
+	for h in encounter.water_hexes:
+		s.water[h] = WATER_PERMANENT
+	for i in mini(encounter.current_hexes.size(), encounter.current_dirs.size()):
+		s.currents[encounter.current_hexes[i]] = encounter.current_dirs[i]
 	s.passive_id = passive
 	var upgrades: Array[StringName] = []
 	if hero:
@@ -109,11 +127,16 @@ static func create(db: DefsDB, encounter: EncounterDef, codex: CodexState, selec
 					var count := Difficulty.enemy_count(difficulty, encounter.reinforce_counts[i])
 					var r := UnitState.from_def(db.unit(encounter.reinforce_ids[i]), -1, UnitState.Side.ENEMY, count, Vector2i(-1, -1))
 					s.reinforcements.append({"round": encounter.reinforce_rounds[i], "unit": r.to_dict()})
+	if encounter.boss_commander != &"":
+		commander = encounter.boss_commander
 	if commander != &"":
 		var def := db.commander(commander)
 		s.commander_id = commander
+		if def.summon_unit != &"":
+			s.summon_template = UnitState.from_def(db.unit(def.summon_unit), -1, UnitState.Side.ENEMY,
+					Difficulty.enemy_count(difficulty, def.summon_count), Vector2i(-1, -1)).to_dict()
 		for id in def.actions:
-			s.commander_charges[id] = Difficulty.commander_charges(difficulty, def.charges)
+			s.commander_charges[id] = def.charges if encounter.boss_commander != &"" else Difficulty.commander_charges(difficulty, def.charges)
 	return s
 
 
@@ -176,8 +199,10 @@ func enemies_of(u: UnitState) -> Array[UnitState]:
 	return alive(1 - u.side)
 
 
-## Стрелок заблокирован, если рядом стоит враг.
+## Стрелок заблокирован, если рядом стоит враг или он в чернильном облаке.
 func is_blocked(u: UnitState) -> bool:
+	if ink.has(u.hex):
+		return true
 	for n in grid.neighbors(u.hex):
 		var other := unit_at(n)
 		if other and other.side != u.side:
@@ -247,7 +272,16 @@ func to_dict() -> Dictionary:
 		"objective_rounds": objective_rounds, "hold_hexes": Array(hold_hexes).map(func(h: Vector2i) -> Array: return [h.x, h.y]),
 		"hold_count": hold_count, "archive_uid": archive_uid, "reinforcements": reinforcements.duplicate(true),
 		"commander_id": String(commander_id), "commander_charges": _charges_dict(), "intent": _intent_dict(),
+		"summon_template": summon_template.duplicate(true),
+		"currents": _hex_pairs(currents), "ink": _hex_pairs(ink), "biome": String(biome), "boss_phase": boss_phase,
 	}
+
+
+static func _hex_pairs(d: Dictionary) -> Array:
+	var out: Array = []
+	for h: Vector2i in d:
+		out.append([h.x, h.y, d[h]])
+	return out
 
 
 func _charges_dict() -> Dictionary:
@@ -311,6 +345,15 @@ static func from_dict(d: Dictionary) -> BattleState:
 	for r: Dictionary in d.get("reinforcements", []):
 		# Нормализация чисел после JSON (float -> int): копия боя должна совпадать байт в байт.
 		s.reinforcements.append({"round": int(r["round"]), "unit": UnitState.from_dict(r["unit"]).to_dict()})
+	for h: Array in d.get("currents", []):
+		s.currents[Vector2i(int(h[0]), int(h[1]))] = int(h[2])
+	for h: Array in d.get("ink", []):
+		s.ink[Vector2i(int(h[0]), int(h[1]))] = int(h[2])
+	s.biome = StringName(d.get("biome", "archive"))
+	s.boss_phase = int(d.get("boss_phase", 1))
+	var tpl: Dictionary = d.get("summon_template", {})
+	if not tpl.is_empty():
+		s.summon_template = UnitState.from_dict(tpl).to_dict()
 	s.commander_id = StringName(d.get("commander_id", ""))
 	var charges: Dictionary = d.get("commander_charges", {})
 	for id: String in charges:

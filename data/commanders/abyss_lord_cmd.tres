@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CommanderDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/commander_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"abyss_lord_cmd"
+name_key = "CMD_ABYSS_LORD_CMD"
+desc_key = "CMD_ABYSS_LORD_CMD_DESC"
+color = Color(0.4, 0.85, 0.95, 1)
+actions = Array[StringName]([&"cmd_wave", &"cmd_summon", &"cmd_deep_strike"])
+charges = 99
+summon_unit = &"deep_eel"
+summon_count = 5

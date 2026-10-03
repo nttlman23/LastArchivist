@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"elite2_flood"
+name_key = "ENC_ELITE2_FLOOD"
+unit_ids = Array[StringName]([&"abyss_warden", &"deep_eel", &"ink_kraken"])
+counts = Array[int]([6, 14, 4])
+obstacles = Array[Vector2i]([])
+tier = 5
+elite = true
+boss = false
+act = 2
+water_hexes = Array[Vector2i]([Vector2i(4, 2), Vector2i(5, 2), Vector2i(4, 6), Vector2i(5, 6), Vector2i(5, 4)])
+current_hexes = Array[Vector2i]([Vector2i(3, 4), Vector2i(7, 4)])
+current_dirs = Array[int]([3, 3])

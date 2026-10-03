@@ -6,6 +6,9 @@ extends RefCounted
 const ADVANCE := &"order_advance"
 const CLOSE_RANKS := &"order_close_ranks"
 const ROYAL := &"order_royal"
+## «Глубинное благословение» (Утопленная корона, дар привала): лечение союзного стека.
+const DEEP_BLESSING := &"order_deep_blessing"
+const BLESSING_HEAL := 40
 
 const SALT_WALL := &"salt_wall"
 const ASH_RECORD := &"ash_record"
@@ -25,7 +28,7 @@ const NO_HEX := Vector2i(-1, -1)
 
 static func target_kind(id: StringName) -> Targeting.Kind:
 	match id:
-		ADVANCE, CLOSE_RANKS, ROYAL, HUNGER, RUST_ARMOR, MIRAGE:
+		ADVANCE, CLOSE_RANKS, ROYAL, HUNGER, RUST_ARMOR, MIRAGE, DEEP_BLESSING:
 			return Targeting.Kind.ALLY
 		ASH_RECORD, CHAIN_SPELL:
 			return Targeting.Kind.ENEMY
@@ -44,7 +47,7 @@ static func options(state: BattleState, id: StringName, slot: int) -> Array[Batt
 		Targeting.Kind.ALLY:
 			for u in state.alive(UnitState.Side.PLAYER):
 				# Объект цели (архив) не ходит: приказы и миражи на него не действуют, лечить можно.
-				if not u.inert or id == HUNGER or id == RUST_ARMOR:
+				if not u.inert or id == HUNGER or id == RUST_ARMOR or id == DEEP_BLESSING:
 					candidates.append(_make(id, slot, u.uid, NO_HEX))
 		Targeting.Kind.ENEMY:
 			for u in state.alive(UnitState.Side.ENEMY):
@@ -66,6 +69,8 @@ static func validate(state: BattleState, action: BattleAction) -> bool:
 	if action.slot < 0:
 		if not state.hero_orders.has(action.ref_id):
 			return false
+		if action.ref_id == DEEP_BLESSING:
+			return _is_side(t, UnitState.Side.PLAYER)
 		if not _is_side(t, UnitState.Side.PLAYER) or t.inert:
 			return false
 		if action.ref_id == ROYAL:
@@ -113,6 +118,8 @@ static func apply(state: BattleState, action: BattleAction, events: Array[Battle
 			ROYAL:
 				# Стек ходит сразу после текущего.
 				state.queue.push_front(t.uid)
+			DEEP_BLESSING:
+				BattleResolver.heal(t, BLESSING_HEAL, events)
 		return
 
 	var sp := state.hero_spells[action.slot]
@@ -143,7 +150,8 @@ static func apply(state: BattleState, action: BattleAction, events: Array[Battle
 				BattleResolver.add_temp_obstacle(state, action.dest2, power, events)
 		WHIRLPOOL:
 			for h in Abilities.flood_area(state, action.dest):
-				state.water[h] = power
+				if state.water.get(h, 0) != BattleState.WATER_PERMANENT:
+					state.water[h] = power
 			events.append(BattleEvent.new(BattleEvent.OBSTACLE_ADDED, {"hex": action.dest, "rounds": power, "water": true}))
 		MIRAGE:
 			Abilities.summon_illusion(state, t, Abilities.illusion_hex(state, t, t), power / 100.0, events)

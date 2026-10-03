@@ -10,3 +10,6 @@ extends Resource
 @export var actions: Array[StringName] = []
 ## Заряды каждого действия на бой.
 @export var charges: int = 2
+## Кого призывает действие «Призыв» (боссы).
+@export var summon_unit: StringName
+@export var summon_count: int = 0

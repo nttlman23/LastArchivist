@@ -17,6 +17,10 @@ enum Kind { UNIT, HERO }
 @export var order_id: StringName
 @export var passive_upgrade_id: StringName
 @export var desc_key: String
+## С какого акта карта выпадает в наградах и лавке (SPEC_SPRINT7).
+@export var act: int = 1
+## Только из даров привала — в пулы наград не попадает.
+@export var gift_only := false
 
 
 func is_unit() -> bool:

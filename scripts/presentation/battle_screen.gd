@@ -255,8 +255,10 @@ func _refresh_hud() -> void:
 
 ## Цель с прогрессом и намерение командира (значок, действие, цель).
 func _refresh_battle_info() -> void:
-	_battle_info.visible = state.objective != ObjectiveRule.ELIMINATE or state.commander_id != &""
-	var key := "%s|%s|%s|%s" % [state.round_number, state.hold_count, state.intent, state.get_unit(int(state.intent.get("target", -1))) != null]
+	_battle_info.visible = state.objective != ObjectiveRule.ELIMINATE or state.commander_id != &"" 			or (state.biome == &"flooded" and state.boss_uid >= 0)
+	var boss := state.get_unit(state.boss_uid)
+	var boss_hp := boss.total_hp() if boss else 0
+	var key := "%s|%s|%s|%s|%s|%s" % [state.round_number, state.hold_count, state.intent, state.get_unit(int(state.intent.get("target", -1))) != null, boss_hp, state.boss_phase]
 	if key == _info_key or not _battle_info.visible:
 		return
 	_info_key = key
@@ -272,7 +274,14 @@ func _refresh_battle_info() -> void:
 			progress = tr("OBJ_PROGRESS_ROUNDS") % [mini(state.round_number, state.objective_rounds), state.objective_rounds]
 		ObjectiveRule.HOLD:
 			progress = tr("OBJ_PROGRESS_HOLD") % [state.hold_count, state.objective_rounds]
-	_objective_box.add_child(UiKit.objective_chip(state.objective, state.objective_rounds, progress, 19))
+	# У босса второго акта цель — он сам: вместо «Уничтожить всех» — его ОЗ и фаза.
+	if not (state.objective == ObjectiveRule.ELIMINATE and boss and state.biome == &"flooded"):
+		_objective_box.add_child(UiKit.objective_chip(state.objective, state.objective_rounds, progress, 19))
+	# Босс второго акта: ОЗ и фаза (вторая — с половины ОЗ).
+	if boss and state.biome == &"flooded":
+		var full := boss.start_count * boss.hp
+		_objective_box.add_child(UiKit.chip(UnitGlyphs.ICON_HP, "%d/%d · %s" % [boss_hp, full, tr("BOSS_PHASE") % state.boss_phase],
+				BattleView.RIFT_COLOR, UiKit.unit_name(db, boss.def_id), tr("BOSS_PHASE_TIP"), 17))
 	if state.commander_id == &"":
 		return
 	_commander_box.add_child(UiKit.commander_chip(db, state.commander_id, 17))
@@ -817,6 +826,8 @@ func _event_label(e: BattleEvent) -> String:
 	match e.type:
 		BattleEvent.RIFT_MARKED:
 			return tr("RIFT_MARK_FLOAT")
+		BattleEvent.PHASE_CHANGED:
+			return tr("BOSS_PHASE_FLOAT")
 		BattleEvent.ERASED:
 			return tr("RIFT_ERASE_FLOAT")
 		BattleEvent.COMMANDER_ACTED:
@@ -852,7 +863,10 @@ func _log_events(events: Array[BattleEvent]) -> void:
 			BattleEvent.HEALED:
 				line = tr("LOG_HEALED") % [_name(e.data["uid"]), int(e.data["amount"]), int(e.data["revived"])]
 			BattleEvent.PUSHED:
-				line = tr("LOG_PUSHED") % _name(e.data["uid"])
+				line = tr("LOG_CURRENT" if e.data.get("current", false) else "LOG_PUSHED") % _name(e.data["uid"])
+			BattleEvent.PHASE_CHANGED:
+				line = "[color=#%s]%s[/color]" % [BattleView.RIFT_COLOR.to_html(false), tr("LOG_BOSS_PHASE") % _name(e.data["uid"])]
+				Hints.show_hint(&"flooded")
 			BattleEvent.SUMMONED:
 				line = tr("LOG_SUMMONED") % _name(e.data["uid"])
 			BattleEvent.COMMANDER_INTENT:

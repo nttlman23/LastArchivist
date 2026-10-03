@@ -9,6 +9,10 @@ const GUARD_PER_ATTACKER := 10.0
 const HASTE_SCORE := 25.0
 const FURY_SCORE := 18.0
 const HEAL_MIN_MISSING := 0.5
+const WAVE_PER_UNIT := 14.0
+const SUMMON_SCORE := 35.0
+## Призывать, пока у босса меньше стольких стеков.
+const SUMMON_BELOW := 6
 
 
 static func choose(state: BattleState) -> Dictionary:
@@ -64,6 +68,20 @@ static func _candidates(state: BattleState, id: StringName) -> Array:
 			for t in enemies:
 				if AiController.can_attack_now(state, t):
 					result.append([_intent(id, t.uid), FURY_SCORE * (1.0 + t.count / 20.0)])
+		CommanderActions.WAVE:
+			for t in players:
+				var pushed := 0
+				for o in players:
+					if o.hex.y == t.hex.y and state.is_free(HexGrid.step(o.hex, CommanderActions.WAVE_DIR)):
+						pushed += 1
+				if pushed > 0:
+					result.append([_intent(id, t.uid), WAVE_PER_UNIT * pushed])
+		CommanderActions.SUMMON:
+			if not state.summon_template.is_empty() and enemies.size() < SUMMON_BELOW:
+				result.append([{"action": id, "target": -1, "hex": CommanderActions.NO_HEX}, SUMMON_SCORE])
+		CommanderActions.DEEP_STRIKE:
+			for t in players:
+				result.append([_intent(id, t.uid), AiController.value(CommanderActions.DEEP_DAMAGE, t)])
 		CommanderActions.WALL:
 			var h := wall_hex(state)
 			if h != CommanderActions.NO_HEX:

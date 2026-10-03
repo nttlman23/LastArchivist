@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"t5_library"
+name_key = "ENC_T5_LIBRARY"
+unit_ids = Array[StringName]([&"drowned_scribe", &"ink_kraken", &"abyss_warden", &"siren"])
+counts = Array[int]([11, 3, 4, 3])
+obstacles = Array[Vector2i]([])
+tier = 5
+elite = false
+boss = false
+act = 2
+water_hexes = Array[Vector2i]([Vector2i(2, 2), Vector2i(2, 6), Vector2i(8, 2), Vector2i(8, 6)])
+current_hexes = Array[Vector2i]([Vector2i(5, 2), Vector2i(5, 6)])
+current_dirs = Array[int]([3, 3])

@@ -2,6 +2,7 @@ extends Control
 ## Карта экспедиции — хаб забега (SPEC_SPRINT3 3.3): выбор острова, разведка, перелёт, Кодекс.
 
 const SIDE_WIDTH := 420.0
+const ROMAN := ["I", "II", "III"]
 const TYPE_KEYS := {
 	MapState.NodeType.BATTLE: "NODE_BATTLE",
 	MapState.NodeType.ELITE: "NODE_ELITE",
@@ -31,7 +32,8 @@ func _ready() -> void:
 	run = Game.run
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var bg := UiKit.add_background(self)
-	bg.color = Color(0.06, 0.08, 0.13)
+	# Второй акт — Затопленные хранилища: фон глубже и зеленее.
+	bg.color = Color(0.03, 0.07, 0.08) if run.act >= 2 else Color(0.06, 0.08, 0.13)
 	view = MapView.new()
 	add_child(view)
 	view.setup(run)
@@ -101,7 +103,7 @@ func _refresh() -> void:
 	for child in _resources_box.get_children():
 		child.queue_free()
 	_resources_box.add_child(UiKit.resource_row(run.resources, false, 22))
-	_layer_label.text = tr("MAP_LAYER") % [run.map.current_layer(), MapState.LAYERS]
+	_layer_label.text = (tr("MAP_LAYER_ACT") % [ROMAN[run.act - 1], run.map.current_layer(), MapState.LAYERS])
 	view.selected = _selected
 	var risks: Dictionary[int, int] = {}
 	for n in run.map.nodes:
@@ -182,7 +184,7 @@ func _add_node_card(n: MapState.MapNode) -> void:
 	else:
 		_info.add_child(_wrapped(tr(TYPE_KEYS[n.type] + "_SHORT"), Color.WHITE))
 	if n.type == MapState.NodeType.BATTLE:
-		_info.add_child(UiKit.label(tr("MAP_TIER") % MapGenerator.tier_for_layer(n.layer), 0, UiKit.MUTED))
+		_info.add_child(UiKit.label(tr("MAP_TIER") % MapGenerator.tier_for_layer(n.layer, run.act), 0, UiKit.MUTED))
 	var risk := CardAdvisor.node_risk(db, run, n)
 	if risk >= 0:
 		var enc := db.encounter(n.content)

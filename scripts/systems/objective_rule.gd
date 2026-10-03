@@ -98,7 +98,7 @@ static func _spawn_reinforcements(state: BattleState, events: Array[BattleEvent]
 		if int(r["round"]) != state.round_number:
 			rest.append(r)
 			continue
-		var hex := _edge_hex(state)
+		var hex := edge_hex(state)
 		if hex == NO_HEX:
 			rest.append(r)
 			continue
@@ -110,7 +110,8 @@ static func _spawn_reinforcements(state: BattleState, events: Array[BattleEvent]
 	state.reinforcements = rest
 
 
-static func _edge_hex(state: BattleState) -> Vector2i:
+## Свободная клетка у края врага (подкрепления, призыв).
+static func edge_hex(state: BattleState) -> Vector2i:
 	for col in [state.grid.width - 1, state.grid.width - 2, state.grid.width - 3]:
 		for row in BattleState.START_ROWS:
 			if state.is_free(Vector2i(col, row)):

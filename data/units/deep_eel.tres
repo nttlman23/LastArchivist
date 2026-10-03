@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="UnitDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/unit_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"deep_eel"
+name_key = "UNIT_DEEP_EEL"
+hp = 14
+attack = 7
+defense = 4
+dmg_min = 3
+dmg_max = 5
+speed = 6
+initiative = 10
+is_ranged = false
+shots = 0
+is_flying = false
+ability_id = &"devour"
+color = Color(0.3, 0.45, 0.4, 1)

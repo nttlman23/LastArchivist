@@ -32,7 +32,13 @@ func test_points_for_run() -> void:
 	run.elites_won = 2
 	assert_eq(MetaRewards.points_for_run(run, false), 5 + 4)
 	run.map.current = run.map.layer_nodes(MapState.RIFT_LAYER)[0].id
-	assert_eq(MetaRewards.points_for_run(run, true), 7 + 4 + 5)
+	assert_eq(MetaRewards.points_for_run(run, false), 7 + 4, "проигрыш у Разлома: Разлом не закрыт")
+	# Второй акт: слои считаются сквозь акты, закрытый Разлом +5, босс второго акта +8.
+	run.act = 2
+	run.map.current = run.map.layer_nodes(3)[0].id
+	assert_eq(MetaRewards.points_for_run(run, false), (8 + 3 - 1) + 4 + 5)
+	run.map.current = run.map.layer_nodes(MapState.RIFT_LAYER)[0].id
+	assert_eq(MetaRewards.points_for_run(run, true), (16 - 1) + 4 + 5 + 8)
 
 
 func test_finish_run_updates_profile() -> void:

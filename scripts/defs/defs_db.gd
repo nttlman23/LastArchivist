@@ -110,19 +110,19 @@ func event(id: StringName) -> EventDef:
 
 
 ## Шаблоны встреч уровня tier (элитные — отдельно), отсортированные по id.
-func encounter_pool(tier: int, elite: bool) -> Array[StringName]:
+func encounter_pool(tier: int, elite: bool, act: int = 1) -> Array[StringName]:
 	var ids: Array[StringName] = []
 	for id in encounters:
 		var e := encounters[id]
-		if not e.boss and e.elite == elite and (elite or e.tier == tier):
+		if not e.boss and e.act == act and e.elite == elite and (elite or e.tier == tier):
 			ids.append(id)
 	ids.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
 	return ids
 
 
-func boss_encounter() -> StringName:
+func boss_encounter(act: int = 1) -> StringName:
 	for id in encounters:
-		if encounters[id].boss:
+		if encounters[id].boss and encounters[id].act == act:
 			return id
 	assert(false, "Нет встречи-босса")
 	return &""
@@ -132,6 +132,16 @@ func event_ids() -> Array[StringName]:
 	var ids: Array[StringName] = []
 	ids.assign(events.keys())
 	ids.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
+	return ids
+
+
+## Карты для пулов наград и лавки забега в акте act: без карт из даров и без карт более поздних актов.
+func pool_memory_ids(act: int = 1) -> Array[StringName]:
+	var ids: Array[StringName] = []
+	for id in memory_ids():
+		var m := memories[id]
+		if not m.gift_only and m.act <= act:
+			ids.append(id)
 	return ids
 
 

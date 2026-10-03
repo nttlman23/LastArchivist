@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"t5_maelstrom"
+name_key = "ENC_T5_MAELSTROM"
+unit_ids = Array[StringName]([&"abyss_warden", &"siren", &"drowned_scribe", &"ink_kraken"])
+counts = Array[int]([4, 4, 8, 2])
+obstacles = Array[Vector2i]([])
+tier = 5
+elite = false
+boss = false
+act = 2
+water_hexes = Array[Vector2i]([Vector2i(5, 4)])
+current_hexes = Array[Vector2i]([Vector2i(4, 3), Vector2i(6, 3), Vector2i(6, 5), Vector2i(4, 5)])
+current_dirs = Array[int]([0, 2, 3, 5])

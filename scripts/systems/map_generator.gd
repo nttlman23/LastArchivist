@@ -17,19 +17,23 @@ const ELITE_FROM_LAYER := 3
 const NO_REPEAT: Array[MapState.NodeType] = [MapState.NodeType.SHOP, MapState.NodeType.HAVEN]
 
 
-static func tier_for_layer(layer: int) -> int:
+## Уровень встреч: первый акт — 1–3 по слоям, второй (SPEC_SPRINT7) — 4 на слоях 1–3, 5 дальше.
+static func tier_for_layer(layer: int, act: int = 1) -> int:
+	if act >= 2:
+		return 4 if layer <= 3 else 5
 	return clampi((layer + 1) / 2, 1, 3)
 
 
-## events — пул событий забега (пусто — все события).
-static func generate(db: DefsDB, seed_value: int, events: Array[StringName] = []) -> MapState:
+## events — пул событий забега (пусто — все события); act — номер акта.
+static func generate(db: DefsDB, seed_value: int, events: Array[StringName] = [], act: int = 1) -> MapState:
 	for attempt in MAX_ATTEMPTS:
 		var rng := RandomNumberGenerator.new()
-		rng.seed = hash("map:%d:%d" % [seed_value, attempt])
+		# Первый акт — прежний сид (карты прежних забегов не меняются).
+		rng.seed = hash("map:%d:%d" % [seed_value, attempt]) if act == 1 else hash("map%d:%d:%d" % [act, seed_value, attempt])
 		var map := _build_graph(rng)
 		_assign_types(map, rng)
 		if _valid(map):
-			_assign_content(db, map, rng, events if not events.is_empty() else db.event_ids())
+			_assign_content(db, map, rng, events if not events.is_empty() else db.event_ids(), act)
 			return map
 	push_error("Не удалось сгенерировать карту для сида %d" % seed_value)
 	return MapState.new()
@@ -150,7 +154,7 @@ static func _valid(map: MapState) -> bool:
 
 
 ## Встречи и события без повторов, пока пул не исчерпан.
-static func _assign_content(db: DefsDB, map: MapState, rng: RandomNumberGenerator, events: Array[StringName]) -> void:
+static func _assign_content(db: DefsDB, map: MapState, rng: RandomNumberGenerator, events: Array[StringName], act: int = 1) -> void:
 	var pools := {}
 	var draw := func(key: String, source: Array[StringName]) -> StringName:
 		if not pools.has(key) or pools[key].is_empty():
@@ -161,14 +165,14 @@ static func _assign_content(db: DefsDB, map: MapState, rng: RandomNumberGenerato
 	for n in map.nodes:
 		match n.type:
 			MapState.NodeType.BATTLE:
-				var tier := tier_for_layer(n.layer)
-				n.content = draw.call("tier%d" % tier, db.encounter_pool(tier, false))
+				var tier := tier_for_layer(n.layer, act)
+				n.content = draw.call("tier%d" % tier, db.encounter_pool(tier, false, act))
 			MapState.NodeType.ELITE:
-				n.content = draw.call("elite", db.encounter_pool(0, true))
+				n.content = draw.call("elite", db.encounter_pool(0, true, act))
 			MapState.NodeType.EVENT:
 				n.content = draw.call("event", events)
 			MapState.NodeType.RIFT:
-				n.content = db.boss_encounter()
+				n.content = db.boss_encounter(act)
 
 
 static func _shuffle(arr: Array, rng: RandomNumberGenerator) -> void:
