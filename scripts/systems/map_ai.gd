@@ -35,6 +35,8 @@ static func choose_node(db: DefsDB, run: RunState, rng: RandomNumberGenerator) -
 				return 5.0
 			MapState.NodeType.EVENT:
 				return 4.0
+			MapState.NodeType.RELIQUARY:
+				return 6.0
 		return 1.0
 	var best := options[0]
 	var best_score := -1.0
@@ -44,6 +46,13 @@ static func choose_node(db: DefsDB, run: RunState, rng: RandomNumberGenerator) -
 			best_score = s
 			best = id
 	return best
+
+
+## Реликварий: первая предложенная реликвия, если её цену можно заплатить.
+static func reliquary(db: DefsDB, run: RunState, node_id: int) -> void:
+	var offer := RelicOps.offer(db, run, node_id)
+	if not offer.is_empty():
+		RelicOps.take(db, run, offer[0], run.node_seed(node_id, "relic_cost"))
 
 
 static func shop(db: DefsDB, run: RunState, visit: ShopOps.Visit) -> void:

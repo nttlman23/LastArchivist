@@ -31,13 +31,14 @@ const ICON_LOCK := &"lock"
 const ICON_MASK := &"mask"
 const ICON_THREAT := &"threat"
 const ICON_WATER := &"water"
+const ICON_CHALICE := &"chalice"
 
 ## Все значки — для запекания в текстуры (IconAtlas).
 const ALL_ICONS: Array[StringName] = [
 	ICON_MELEE, ICON_RANGED, ICON_FLYING, ICON_RETALIATION, ICON_RETALIATION_USED, ICON_DEFEND, ICON_WAIT,
 	ICON_MOVE, ICON_ABILITY, ICON_MARK, ICON_ARMOR, ICON_HEAL, ICON_ORDER, ICON_SPELL,
 	ICON_INK, ICON_PARCHMENT, ICON_AETHER, ICON_HP, ICON_SPEED, ICON_KILL, ICON_POINTS, ICON_LOCK,
-	ICON_MASK, ICON_THREAT, ICON_WATER,
+	ICON_MASK, ICON_THREAT, ICON_WATER, ICON_CHALICE,
 ]
 
 
@@ -314,6 +315,11 @@ static func draw_icon(ci: CanvasItem, kind: StringName, c: Vector2, r: float, bg
 			_poly(ci, c, s, [Vector2(0, -0.95), Vector2(0.95, 0.8), Vector2(-0.95, 0.8)], fg)
 			ci.draw_line(c + Vector2(0, -0.4) * s, c + Vector2(0, 0.25) * s, mark, maxf(2.0, s * 0.2))
 			ci.draw_circle(c + Vector2(0, 0.52) * s, maxf(1.2, s * 0.11), mark)
+		ICON_CHALICE:
+			# Чаша реликвария.
+			_poly(ci, c, s, [Vector2(-0.75, -0.7), Vector2(0.75, -0.7), Vector2(0.45, 0.05), Vector2(-0.45, 0.05)], fg)
+			ci.draw_line(c + Vector2(0, 0.05) * s, c + Vector2(0, 0.6) * s, fg, maxf(2.0, s * 0.2))
+			_poly(ci, c, s, [Vector2(-0.5, 0.6), Vector2(0.5, 0.6), Vector2(0.5, 0.85), Vector2(-0.5, 0.85)], fg)
 		ICON_WATER:
 			# Три волны.
 			for y: float in [-0.45, 0.0, 0.45]:

@@ -414,6 +414,13 @@ static func _hero_chips(db: DefsDB, run: RunState, school: SchoolDef) -> HFlowCo
 	for slot in run.hero.spells:
 		var sp := db.spell(slot.spell_id)
 		f.add_child(chip(UnitGlyphs.ICON_SPELL, "%s ×%d" % [t.call(sp.name_key), slot.charges], Color(0.75, 0.6, 1.0), t.call(sp.name_key), t.call(sp.desc_key)))
+	# Дары привала и реликвии (SPEC_SPRINT7) — значками, описание в подсказке.
+	for g in run.gifts:
+		var key := "CAMP_" + String(g).to_upper()
+		f.add_child(chip(UnitGlyphs.ICON_POINTS, "", Color(0.55, 0.85, 1.0), t.call(key), t.call(key + "_TIP")))
+	for id in run.relics:
+		var r := db.relic(id)
+		f.add_child(chip(r.icon, "", r.color, t.call(r.name_key), t.call(r.desc_key)))
 	return f
 
 

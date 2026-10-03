@@ -17,12 +17,14 @@ const TYPE_COLORS := {
 	MapState.NodeType.SHOP: Color(0.82, 0.66, 0.32),
 	MapState.NodeType.HAVEN: Color(0.36, 0.66, 0.44),
 	MapState.NodeType.RIFT: Color(0.48, 0.24, 0.66),
+	MapState.NodeType.RELIQUARY: Color(0.78, 0.62, 0.36),
 }
 const TYPE_ICONS := {
 	MapState.NodeType.BATTLE: UnitGlyphs.ICON_MELEE,
 	MapState.NodeType.ELITE: UnitGlyphs.ICON_RETALIATION,
 	MapState.NodeType.SHOP: UnitGlyphs.ICON_SPELL,
 	MapState.NodeType.HAVEN: UnitGlyphs.ICON_HEAL,
+	MapState.NodeType.RELIQUARY: UnitGlyphs.ICON_CHALICE,
 }
 const ROCK := Color(0.24, 0.22, 0.27)
 const BRIDGE := Color(0.55, 0.58, 0.66, 0.55)

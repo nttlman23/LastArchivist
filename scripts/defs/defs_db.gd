@@ -14,6 +14,7 @@ var upgrades: Dictionary[StringName, UpgradeDef] = {}
 var events: Dictionary[StringName, EventDef] = {}
 var schools: Dictionary[StringName, SchoolDef] = {}
 var commanders: Dictionary[StringName, CommanderDef] = {}
+var relics: Dictionary[StringName, RelicDef] = {}
 const DEFAULT_SCHOOL := &"ash_archive"
 ## Приказы, доступные всегда.
 var base_orders: Array[StringName] = [&"order_advance", &"order_close_ranks"]
@@ -41,6 +42,8 @@ static func load_default() -> DefsDB:
 		db.schools[res.id] = res as SchoolDef
 	for res in _load_dir("commanders"):
 		db.commanders[res.id] = res as CommanderDef
+	for res in _load_dir("relics"):
+		db.relics[res.id] = res as RelicDef
 	return db
 
 
@@ -52,6 +55,18 @@ func unit(id: StringName) -> UnitDef:
 func commander(id: StringName) -> CommanderDef:
 	assert(commanders.has(id), "Unknown commander: %s" % id)
 	return commanders[id]
+
+
+func relic(id: StringName) -> RelicDef:
+	assert(relics.has(id), "Unknown relic: %s" % id)
+	return relics[id]
+
+
+func relic_ids() -> Array[StringName]:
+	var ids: Array[StringName] = []
+	ids.assign(relics.keys())
+	ids.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
+	return ids
 
 
 func commander_ids() -> Array[StringName]:

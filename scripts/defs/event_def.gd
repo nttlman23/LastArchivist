@@ -7,3 +7,5 @@ extends Resource
 @export var text_key: String
 ## Массив EventOptionDef.
 @export var options: Array = []
+## Акт, в котором событие встречается на карте (SPEC_SPRINT7 12).
+@export var act: int = 1

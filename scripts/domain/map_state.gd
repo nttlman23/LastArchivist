@@ -2,7 +2,7 @@ class_name MapState
 extends RefCounted
 ## Карта экспедиции: граф слоёв островов (SPEC_SPRINT3 3). Только данные.
 
-enum NodeType { BATTLE, ELITE, EVENT, SHOP, HAVEN, RIFT }
+enum NodeType { BATTLE, ELITE, EVENT, SHOP, HAVEN, RIFT, RELIQUARY }
 
 const LAYERS := 7
 const LANES := 4

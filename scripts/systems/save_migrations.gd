@@ -18,9 +18,17 @@ static func migrate(d: Dictionary) -> Dictionary:
 				out = _v5_to_v6(out)
 			6:
 				out = _v6_to_v7(out)
+			7:
+				out = _v7_to_v8(out)
 		v += 1
 		out["version"] = v
 	return out
+
+
+## v8: реликвии — у старого забега их нет.
+static func _v7_to_v8(d: Dictionary) -> Dictionary:
+	d["relics"] = []
+	return d
 
 
 ## v7: второй акт — забег из старого сохранения идёт в первом акте, даров нет.

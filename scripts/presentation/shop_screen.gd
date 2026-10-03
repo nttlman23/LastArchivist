@@ -60,7 +60,7 @@ func _rebuild() -> void:
 		if visit.offer[i] != &"":
 			col.add_child(UiKit.advice_row(db, run.codex, visit.offer[i]))
 
-	_content.add_child(_section(tr("SHOP_REPAIR_SHORT"), UnitGlyphs.ICON_INK, ShopOps.REPAIR_COST, RunState.INK, tr("SHOP_REPAIR") % ShopOps.REPAIR_COST))
+	_content.add_child(_section(tr("SHOP_REPAIR_SHORT"), UnitGlyphs.ICON_INK, ShopOps.repair_cost(run), RunState.INK, tr("SHOP_REPAIR") % ShopOps.repair_cost(run)))
 	var grid := GridContainer.new()
 	grid.columns = 3
 	grid.add_theme_constant_override("h_separation", 8)

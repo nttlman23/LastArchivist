@@ -49,7 +49,7 @@ static func apply(db: DefsDB, run: RunState, node_id: int, event: EventDef, opti
 
 ## Встреча для боя, начатого событием: шаблон уровня tier по сиду острова.
 static func battle_encounter(db: DefsDB, run: RunState, node_id: int, tier: int) -> StringName:
-	var pool := db.encounter_pool(tier, false)
+	var pool := db.encounter_pool(tier, false, 2 if tier >= 4 else 1)
 	return pool[posmod(run.node_seed(node_id, "event_battle"), pool.size())]
 
 
@@ -101,6 +101,13 @@ static func _apply_effect(db: DefsDB, run: RunState, e: EventEffect, chosen: Cod
 		EventEffect.Kind.BATTLE:
 			result.battle_tier = e.tier
 			result.battle_reward = e.memory_id
+		EventEffect.Kind.RELIC:
+			var free: Array[StringName] = []
+			for id in db.relic_ids():
+				if not run.relics.has(id):
+					free.append(id)
+			if not free.is_empty():
+				RelicOps.take(db, run, free[rng.randi_range(0, free.size() - 1)], rng.randi())
 
 
 static func _change_durability(db: DefsDB, card: CodexState.Card, amount: int) -> void:

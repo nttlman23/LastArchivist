@@ -9,6 +9,7 @@ static func for_run(db: DefsDB, run: RunState, selected: Array[int]) -> BattleSt
 	var s := BattleState.create(db, enc, run.codex, selected, run.battle_seed(), run.hero,
 			db.school(run.school_id).passive_id, run.difficulty, Difficulty.commander_for(db, run, enc))
 	CampOps.apply_gifts(run, s)
+	RelicOps.apply_battle(run, s)
 	return s
 
 

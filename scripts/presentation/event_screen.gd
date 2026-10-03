@@ -79,6 +79,8 @@ static func option_chips(option: EventOptionDef) -> Array:
 				chips.append([UnitGlyphs.ICON_SPELL, "%+d" % e.amount, UiKit.ACCENT, t.call("EVENT_CHIP_CHARGES")])
 			EventEffect.Kind.UPGRADE_RANDOM:
 				chips.append([UnitGlyphs.ICON_ABILITY, "", UiKit.ACCENT, t.call("EVENT_CHIP_UPGRADE")])
+			EventEffect.Kind.RELIC:
+				chips.append([UnitGlyphs.ICON_CHALICE, "", Color(0.85, 0.7, 0.4), TranslationServer.translate("EFFECT_RELIC")])
 			EventEffect.Kind.BATTLE:
 				chips.append([UnitGlyphs.ICON_MELEE, t.call("EVENT_CHIP_BATTLE") % e.tier, UiKit.DANGER, t.call("EVENT_CHIP_BATTLE") % e.tier])
 	return chips

@@ -65,6 +65,13 @@ func _run() -> void:
 			Game.SCENE_HAVEN:
 				MapAi.haven(Game.defs, Game.run)
 				Game.complete_node()
+			Game.SCENE_RELIQUARY:
+				var offer: Array[StringName] = scene.offer
+				_log.append("  реликварий: %s" % (offer[0] if not offer.is_empty() else &"—"))
+				if offer.is_empty():
+					Game.complete_node()
+				else:
+					scene._take(offer[0])
 			Game.SCENE_CAMP:
 				# Привал: ремонт, если есть что чинить, иначе дар-пассивка.
 				var options := CampOps.options(Game.run)

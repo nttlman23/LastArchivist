@@ -13,4 +13,4 @@ max_durability = 3
 spell_id = &"whirlpool"
 upgrade_id = &"up_defense"
 act = 2
-gift_only = true
+gift_only = false

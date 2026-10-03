@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"abyss_lord"
 name_key = "UNIT_ABYSS_LORD"
-hp = 320
+hp = 250
 attack = 14
 defense = 12
 dmg_min = 18

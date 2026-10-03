@@ -18,7 +18,10 @@ const SUMMON_BELOW := 6
 static func choose(state: BattleState) -> Dictionary:
 	var best := {}
 	var best_score := 0.0
-	for id in state.commander_charges:
+	# Порядок ключей словаря после загрузки может отличаться — при равных оценках решает сортировка.
+	var ids: Array = state.commander_charges.keys()
+	ids.sort()
+	for id: StringName in ids:
 		if int(state.commander_charges[id]) <= 0:
 			continue
 		for c in _candidates(state, id):

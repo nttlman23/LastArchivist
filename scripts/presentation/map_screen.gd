@@ -10,6 +10,7 @@ const TYPE_KEYS := {
 	MapState.NodeType.SHOP: "NODE_SHOP",
 	MapState.NodeType.HAVEN: "NODE_HAVEN",
 	MapState.NodeType.RIFT: "NODE_RIFT",
+	MapState.NodeType.RELIQUARY: "NODE_RELIQUARY",
 }
 
 var db: DefsDB
@@ -230,7 +231,7 @@ func _shop_prices() -> HFlowContainer:
 	var row := UiKit.flow(14)
 	var entries := [
 		[RunState.PARCHMENT, ShopOps.CARD_PRICE, "SHOP_PRICE_CARD"],
-		[RunState.INK, ShopOps.REPAIR_COST, "SHOP_PRICE_REPAIR"],
+		[RunState.INK, ShopOps.repair_cost(run), "SHOP_PRICE_REPAIR"],
 		[RunState.AETHER, ShopOps.RECHARGE_COST, "SHOP_PRICE_RECHARGE"],
 		[RunState.PARCHMENT, ShopOps.REWORK_COST, "SHOP_PRICE_REWORK"],
 	]

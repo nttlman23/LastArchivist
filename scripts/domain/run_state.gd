@@ -3,7 +3,7 @@ extends RefCounted
 ## Состояние забега. Сохраняется на чекпоинтах — при возврате на карту экспедиции.
 
 ## Версия формата; более старые (от SaveMigrations.MIN_VERSION) переводятся миграциями.
-const SAVE_VERSION := 7
+const SAVE_VERSION := 8
 const REWARD_CHOICES := 3
 
 const INK := &"ink"
@@ -36,6 +36,8 @@ var act := 1
 var at_camp := false
 ## Дары-пассивки привала (CampOps.GIFTS).
 var gifts: Array[StringName] = []
+## Реликвии (SPEC_SPRINT7 11).
+var relics: Array[StringName] = []
 ## Пул карт наград и лавки (с повторами для веса) и пул событий — фиксируются при старте забега.
 var card_pool: Array[StringName] = []
 var event_pool: Array[StringName] = []
@@ -197,6 +199,7 @@ func to_dict() -> Dictionary:
 		"act": act,
 		"at_camp": at_camp,
 		"gifts": Array(gifts).map(func(x: StringName) -> String: return String(x)),
+		"relics": Array(relics).map(func(x: StringName) -> String: return String(x)),
 		"card_pool": Array(card_pool).map(func(x: StringName) -> String: return String(x)),
 		"event_pool": Array(event_pool).map(func(x: StringName) -> String: return String(x)),
 	}
@@ -205,7 +208,7 @@ func to_dict() -> Dictionary:
 ## Поля, без которых сохранение не читается.
 const REQUIRED_KEYS: Array[String] = ["run_seed", "codex", "hero", "loot_rng_seed", "loot_rng_state", "map", "resources",
 		"pending_node", "pending_battle", "pending_reward_card", "battles_won", "elites_won", "cards_lost",
-		"school_id", "difficulty", "act", "at_camp", "gifts", "card_pool", "event_pool"]
+		"school_id", "difficulty", "act", "at_camp", "gifts", "relics", "card_pool", "event_pool"]
 
 
 static func from_dict(d: Dictionary) -> RunState:
@@ -233,6 +236,8 @@ static func from_dict(d: Dictionary) -> RunState:
 	run.at_camp = bool(d["at_camp"])
 	for g: String in d["gifts"]:
 		run.gifts.append(StringName(g))
+	for r: String in d["relics"]:
+		run.relics.append(StringName(r))
 	for id: String in d["card_pool"]:
 		run.card_pool.append(StringName(id))
 	for id: String in d["event_pool"]:

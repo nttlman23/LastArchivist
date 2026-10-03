@@ -13,6 +13,8 @@ const WEIGHTS := {
 	MapState.NodeType.ELITE: 8,
 }
 const ELITE_FROM_LAYER := 3
+const RELIQUARIES_MIN := 1
+const RELIQUARIES_MAX := 2
 ## Нельзя два подряд по ребру.
 const NO_REPEAT: Array[MapState.NodeType] = [MapState.NodeType.SHOP, MapState.NodeType.HAVEN]
 
@@ -32,8 +34,14 @@ static func generate(db: DefsDB, seed_value: int, events: Array[StringName] = []
 		rng.seed = hash("map:%d:%d" % [seed_value, attempt]) if act == 1 else hash("map%d:%d:%d" % [act, seed_value, attempt])
 		var map := _build_graph(rng)
 		_assign_types(map, rng)
+		if act >= 2:
+			_place_reliquaries(map, rng)
 		if _valid(map):
-			_assign_content(db, map, rng, events if not events.is_empty() else db.event_ids(), act)
+			var pool: Array[StringName] = []
+			for id in (events if not events.is_empty() else db.event_ids()):
+				if db.event(id).act == act:
+					pool.append(id)
+			_assign_content(db, map, rng, pool, act)
 			return map
 	push_error("Не удалось сгенерировать карту для сида %d" % seed_value)
 	return MapState.new()
@@ -117,6 +125,17 @@ static func _assign_types(map: MapState, rng: RandomNumberGenerator) -> void:
 	for n in map.layer_nodes(MapState.LAYERS - 1):
 		if n.type == MapState.NodeType.HAVEN:
 			n.type = MapState.NodeType.BATTLE
+
+
+## Второй акт: 1–2 Реликвария на слоях 2–6 вместо события или боя (SPEC_SPRINT7 11).
+static func _place_reliquaries(map: MapState, rng: RandomNumberGenerator) -> void:
+	var candidates: Array[MapState.MapNode] = []
+	for n in map.nodes:
+		if n.layer >= 2 and n.layer <= MapState.LAYERS - 1 and (n.type == MapState.NodeType.EVENT or n.type == MapState.NodeType.BATTLE):
+			candidates.append(n)
+	var count := mini(RELIQUARIES_MIN + rng.randi_range(0, RELIQUARIES_MAX - RELIQUARIES_MIN), candidates.size())
+	for i in count:
+		candidates.pop_at(rng.randi_range(0, candidates.size() - 1)).type = MapState.NodeType.RELIQUARY
 
 
 static func _weighted(rng: RandomNumberGenerator, banned: Array[MapState.NodeType]) -> MapState.NodeType:

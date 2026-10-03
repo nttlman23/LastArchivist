@@ -25,6 +25,9 @@ var ink: Dictionary[Vector2i, int] = {}
 var biome := &"archive"
 ## Босс второго акта перешёл во вторую фазу.
 var boss_phase := 1
+## Реликвии (SPEC_SPRINT7 11): лишнее действие героя в первом раунде; течения не сносят отряды игрока.
+var hero_first_round_bonus := 0
+var player_ignores_currents := false
 var units: Array[UnitState] = []
 var round_number := 0
 ## uid стеков, которые ещё ходят в этом раунде (основная фаза).
@@ -274,6 +277,7 @@ func to_dict() -> Dictionary:
 		"commander_id": String(commander_id), "commander_charges": _charges_dict(), "intent": _intent_dict(),
 		"summon_template": summon_template.duplicate(true),
 		"currents": _hex_pairs(currents), "ink": _hex_pairs(ink), "biome": String(biome), "boss_phase": boss_phase,
+		"hero_first_round_bonus": hero_first_round_bonus, "player_ignores_currents": player_ignores_currents,
 	}
 
 
@@ -351,6 +355,8 @@ static func from_dict(d: Dictionary) -> BattleState:
 		s.ink[Vector2i(int(h[0]), int(h[1]))] = int(h[2])
 	s.biome = StringName(d.get("biome", "archive"))
 	s.boss_phase = int(d.get("boss_phase", 1))
+	s.hero_first_round_bonus = int(d.get("hero_first_round_bonus", 0))
+	s.player_ignores_currents = bool(d.get("player_ignores_currents", false))
 	var tpl: Dictionary = d.get("summon_template", {})
 	if not tpl.is_empty():
 		s.summon_template = UnitState.from_dict(tpl).to_dict()

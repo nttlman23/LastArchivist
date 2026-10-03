@@ -81,6 +81,8 @@ func _play(run: RunState, rng: RandomNumberGenerator) -> String:
 				MapAi.shop(db, run, ShopOps.open(db, run, id))
 			MapState.NodeType.HAVEN:
 				MapAi.haven(db, run)
+			MapState.NodeType.RELIQUARY:
+				MapAi.reliquary(db, run, id)
 		MapActions.complete(run)
 		if not run.codex.has_unit_cards(db):
 			return "нет карт"
@@ -113,6 +115,9 @@ func _battle(run: RunState, rng: RandomNumberGenerator, key: String, elite: bool
 	if enc.boss:
 		return true
 	var rewards := MapActions.battle_rewards(enc)
+	var relic_bonus := RelicOps.battle_bonus(run)
+	for id in relic_bonus:
+		rewards[id] += relic_bonus[id]
 	for id in rewards:
 		run.gain(id, rewards[id])
 	var bonus := BattleSetup.objective_bonus(run, enc)

@@ -56,11 +56,16 @@ static func buy(db: DefsDB, run: RunState, visit: Visit, index: int) -> bool:
 	return true
 
 
+## Цена ремонта с учётом реликвий.
+static func repair_cost(run: RunState) -> int:
+	return REPAIR_COST * RelicOps.repair_multiplier(run)
+
+
 static func repair_reason(db: DefsDB, run: RunState, card_index: int) -> String:
 	var card := run.codex.cards[card_index]
 	if card.durability >= db.memory(card.memory_id).max_durability:
 		return "REASON_FULL_DURABILITY"
-	if not run.can_afford(RunState.INK, REPAIR_COST):
+	if not run.can_afford(RunState.INK, repair_cost(run)):
 		return "REASON_NO_INK"
 	return ""
 
@@ -68,7 +73,7 @@ static func repair_reason(db: DefsDB, run: RunState, card_index: int) -> String:
 static func repair(db: DefsDB, run: RunState, card_index: int) -> bool:
 	if repair_reason(db, run, card_index) != "":
 		return false
-	run.spend(RunState.INK, REPAIR_COST)
+	run.spend(RunState.INK, repair_cost(run))
 	run.codex.cards[card_index].durability += 1
 	return true
 

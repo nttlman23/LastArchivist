@@ -15,6 +15,7 @@ const SCENE_META := "res://scenes/meta/meta.tscn"
 const SCENE_SETTINGS := "res://scenes/settings/settings.tscn"
 const SCENE_CHRONICLE := "res://scenes/chronicle/chronicle.tscn"
 const SCENE_CAMP := "res://scenes/camp/camp.tscn"
+const SCENE_RELIQUARY := "res://scenes/reliquary/reliquary.tscn"
 
 const FONT_SIZE := 22
 
@@ -152,6 +153,8 @@ func resume_node() -> void:
 			goto(SCENE_SHOP)
 		MapState.NodeType.HAVEN:
 			goto(SCENE_HAVEN)
+		MapState.NodeType.RELIQUARY:
+			goto(SCENE_RELIQUARY)
 
 
 ## Событие начало бой: встреча уровня tier, после победы — карта reward (если задана).
@@ -195,6 +198,9 @@ func finish_battle(outcome: BattleState.Outcome, spell_charges: Array[int] = [],
 			_end_run(true)
 		return
 	last_rewards = MapActions.battle_rewards(encounter)
+	var relic_bonus := RelicOps.battle_bonus(run)
+	for id in relic_bonus:
+		last_rewards[id] += relic_bonus[id]
 	var bonus := BattleSetup.objective_bonus(run, encounter)
 	if bonus != &"":
 		last_rewards[bonus] += 1

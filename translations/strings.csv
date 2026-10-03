@@ -632,7 +632,7 @@ CMDACT_CMD_WAVE_DESC,Все ваши стеки в ряду цели сдвиг�
 CMDACT_CMD_SUMMON,Призыв угрей
 CMDACT_CMD_SUMMON_DESC,У края врага появляются два стека глубинных угрей.
 CMDACT_CMD_DEEP_STRIKE,Глубинный удар
-CMDACT_CMD_DEEP_STRIKE_DESC,40 урона вашему стеку (без защиты и ответа).
+CMDACT_CMD_DEEP_STRIKE_DESC,32 урона вашему стеку (без защиты и ответа).
 ORDER_DEEP_BLESSING,Глубинное благословение
 ORDER_DEEP_BLESSING_DESC,Союзный стек восстанавливает 40 ОЗ (с воскрешением). Можно на архив.
 MEM_DROWNED_CROWN,Утопленная корона
@@ -676,3 +676,66 @@ SETTINGS_SHOW_INTENTS_TIP,Значки предполагаемых действ
 HINT_CAMP,Разлом закрыт. Выберите одно: ремонт Кодекса или дар. Дальше — второй акт.
 HINT_FLOODED,"Затопленные хранилища: вода останавливает шаг, течения в начале раунда сносят отряды по стрелке."
 STATUS_SOAKED,Промок: −2 к инициативе.
+NODE_RELIQUARY,Реликварий
+NODE_RELIQUARY_DESC,"Затонувшая сокровищница: одна из двух реликвий — постоянный бонус до конца забега, но у каждой есть цена. Можно отказаться."
+NODE_RELIQUARY_SHORT,Реликвия: бонус с ценой.
+RELIQUARY_TITLE,Реликварий
+RELIQUARY_TEXT,Возьмите одну реликвию — или уйдите ни с чем.
+RELIQUARY_LEAVE,Уйти
+EFFECT_RELIC,Случайная реликвия
+HINT_RELIQUARY,Реликвия действует до конца забега. Внизу описания — её цена.
+RELIC_SALT_CROWN,Солёный венец
+RELIC_SALT_CROWN_DESC,+1 к защите всех отрядов. Цена: −1 прочности случайной карте сейчас.
+RELIC_DROWNED_HOURGLASS,Часы утопленника
+RELIC_DROWNED_HOURGLASS_DESC,+1 действие Архивариуса в первом раунде каждого боя. Цена: −2 Эфира сейчас.
+RELIC_MEMORY_PEARL,Жемчужина памяти
+RELIC_MEMORY_PEARL_DESC,+1 Пергамент за каждую победу. Цена: ремонт в лавке вдвое дороже.
+RELIC_TIDE_COMPASS,Компас прилива
+RELIC_TIDE_COMPASS_DESC,Течения не сносят ваши отряды. Цена: −1 к инициативе отрядов.
+RELIC_KRAKEN_INKWELL,Чернильница кракена
+RELIC_KRAKEN_INKWELL_DESC,Заклинания Архивариуса сильнее на 25%. Цена: −2 Чернил сейчас.
+RELIC_SIREN_SCALE,Чешуя сирены
+RELIC_SIREN_SCALE_DESC,+1 к скорости отрядов. Цена: −10% ОЗ существ.
+RELIC_ABYSS_LANTERN,Фонарь глубин
+RELIC_ABYSS_LANTERN_DESC,В первом раунде боя враги «промокли»: −2 к инициативе. Цена: −3 Пергамента сейчас.
+RELIC_WARDEN_SHELL,Панцирь стража
+RELIC_WARDEN_SHELL_DESC,+15% ОЗ существ отрядов. Цена: −1 к атаке.
+MEM_DROWNED_SCRIBES,Утопленные летописцы
+MEM_INK_KRAKENS,Чернильные спруты
+MEM_SIRENS,Сирены
+EVT_SUNKEN_ALTAR_TITLE,Затонувший алтарь
+EVT_SUNKEN_ALTAR_TEXT,На дне зала светится алтарь. Течение примет подношение — и отдаст что-то взамен.
+EVT_SUNKEN_ALTAR_A,Отдать карту течению
+EVT_SUNKEN_ALTAR_A_RES,Вода уносит воспоминание. На алтаре остаётся реликвия.
+EVT_SUNKEN_ALTAR_B,Собрать эфир с поверхности
+EVT_SUNKEN_ALTAR_B_RES,Немного эфира — и ничего больше.
+EVT_CURRENT_GATE_TITLE,Врата течения
+EVT_CURRENT_GATE_TEXT,Сквозь затопленные врата бьёт течение. За ними — стая сирен и их песня.
+EVT_CURRENT_GATE_A,Войти в течение
+EVT_CURRENT_GATE_A_RES,Течение вносит вас прямо в бой.
+EVT_CURRENT_GATE_B,Обойти по карнизу
+EVT_CURRENT_GATE_B_RES,Долгий путь по мокрому камню изматывает воспоминания.
+EVT_DROWNED_LIBRARY_TITLE,Утонувшая библиотека
+EVT_DROWNED_LIBRARY_TEXT,Полки уходят в воду. Часть свитков ещё можно спасти.
+EVT_DROWNED_LIBRARY_A,Спасти чистый пергамент
+EVT_DROWNED_LIBRARY_A_RES,Сухие листы — в сумку.
+EVT_DROWNED_LIBRARY_B,Переписать карту по уцелевшим строкам
+EVT_DROWNED_LIBRARY_B_RES,Воспоминание становится чётче.
+EVT_DROWNED_LIBRARY_C,Позвать утопленных летописцев
+EVT_DROWNED_LIBRARY_C_RES,Летописцы поднимаются из воды и идут за вами.
+EVT_DROWNED_LIBRARY_C_FAIL,Они не откликаются — чернила расплываются.
+EVT_SIREN_SONG_TITLE,Песня сирены
+EVT_SIREN_SONG_TEXT,Из глубины доносится песня. Она обещает знание — или забвение.
+EVT_SIREN_SONG_A,Слушать
+EVT_SIREN_SONG_A_RES,Песня открывает Архивариусу новый приём.
+EVT_SIREN_SONG_A_FAIL,Песня стирает лучшее воспоминание.
+EVT_SIREN_SONG_B,Заткнуть уши эфиром
+EVT_SIREN_SONG_B_RES,Тишина стоит немного эфира.
+EVT_ABYSS_MERCHANT_TITLE,Торговец из бездны
+EVT_ABYSS_MERCHANT_TEXT,"На плавучем сундуке сидит торговец. Он меняет глубинных тварей на эфир, а заряды — на чернила."
+EVT_ABYSS_MERCHANT_A,Купить спрутов (4 Эфира)
+EVT_ABYSS_MERCHANT_A_RES,Спруты присоединяются к Кодексу.
+EVT_ABYSS_MERCHANT_B,Зарядить заклинания (3 Чернил)
+EVT_ABYSS_MERCHANT_B_RES,Каждое заклинание получает заряд.
+EVT_ABYSS_MERCHANT_C,Уплыть
+EVT_ABYSS_MERCHANT_C_RES,Торговец пожимает плечами.

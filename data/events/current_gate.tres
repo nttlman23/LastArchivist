@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/event_def.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/defs/event_option_def.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/defs/event_effect.gd" id="3"]
+
+[sub_resource type="Resource" id="e0_0"]
+script = ExtResource("3")
+kind = 8
+tier = 5
+memory_id = &"sirens"
+
+[sub_resource type="Resource" id="o0"]
+script = ExtResource("2")
+label_key = "EVT_CURRENT_GATE_A"
+result_key = "EVT_CURRENT_GATE_A_RES"
+effects = [SubResource("e0_0")]
+
+[sub_resource type="Resource" id="e1_0"]
+script = ExtResource("3")
+kind = 2
+amount = -1
+count = 2
+
+[sub_resource type="Resource" id="o1"]
+script = ExtResource("2")
+label_key = "EVT_CURRENT_GATE_B"
+result_key = "EVT_CURRENT_GATE_B_RES"
+effects = [SubResource("e1_0")]
+
+[resource]
+script = ExtResource("1")
+id = &"current_gate"
+title_key = "EVT_CURRENT_GATE_TITLE"
+text_key = "EVT_CURRENT_GATE_TEXT"
+options = [SubResource("o0"), SubResource("o1")]
+act = 2

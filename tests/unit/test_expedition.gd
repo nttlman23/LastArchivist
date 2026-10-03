@@ -83,6 +83,7 @@ func test_all_events_resolve_every_option() -> void:
 			var r := RunState.create(db, 11)
 			CodexOps.apply(db, r, 3, CodexOps.Form.SPELL)
 			r.resources[RunState.INK] = 5
+			r.resources[RunState.AETHER] = 5
 			var option: EventOptionDef = event.options[i]
 			assert_eq(EventResolver.option_reason(db, r, option), "", "%s/%d доступен" % [id, i])
 			var res := EventResolver.apply(db, r, 1, event, i, 0 if option.needs_card else -1)

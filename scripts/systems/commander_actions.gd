@@ -14,7 +14,7 @@ const FURY := &"cmd_fury"
 const WAVE := &"cmd_wave"
 const SUMMON := &"cmd_summon"
 const DEEP_STRIKE := &"cmd_deep_strike"
-const DEEP_DAMAGE := 40
+const DEEP_DAMAGE := 32
 const SUMMON_STACKS := 2
 ## Направление «Приливной волны» — к краю игрока (влево).
 const WAVE_DIR := 3

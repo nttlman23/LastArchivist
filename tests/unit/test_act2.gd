@@ -43,8 +43,9 @@ func test_act2_pools_and_map() -> void:
 func test_gift_cards_not_in_pools() -> void:
 	var run := RunState.create(db, 5)
 	assert_false(run.card_pool.has(CampOps.HERO_CARD))
-	assert_false(run.card_pool.has(CampOps.UNIT_CARD))
-	assert_false(db.pool_memory_ids(2).has(CampOps.UNIT_CARD), "карты даров — только из привала")
+	assert_false(run.card_pool.has(CampOps.UNIT_CARD), "карты второго акта не выпадают в первом")
+	assert_true(db.pool_memory_ids(2).has(CampOps.UNIT_CARD), "во втором акте — выпадают")
+	assert_false(db.pool_memory_ids(2).has(CampOps.HERO_CARD), "геройская карта — только из дара")
 
 
 # --- Структура забега ---------------------------------------------------------------

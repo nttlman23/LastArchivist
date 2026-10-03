@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"siren_scale"
+name_key = "RELIC_SIREN_SCALE"
+desc_key = "RELIC_SIREN_SCALE_DESC"
+icon = &"speed"
+color = Color(0.55, 0.8, 0.85, 1)

@@ -32,7 +32,7 @@ static func start_round(state: BattleState) -> Array[BattleEvent]:
 		_tick_statuses(u, events)
 	_tick_obstacles(state, events)
 	SchoolPassives.on_round_start(state, events)
-	state.hero_actions_left = BattleState.HERO_ACTIONS_PER_ROUND
+	state.hero_actions_left = BattleState.HERO_ACTIONS_PER_ROUND + (state.hero_first_round_bonus if state.round_number == 1 else 0)
 	order.sort_custom(_main_phase_before)
 	state.queue.clear()
 	state.wait_queue.clear()
@@ -54,6 +54,8 @@ static func _apply_currents(state: BattleState, events: Array[BattleEvent]) -> v
 	movers.sort_custom(func(a: UnitState, b: UnitState) -> bool: return a.uid < b.uid)
 	for u in movers:
 		if u.is_flying or u.inert or not state.currents.has(u.hex):
+			continue
+		if state.player_ignores_currents and u.side == UnitState.Side.PLAYER:
 			continue
 		var to := HexGrid.step(u.hex, state.currents[u.hex])
 		if state.is_free(to):
