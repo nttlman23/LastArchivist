@@ -15,6 +15,8 @@ var events: Dictionary[StringName, EventDef] = {}
 var schools: Dictionary[StringName, SchoolDef] = {}
 var commanders: Dictionary[StringName, CommanderDef] = {}
 var relics: Dictionary[StringName, RelicDef] = {}
+## Узлы дерева Зала Архива (SPEC_SPRINT8 2).
+var hall_nodes: Dictionary[StringName, UpgradeNodeDef] = {}
 const DEFAULT_SCHOOL := &"ash_archive"
 ## Приказы, доступные всегда.
 var base_orders: Array[StringName] = [&"order_advance", &"order_close_ranks"]
@@ -44,6 +46,8 @@ static func load_default() -> DefsDB:
 		db.commanders[res.id] = res as CommanderDef
 	for res in _load_dir("relics"):
 		db.relics[res.id] = res as RelicDef
+	for res in _load_dir("hall"):
+		db.hall_nodes[res.id] = res as UpgradeNodeDef
 	return db
 
 
@@ -60,6 +64,21 @@ func commander(id: StringName) -> CommanderDef:
 func relic(id: StringName) -> RelicDef:
 	assert(relics.has(id), "Unknown relic: %s" % id)
 	return relics[id]
+
+
+func hall_node(id: StringName) -> UpgradeNodeDef:
+	assert(hall_nodes.has(id), "Unknown hall node: %s" % id)
+	return hall_nodes[id]
+
+
+## Узлы ветви по порядку.
+func hall_branch(branch: StringName) -> Array[UpgradeNodeDef]:
+	var result: Array[UpgradeNodeDef] = []
+	for n in hall_nodes.values():
+		if n.branch == branch:
+			result.append(n)
+	result.sort_custom(func(a: UpgradeNodeDef, b: UpgradeNodeDef) -> bool: return a.tier < b.tier)
+	return result
 
 
 func relic_ids() -> Array[StringName]:

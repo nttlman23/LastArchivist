@@ -4,7 +4,9 @@ extends RefCounted
 ## Хранится отдельно от сохранения забега.
 
 const DEFAULT_PATH := "user://profile.cfg"
-const VERSION := 1
+const VERSION := 2
+## Читаются и более старые версии (поля, которых в них нет, пусты).
+const MIN_VERSION := 1
 
 var points := 0
 var unlocked: Array[StringName] = []
@@ -16,6 +18,10 @@ var best_layer := 0
 var chronicle: Array[Dictionary] = []
 ## Сводка по школам за всё время: id школы -> {"runs", "wins", "best"}.
 var school_stats: Dictionary[StringName, Dictionary] = {}
+## Купленные узлы Зала Архива (SPEC_SPRINT8 2).
+var upgrades: Array[StringName] = []
+## Наибольшая открытая ступень Испытаний по школам (SPEC_SPRINT8 3).
+var trials: Dictionary[StringName, int] = {}
 
 const CHRONICLE_SIZE := 20
 
@@ -38,7 +44,7 @@ func record_run(entry: Dictionary) -> void:
 	stats["best"] = maxi(int(stats["best"]), int(entry.get("layer", 0)))
 	if entry.get("outcome", "") == OUTCOME_WON and is_better_codex(entry, stats.get("best_codex", {})):
 		stats["best_codex"] = {
-			"codex": entry.get("codex", []), "difficulty": entry.get("difficulty", "normal"),
+			"codex": entry.get("codex", []), "difficulty": entry.get("difficulty", "normal"), "trial": int(entry.get("trial", 0)),
 			"lost": int(entry.get("lost", 0)), "date": entry.get("date", ""),
 		}
 	school_stats[school] = stats
@@ -47,10 +53,15 @@ func record_run(entry: Dictionary) -> void:
 const DIFFICULTY_RANK := {"easy": 0, "normal": 1, "hard": 2}
 
 
-## Лучший победный Кодекс (SPEC_SPRINT6 8): выше сложность, затем меньше потерь, затем новее.
+## Лучший победный Кодекс (SPEC_SPRINT6 8, SPEC_SPRINT8 3): выше ступень Испытания, затем сложность,
+## затем меньше потерь, затем новее.
 static func is_better_codex(entry: Dictionary, best: Dictionary) -> bool:
 	if best.is_empty():
 		return true
+	var ta := int(entry.get("trial", 0))
+	var tb := int(best.get("trial", 0))
+	if ta != tb:
+		return ta > tb
 	var a := int(DIFFICULTY_RANK.get(String(entry.get("difficulty", "normal")), 1))
 	var b := int(DIFFICULTY_RANK.get(String(best.get("difficulty", "normal")), 1))
 	if a != b:
@@ -60,6 +71,16 @@ static func is_better_codex(entry: Dictionary, best: Dictionary) -> bool:
 
 func is_unlocked(id: StringName) -> bool:
 	return unlocked.has(id)
+
+
+## Наибольшая открытая ступень Испытаний школы (0 — не открыты).
+func trial_open(school_id: StringName) -> int:
+	return trials.get(school_id, 0)
+
+
+## Победа на «Тяжело» открывает следующую ступень Испытаний этой школы.
+func open_next_trial(school_id: StringName, won_trial: int) -> void:
+	trials[school_id] = clampi(maxi(trial_open(school_id), won_trial + 1), 0, Trials.MAX)
 
 
 func save(path: String = DEFAULT_PATH) -> void:
@@ -76,13 +97,21 @@ func save(path: String = DEFAULT_PATH) -> void:
 	for id in school_stats:
 		schools[String(id)] = school_stats[id]
 	cfg.set_value("chronicle", "schools", schools)
+	cfg.set_value("hall", "upgrades", Array(upgrades).map(func(x: StringName) -> String: return String(x)))
+	var t := {}
+	for id in trials:
+		t[String(id)] = trials[id]
+	cfg.set_value("hall", "trials", t)
 	SafeFile.save_config(cfg, path)
 
 
 static func load_or_new(path: String = DEFAULT_PATH) -> ProfileState:
 	var p := ProfileState.new()
 	var cfg := SafeFile.load_config(path, func(c: ConfigFile) -> bool: return c.has_section_key("profile", "version"))
-	if cfg == null or int(cfg.get_value("profile", "version", 0)) != VERSION:
+	if cfg == null:
+		return p
+	var version := int(cfg.get_value("profile", "version", 0))
+	if version < MIN_VERSION or version > VERSION:
 		return p
 	p.points = int(cfg.get_value("profile", "points", 0))
 	for id in cfg.get_value("profile", "unlocked", []):
@@ -99,4 +128,10 @@ static func load_or_new(path: String = DEFAULT_PATH) -> ProfileState:
 	var schools: Dictionary = cfg.get_value("chronicle", "schools", {})
 	for id in schools:
 		p.school_stats[StringName(id)] = schools[id]
+	# Зал Архива и Испытания появились в версии 2.
+	for id in cfg.get_value("hall", "upgrades", []):
+		p.upgrades.append(StringName(id))
+	var t: Dictionary = cfg.get_value("hall", "trials", {})
+	for id in t:
+		p.trials[StringName(id)] = int(t[id])
 	return p

@@ -6,6 +6,9 @@ extends Node
 const MUSIC := {
 	&"menu": "res://audio/music/menu.wav",
 	&"battle": "res://audio/music/battle.wav",
+	&"act2": "res://audio/music/act2.wav",
+	&"boss": "res://audio/music/boss.wav",
+	&"boss2": "res://audio/music/boss2.wav",
 }
 ## id -> [путь, громкость дБ]
 const SFX := {

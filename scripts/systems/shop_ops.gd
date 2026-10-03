@@ -24,7 +24,7 @@ static func open(db: DefsDB, run: RunState, node_id: int) -> Visit:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = run.node_seed(node_id, "shop")
 	var pool := run.pool_unique()
-	for i in mini(OFFER_SIZE, pool.size()):
+	for i in mini(offer_size(run), pool.size()):
 		var idx := rng.randi_range(0, pool.size() - 1)
 		v.offer.append(pool[idx])
 		v.bought.append(false)
@@ -32,8 +32,23 @@ static func open(db: DefsDB, run: RunState, node_id: int) -> Visit:
 	return v
 
 
-static func price(db: DefsDB, memory_id: StringName) -> int:
-	return CARD_PRICE if db.memory(memory_id).is_unit() else HERO_CARD_PRICE
+## Товаров в лавке: +1 с «Сундуком с двойным дном».
+static func offer_size(run: RunState) -> int:
+	return OFFER_SIZE + (1 if run.relics.has(RelicOps.CHEST) else 0)
+
+
+## Цена карты: «Скидка у знакомых» −1 (не ниже 1), Испытание 8 +1.
+static func price(db: DefsDB, memory_id: StringName, run: RunState = null) -> int:
+	return adjust_price(run, CARD_PRICE if db.memory(memory_id).is_unit() else HERO_CARD_PRICE)
+
+
+static func adjust_price(run: RunState, base: int) -> int:
+	var p := base
+	if MetaUpgrades.has(run, MetaUpgrades.DISCOUNT):
+		p = maxi(1, p - 1)
+	if Trials.has(run, Trials.PRICES):
+		p += 1
+	return p
 
 
 ## Ключ причины, почему нельзя купить, или "".
@@ -42,7 +57,7 @@ static func buy_reason(db: DefsDB, run: RunState, visit: Visit, index: int) -> S
 		return "REASON_SOLD"
 	if run.codex.is_full():
 		return "REASON_CODEX_FULL"
-	if not run.can_afford(RunState.PARCHMENT, price(db, visit.offer[index])):
+	if not run.can_afford(RunState.PARCHMENT, price(db, visit.offer[index], run)):
 		return "REASON_NO_PARCHMENT"
 	return ""
 
@@ -50,15 +65,22 @@ static func buy_reason(db: DefsDB, run: RunState, visit: Visit, index: int) -> S
 static func buy(db: DefsDB, run: RunState, visit: Visit, index: int) -> bool:
 	if buy_reason(db, run, visit, index) != "":
 		return false
-	run.spend(RunState.PARCHMENT, price(db, visit.offer[index]))
-	run.codex.add(db, visit.offer[index])
+	run.spend(RunState.PARCHMENT, price(db, visit.offer[index], run))
+	run.gain_card(db, visit.offer[index])
 	visit.bought[index] = true
 	return true
 
 
-## Цена ремонта с учётом реликвий.
+## Цена ремонта с учётом реликвий и Испытания 3.
 static func repair_cost(run: RunState) -> int:
-	return REPAIR_COST * RelicOps.repair_multiplier(run)
+	return REPAIR_COST * RelicOps.repair_multiplier(run) + (1 if Trials.has(run, Trials.REPAIR) else 0)
+
+
+## Цена переработки: первая в акте бесплатна с «Опытным переписчиком».
+static func rework_cost(run: RunState) -> int:
+	if MetaUpgrades.has(run, MetaUpgrades.COPYIST) and run.free_rework_act != run.act:
+		return 0
+	return REWORK_COST
 
 
 static func repair_reason(db: DefsDB, run: RunState, card_index: int) -> String:
@@ -97,7 +119,7 @@ static func recharge(run: RunState, slot: int) -> bool:
 static func rework_reason(db: DefsDB, run: RunState, visit: Visit, card_index: int, form: CodexOps.Form) -> String:
 	if visit.rework_used:
 		return "REASON_REWORK_USED"
-	if not run.can_afford(RunState.PARCHMENT, REWORK_COST):
+	if not run.can_afford(RunState.PARCHMENT, rework_cost(run)):
 		return "REASON_NO_PARCHMENT"
 	return CodexOps.unavailable_reason(db, run, card_index, form)
 
@@ -105,7 +127,10 @@ static func rework_reason(db: DefsDB, run: RunState, visit: Visit, card_index: i
 static func rework(db: DefsDB, run: RunState, visit: Visit, card_index: int, form: CodexOps.Form) -> bool:
 	if rework_reason(db, run, visit, card_index, form) != "":
 		return false
-	run.spend(RunState.PARCHMENT, REWORK_COST)
+	var cost := rework_cost(run)
+	if cost == 0:
+		run.free_rework_act = run.act
+	run.spend(RunState.PARCHMENT, cost)
 	CodexOps.apply(db, run, card_index, form)
 	visit.rework_used = true
 	return true
@@ -122,9 +147,14 @@ static func haven_repairs(db: DefsDB, run: RunState) -> int:
 	return n
 
 
+## Сколько прочности чинит «Починить»: +2 с «Крепким переплётом».
+static func haven_repair_amount(run: RunState) -> int:
+	return MetaUpgrades.BINDING_REPAIR if MetaUpgrades.has(run, MetaUpgrades.BINDING) else 1
+
+
 static func haven_repair_all(db: DefsDB, run: RunState) -> void:
 	for c in run.codex.cards:
-		c.durability = mini(db.memory(c.memory_id).max_durability, c.durability + 1)
+		c.durability = mini(db.memory(c.memory_id).max_durability, c.durability + haven_repair_amount(run))
 
 
 static func haven_meditate(run: RunState) -> void:

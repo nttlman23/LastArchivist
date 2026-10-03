@@ -82,7 +82,7 @@ static func _apply_effect(db: DefsDB, run: RunState, e: EventEffect, chosen: Cod
 				if id == &"":
 					var units := run.pool_unique().filter(func(m: StringName) -> bool: return db.memory(m).is_unit())
 					id = units[rng.randi_range(0, units.size() - 1)]
-				var card := run.codex.add(db, id)
+				var card := run.gain_card(db, id)
 				if e.durability > 0:
 					card.durability = e.durability
 		EventEffect.Kind.REMOVE_CHOSEN:
@@ -102,12 +102,14 @@ static func _apply_effect(db: DefsDB, run: RunState, e: EventEffect, chosen: Cod
 			result.battle_tier = e.tier
 			result.battle_reward = e.memory_id
 		EventEffect.Kind.RELIC:
-			var free: Array[StringName] = []
-			for id in db.relic_ids():
-				if not run.relics.has(id):
-					free.append(id)
+			var free := RelicOps.available(db, run)
 			if not free.is_empty():
 				RelicOps.take(db, run, free[rng.randi_range(0, free.size() - 1)], rng.randi())
+		EventEffect.Kind.SCOUT_NEXT:
+			var from := run.map.current_layer() + 1
+			for layer in range(from, from + e.count):
+				for n in run.map.layer_nodes(layer):
+					n.scouted = true
 
 
 static func _change_durability(db: DefsDB, card: CodexState.Card, amount: int) -> void:

@@ -25,6 +25,8 @@ var ink: Dictionary[Vector2i, int] = {}
 var biome := &"archive"
 ## Босс второго акта перешёл во вторую фазу.
 var boss_phase := 1
+## Доля ОЗ, при которой начинается вторая фаза (Испытание 10 — выше, SPEC_SPRINT8 3).
+var boss_phase_share := BossRule.PHASE_SHARE
 ## Реликвии (SPEC_SPRINT7 11): лишнее действие героя в первом раунде; течения не сносят отряды игрока.
 var hero_first_round_bonus := 0
 var player_ignores_currents := false
@@ -277,6 +279,7 @@ func to_dict() -> Dictionary:
 		"commander_id": String(commander_id), "commander_charges": _charges_dict(), "intent": _intent_dict(),
 		"summon_template": summon_template.duplicate(true),
 		"currents": _hex_pairs(currents), "ink": _hex_pairs(ink), "biome": String(biome), "boss_phase": boss_phase,
+		"boss_phase_share": boss_phase_share,
 		"hero_first_round_bonus": hero_first_round_bonus, "player_ignores_currents": player_ignores_currents,
 	}
 
@@ -355,6 +358,7 @@ static func from_dict(d: Dictionary) -> BattleState:
 		s.ink[Vector2i(int(h[0]), int(h[1]))] = int(h[2])
 	s.biome = StringName(d.get("biome", "archive"))
 	s.boss_phase = int(d.get("boss_phase", 1))
+	s.boss_phase_share = float(d.get("boss_phase_share", BossRule.PHASE_SHARE))
 	s.hero_first_round_bonus = int(d.get("hero_first_round_bonus", 0))
 	s.player_ignores_currents = bool(d.get("player_ignores_currents", false))
 	var tpl: Dictionary = d.get("summon_template", {})

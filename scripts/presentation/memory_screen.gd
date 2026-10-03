@@ -77,6 +77,10 @@ func _show_main() -> void:
 		col.add_child(b)
 		col.add_child(UiKit.advice_row(db, run.codex, id))
 		row.add_child(col)
+	if MetaUpgrades.can_reroll(run):
+		var reroll := UiKit.icon_button(UnitGlyphs.ICON_MARK, tr("MEMORY_REROLL"), _reroll, tr("HALL_SECOND_LOOK"), tr("MEMORY_REROLL_TIP"), 220)
+		reroll.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		_content.add_child(reroll)
 
 	# Секция 2: переработка карты Кодекса.
 	_content.add_child(UiKit.label(tr("MEMORY_REWORK"), 28, UiKit.ACCENT))
@@ -113,9 +117,16 @@ func _apply(card_index: int, form: CodexOps.Form) -> void:
 
 # --- Новая карта ---------------------------------------------------------------
 
+## «Второй взгляд» (SPEC_SPRINT8 2): новое предложение, раз за акт.
+func _reroll() -> void:
+	Audio.play(&"card")
+	_offer = MetaUpgrades.reroll(db, run, Game.reward_guarantees_hero())
+	_show_main()
+
+
 func _on_pick(id: StringName) -> void:
 	if not run.codex.is_full():
-		run.codex.add(db, id)
+		run.gain_card(db, id)
 		Game.complete_node()
 		return
 	_chosen = id
@@ -142,5 +153,5 @@ func _show_discard() -> void:
 
 func _on_discard(index: int) -> void:
 	run.codex.remove_at(index)
-	run.codex.add(db, _chosen)
+	run.gain_card(db, _chosen)
 	Game.complete_node()

@@ -253,7 +253,7 @@ REASON_REWORK_USED,переработка уже была
 REASON_NO_CARDS,нет карт отрядов
 HAVEN_TITLE,Тихая гавань
 HAVEN_TEXT,Ветер стих. Есть время для одного дела.
-HAVEN_REPAIR,Починить: +1 прочности всем картам (%d)
+HAVEN_REPAIR,Починить: +%d прочности всем картам (%d)
 HAVEN_REWRITE,Переписать: одно превращение карты бесплатно
 HAVEN_MEDITATE,Медитировать: +1 заряд всем заклинаниям (%d)
 RUN_STATS,Слой %d из %d · побед в боях: %d · карт в Кодексе: %d · %s
@@ -350,8 +350,8 @@ PREVIEW_TIP_AREA,Урон каждому стеку в зоне
 PREVIEW_TIP_ALLIES,Заденет своих
 TARGET_PROMPT_SHORT,%s → цель · ПКМ — отмена
 META_POINTS,Очки памяти
-META_POINTS_TIP,"Даются за пройденные слои, элитные бои и закрытый разлом. Тратятся в «Архиве открытий»."
-META_TITLE,Архив открытий
+META_POINTS_TIP,"Даются за пройденные слои, элитные бои и закрытый разлом. Тратятся в «Зале Архива»."
+META_TITLE,Зал Архива
 META_STATS,Забегов: %d · побед: %d · лучший слой: %d
 META_OPEN,открыто
 META_KIND_SCHOOL,Школа: %s
@@ -424,7 +424,7 @@ SCHOOL_MACHINE_SYNOD_DESC_SHORT,"Турели, барьеры, починка."
 SCHOOL_GARDEN_OF_FACES,Сад Лиц
 SCHOOL_GARDEN_OF_FACES_DESC,Иллюзии и копирование. «Маски»: в начале боя у вашего отряда появляется иллюзия-копия.
 SCHOOL_GARDEN_OF_FACES_DESC_SHORT,Иллюзии и чужие способности.
-MENU_META,Архив открытий
+MENU_META,Зал Архива
 MENU_SETTINGS,Настройки
 RUN_POINTS,+%d очков памяти (всего %d)
 PASSIVE_ASH_SACRIFICE,Пепельная жертва
@@ -739,3 +739,80 @@ EVT_ABYSS_MERCHANT_B,Зарядить заклинания (3 Чернил)
 EVT_ABYSS_MERCHANT_B_RES,Каждое заклинание получает заряд.
 EVT_ABYSS_MERCHANT_C,Уплыть
 EVT_ABYSS_MERCHANT_C_RES,Торговец пожимает плечами.
+HALL_BRANCH_SUPPLIES,Запасы
+HALL_BRANCH_KNOWLEDGE,Знание
+HALL_BRANCH_EXPEDITION,Экспедиция
+HALL_UNLOCKS,Открытия
+HALL_RESET,Вернуть очки
+HALL_RESET_TIP,"Сбросить дерево улучшений: все очки, потраченные на узлы, вернутся. Открытия останутся."
+HALL_COST_TIP,Цена: %d очков памяти
+HALL_FROZEN_TIP,Купленное сейчас подействует со следующего забега.
+REASON_NEEDS_PREVIOUS,нужен предыдущий узел
+HALL_STOCK_INK,Запасливость
+HALL_STOCK_INK_DESC,+1 Чернила на старте забега.
+HALL_STOCK_PARCHMENT,Свиток в рукаве
+HALL_STOCK_PARCHMENT_DESC,+1 Пергамент на старте забега.
+HALL_DISCOUNT,Скидка у знакомых
+HALL_DISCOUNT_DESC,Карты в лавке на 1 Пергамент дешевле (не дешевле 1).
+HALL_STOCK_AETHER,Эфирный тайник
+HALL_STOCK_AETHER_DESC,+1 Эфир на старте забега.
+HALL_CAMP_SUPPLIES,Полная сума
+HALL_CAMP_SUPPLIES_DESC,"После привала: +2 Чернил, Пергамента и Эфира."
+HALL_SECOND_LOOK,Второй взгляд
+HALL_SECOND_LOOK_DESC,Раз за акт можно перебросить карты награды после боя.
+HALL_BINDING,Крепкий переплёт
+HALL_BINDING_DESC,«Починить» в Тихой гавани даёт +2 прочности вместо +1.
+HALL_WIDE_SHELF,Широкая полка
+HALL_WIDE_SHELF_DESC,Награда за элитный бой — 4 карты на выбор вместо 3.
+HALL_COPYIST,Опытный переписчик
+HALL_COPYIST_DESC,Первая переработка карты в лавке в каждом акте — бесплатно.
+HALL_FAMILY,Память рода
+HALL_FAMILY_DESC,"Забег начинается с дополнительной картой школы (прочность 1, на один бой)."
+HALL_MARKED_MAP,Карта с пометками
+HALL_MARKED_MAP_DESC,Разведка острова стоит на 1 Эфир меньше.
+HALL_RUMORS,Новые слухи
+HALL_RUMORS_DESC,Открывает события «Архивная пыль» и «Старый картограф».
+HALL_KNOWN_RELIQUARY,Знакомый реликварий
+HALL_KNOWN_RELIQUARY_DESC,Реликварий предлагает 3 реликвии вместо 2.
+HALL_SECRET_PATHS,Тайные тропы
+HALL_SECRET_PATHS_DESC,Перелёт достаёт на 1 полосу дальше.
+HALL_LOST_RELICS,Утерянные реликвии
+HALL_LOST_RELICS_DESC,Открывает реликвии «Перо летописца» и «Сундук с двойным дном».
+RELIC_CHRONICLER_QUILL,Перо летописца
+RELIC_CHRONICLER_QUILL_DESC,+1 к атаке отрядов. Цена: −2 Пергамента сейчас.
+RELIC_FALSE_BOTTOM_CHEST,Сундук с двойным дном
+RELIC_FALSE_BOTTOM_CHEST_DESC,+1 товар в каждой лавке. Цена: −2 Чернил сейчас.
+EVT_ARCHIVE_DUST_TITLE,Архивная пыль
+EVT_ARCHIVE_DUST_TEXT,"Под слоем пыли — нетронутая полка. Разобрать её можно, но пыль въедается в Кодекс."
+EVT_ARCHIVE_DUST_A,"Разобрать полку (новая карта, 2 случайные карты −1 прочности)"
+EVT_ARCHIVE_DUST_A_RES,"Среди пыли нашлось целое воспоминание, но Кодекс потрёпан."
+EVT_ARCHIVE_DUST_B,Взять только чистые листы (+1 Пергамент)
+EVT_ARCHIVE_DUST_B_RES,Пара чистых листов — тоже находка.
+EVT_OLD_CARTOGRAPHER_TITLE,Старый картограф
+EVT_OLD_CARTOGRAPHER_TEXT,"Седой картограф чертит острова, которых вы ещё не видели. За каплю Эфира он поделится картой."
+EVT_OLD_CARTOGRAPHER_A,"Заплатить (−1 Эфир, разведать 2 следующих слоя)"
+EVT_OLD_CARTOGRAPHER_A_RES,Карта ложится в Кодекс: ближайшие острова больше не тайна.
+EVT_OLD_CARTOGRAPHER_B,Купить у него чернила (+1 Чернила)
+EVT_OLD_CARTOGRAPHER_B_RES,Чернила густые и пахнут морем.
+EVENT_CHIP_SCOUT,Разведка следующих слоёв
+MEMORY_REROLL,Перебросить
+MEMORY_REROLL_TIP,"«Второй взгляд»: новые карты на выбор. Один раз за акт."
+TRIAL_TITLE,Испытание
+TRIAL_SHORT,И%d
+TRIAL_NONE,Без Испытания
+TRIAL_NONE_DESC,Обычная «Тяжело» без дополнительных правил.
+TRIAL_LEVEL,Испытание %d
+TRIAL_HARD_ONLY,Испытания доступны только на «Тяжело».
+TRIAL_LOCKED_TIP,Откройте победой на предыдущей ступени этой школой.
+TRIAL_POINTS_TIP,Очки памяти: +%d%%
+SCHOOL_TRIAL,Испытания: до %d
+TRIAL_RULE_1,Элитные бои: +20% численности врагов.
+TRIAL_RULE_2,Стартовые ресурсы: −1 каждого.
+TRIAL_RULE_3,Ремонт в лавке: +1 Чернила.
+TRIAL_RULE_4,Враги: +1 к инициативе.
+TRIAL_RULE_5,Командир — во всех боях.
+TRIAL_RULE_6,Боссы: +15% ОЗ.
+TRIAL_RULE_7,После обычного боя — 2 карты на выбор.
+TRIAL_RULE_8,Карты в лавке: +1 Пергамент.
+TRIAL_RULE_9,Новые карты: −1 прочности.
+TRIAL_RULE_10,Хозяин Глубин: вторая фаза при 65% ОЗ.

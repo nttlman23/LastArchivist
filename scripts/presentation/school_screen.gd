@@ -5,6 +5,9 @@ var db: DefsDB
 ## Выбранная сложность — запоминается до перезапуска игры.
 static var difficulty := Difficulty.NORMAL
 var _difficulty_buttons: Dictionary[StringName, Button] = {}
+## Выбранная ступень Испытания (SPEC_SPRINT8 3); при старте ограничивается открытой у школы.
+static var trial := 0
+var _trial_row: HBoxContainer
 
 
 func _ready() -> void:
@@ -13,6 +16,9 @@ func _ready() -> void:
 	var box := UiKit.centered_column(self, 20)
 	box.add_child(UiKit.label(tr("SCHOOL_TITLE"), 44, UiKit.ACCENT))
 	box.add_child(_difficulty_row())
+	_trial_row = _make_trial_row()
+	box.add_child(_trial_row)
+	_trial_row.visible = Trials.allowed(difficulty)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 18)
 	box.add_child(row)
@@ -51,6 +57,53 @@ func _difficulty_row() -> HBoxContainer:
 
 func _set_difficulty(d: StringName) -> void:
 	difficulty = d
+	_trial_row.visible = Trials.allowed(d)
+	Audio.play(&"ui_click")
+
+
+## Наибольшая ступень, открытая хотя бы у одной школы.
+func _max_trial() -> int:
+	var best := 0
+	for school in db.schools_sorted():
+		best = maxi(best, Game.profile.trial_open(school.id))
+	return best
+
+
+## Ступени 0–10 переключателями: «0» — без Испытания; правила ступени — в подсказке.
+func _make_trial_row() -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	var title := UiKit.label(tr("TRIAL_TITLE"), 20, UiKit.MUTED)
+	title.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(title)
+	var max_open := _max_trial()
+	trial = mini(trial, max_open)
+	var group := ButtonGroup.new()
+	for i in Trials.MAX + 1:
+		var b := Button.new()
+		b.text = "—" if i == 0 else str(i)
+		b.toggle_mode = true
+		b.button_group = group
+		b.custom_minimum_size = Vector2(48, 40)
+		b.focus_mode = Control.FOCUS_NONE
+		b.add_theme_color_override("font_pressed_color", UiKit.DIFFICULTY_COLORS[Difficulty.HARD])
+		b.button_pressed = i == trial
+		b.disabled = i > max_open
+		b.pressed.connect(_set_trial.bind(i))
+		var head := tr("TRIAL_NONE") if i == 0 else tr("TRIAL_LEVEL") % i
+		var body := Trials.describe(i)
+		if i > 0:
+			body += "\n" + tr("TRIAL_POINTS_TIP") % roundi(Trials.POINTS_PER_TRIAL * 100 * i)
+		if i > max_open:
+			body += "\n" + tr("TRIAL_LOCKED_TIP")
+		Tip.attach(b, head, body, UnitGlyphs.ICON_KILL, UiKit.DIFFICULTY_COLORS[Difficulty.HARD])
+		row.add_child(b)
+	return row
+
+
+func _set_trial(i: int) -> void:
+	trial = i
 	Audio.play(&"ui_click")
 
 
@@ -84,6 +137,9 @@ func _school_card(school: SchoolDef) -> Button:
 		start.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		start.custom_minimum_size = Vector2(290, 0)
 		col.add_child(start)
+		var opened := Game.profile.trial_open(school.id)
+		if opened > 0:
+			col.add_child(UiKit.chip(UnitGlyphs.ICON_KILL, tr("SCHOOL_TRIAL") % opened, UiKit.DIFFICULTY_COLORS[Difficulty.HARD], "", "", 16))
 		b.pressed.connect(_choose.bind(school.id))
 	elif not school.implemented:
 		col.add_child(UiKit.chip(UnitGlyphs.ICON_LOCK, tr("SCHOOL_SOON"), UiKit.MUTED))
@@ -95,4 +151,5 @@ func _school_card(school: SchoolDef) -> Button:
 
 func _choose(school_id: StringName) -> void:
 	Audio.play(&"ui_click")
-	Game.new_run(school_id, difficulty)
+	var t := mini(trial, Game.profile.trial_open(school_id)) if Trials.allowed(difficulty) else 0
+	Game.new_run(school_id, difficulty, t)

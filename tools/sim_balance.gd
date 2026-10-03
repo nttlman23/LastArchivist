@@ -18,13 +18,25 @@ func _init() -> void:
 	var profile := ProfileState.new()
 	for s in db.schools_sorted():
 		profile.unlocked.append(MetaRewards.school_unlock_id(s.id))
+	# Зал Архива и Испытания (SPEC_SPRINT8): --upgrades=all|half|none|<id>, --trial=N.
+	var trial := 0
+	var upgrades_mode := "none"
+	for arg in args:
+		if arg.begins_with("--upgrades="):
+			upgrades_mode = arg.get_slice("=", 1)
+		elif arg.begins_with("--trial="):
+			trial = int(arg.get_slice("=", 1))
+	for n: UpgradeNodeDef in db.hall_nodes.values():
+		var take := upgrades_mode == "all" or (upgrades_mode == "half" and n.tier <= 2) or upgrades_mode == String(n.id)
+		if take:
+			profile.upgrades.append(n.id)
 	var won := 0
 	var act2 := 0
 	var layers_sum := 0
 	var res_sum := {RunState.INK: 0, RunState.PARCHMENT: 0, RunState.AETHER: 0}
 	var deaths := {}
 	for i in runs:
-		var run := RunState.create(db, i * 7919 + 1, school_id, profile, difficulty)
+		var run := RunState.create(db, i * 7919 + 1, school_id, profile, difficulty, trial)
 		var rng := RandomNumberGenerator.new()
 		rng.seed = i
 		var result := _play(run, rng)
@@ -37,7 +49,7 @@ func _init() -> void:
 		layers_sum += run.total_layer()
 		for id in res_sum:
 			res_sum[id] += run.resources[id]
-	print("Школа: %s, сложность: %s" % [school_id, difficulty])
+	print("Школа: %s, сложность: %s, улучшения: %s, Испытание: %d" % [school_id, difficulty, upgrades_mode, trial])
 	print("Экспедиций: %d, дошли до 2-го акта: %d (%.0f%%), пройдено полностью: %d (%.0f%%), средний слой %.1f" % [
 		runs, act2, 100.0 * act2 / runs, won, 100.0 * won / runs, float(layers_sum) / runs])
 	print("Поражения: %s" % deaths)

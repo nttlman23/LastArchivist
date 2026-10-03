@@ -517,6 +517,13 @@ static func difficulty_chip(difficulty: StringName, size: int = 18) -> HBoxConta
 			TranslationServer.translate(key), TranslationServer.translate(key + "_DESC"), size)
 
 
+## Ступень Испытания «И4»; действующие правила — в подсказке.
+static func trial_chip(trial: int, size: int = 18) -> HBoxContainer:
+	var t := TranslationServer.translate
+	return chip(UnitGlyphs.ICON_KILL, t.call("TRIAL_SHORT") % trial, DIFFICULTY_COLORS[Difficulty.HARD],
+			t.call("TRIAL_LEVEL") % trial, Trials.describe(trial), size)
+
+
 ## Риск боя: сила врагов относительно лучших карт армии (три уровня, подробности в подсказке).
 static func risk_chip(db: DefsDB, codex: CodexState, enc: EncounterDef, difficulty: StringName = Difficulty.NORMAL, size: int = 18) -> HBoxContainer:
 	var risk := CardAdvisor.risk(db, codex, enc, difficulty)

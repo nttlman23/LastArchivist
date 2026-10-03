@@ -52,7 +52,7 @@ func _rebuild() -> void:
 		col.add_child(card)
 		var price_row := HBoxContainer.new()
 		price_row.add_theme_constant_override("separation", 8)
-		price_row.add_child(UiKit.chip(UnitGlyphs.ICON_PARCHMENT, str(ShopOps.price(db, visit.offer[i])),
+		price_row.add_child(UiKit.chip(UnitGlyphs.ICON_PARCHMENT, str(ShopOps.price(db, visit.offer[i], run)),
 				UiKit.RESOURCE_COLORS[RunState.PARCHMENT] if reason == "" else UiKit.MUTED, tr("RES_PARCHMENT"), tr("SHOP_PRICE_TIP"), 20))
 		if reason != "":
 			price_row.add_child(UiKit.label(tr(reason), 18, UiKit.MUTED))
@@ -85,7 +85,7 @@ func _rebuild() -> void:
 			b.disabled = ShopOps.recharge_reason(run, s) != ""
 			spells.add_child(b)
 
-	_content.add_child(_section(tr("SHOP_REWORK_SHORT"), UnitGlyphs.ICON_PARCHMENT, ShopOps.REWORK_COST, RunState.PARCHMENT, tr("SHOP_REWORK") % ShopOps.REWORK_COST))
+	_content.add_child(_section(tr("SHOP_REWORK_SHORT"), UnitGlyphs.ICON_PARCHMENT, ShopOps.rework_cost(run), RunState.PARCHMENT, tr("SHOP_REWORK") % ShopOps.rework_cost(run)))
 	var rework := ReworkPanel.new()
 	rework.extra_reason = func(i: int, f: CodexOps.Form) -> String:
 		var r := ShopOps.rework_reason(db, run, visit, i, f)

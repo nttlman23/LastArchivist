@@ -20,9 +20,20 @@ static func migrate(d: Dictionary) -> Dictionary:
 				out = _v6_to_v7(out)
 			7:
 				out = _v7_to_v8(out)
+			8:
+				out = _v8_to_v9(out)
 		v += 1
 		out["version"] = v
 	return out
+
+
+## v9: Зал Архива и Испытания (SPEC_SPRINT8) — старый забег без улучшений и Испытания.
+static func _v8_to_v9(d: Dictionary) -> Dictionary:
+	d["upgrades"] = []
+	d["trial"] = 0
+	d["reroll_act"] = 0
+	d["free_rework_act"] = 0
+	return d
 
 
 ## v8: реликвии — у старого забега их нет.

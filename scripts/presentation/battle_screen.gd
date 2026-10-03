@@ -59,7 +59,7 @@ func _ready() -> void:
 	state = BattleSetup.for_run(db, run, Game.selected)
 
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	Audio.play_music(&"battle")
+	Audio.play_music(Game.battle_music(state))
 	# Фон боя — цвет очистки кадра (Game), отдельный прямоугольник на весь экран не нужен.
 	if Settings.effects_full:
 		add_child(UiKit.ambient_ash(self))
@@ -459,6 +459,8 @@ func _execute(action: BattleAction) -> void:
 	_set_preview("", [])
 	var events := BattleResolver.apply(state, action)
 	_log_events(events)
+	# Вторая фаза босса — плотнее музыка (play_music не перезапускает тот же трек).
+	Audio.play_music(Game.battle_music(state))
 	await view.play(events)
 	view.show_active = true
 

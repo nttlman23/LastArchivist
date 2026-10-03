@@ -101,6 +101,8 @@ func _run_row(e: Dictionary) -> PanelContainer:
 	name_l.custom_minimum_size = Vector2(230, 0)
 	row.add_child(name_l)
 	row.add_child(UiKit.label(tr("DIFFICULTY_" + String(e.get("difficulty", "normal")).to_upper()), 18, UiKit.MUTED))
+	if int(e.get("trial", 0)) > 0:
+		row.add_child(UiKit.trial_chip(int(e.get("trial", 0)), 18))
 	row.add_child(UiKit.chip(UnitGlyphs.ICON_ORDER, tr("CHRONICLE_LAYER") % int(e.get("layer", 0)), UiKit.STAT_COLOR, tr("CHRONICLE_BEST"), "", 18))
 	var enc_id := StringName(e.get("encounter", ""))
 	if enc_id != &"" and db.encounters.has(enc_id) and outcome == ProfileState.OUTCOME_LOST:

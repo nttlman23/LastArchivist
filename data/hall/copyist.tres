@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UpgradeNodeDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/upgrade_node_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"hall_copyist"
+name_key = "HALL_COPYIST"
+desc_key = "HALL_COPYIST_DESC"
+branch = &"knowledge"
+tier = 4
+cost = 10
+icon = &"spell"

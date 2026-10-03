@@ -96,7 +96,7 @@ static func event(db: DefsDB, run: RunState, node_id: int, rng: RandomNumberGene
 static func post_battle(db: DefsDB, run: RunState, rng: RandomNumberGenerator, guarantee_hero: bool) -> String:
 	var offer := run.roll_rewards(db, guarantee_hero)
 	if rng.randf() < 0.5 and not run.codex.is_full():
-		run.codex.add(db, offer[rng.randi_range(0, offer.size() - 1)])
+		run.gain_card(db, offer[rng.randi_range(0, offer.size() - 1)])
 		return "card"
 	var options: Array = []
 	for i in run.codex.cards.size():
@@ -105,7 +105,7 @@ static func post_battle(db: DefsDB, run: RunState, rng: RandomNumberGenerator, g
 				options.append([i, form])
 	if options.is_empty() or run.codex.unit_indices(db).size() <= 2:
 		if not run.codex.is_full():
-			run.codex.add(db, offer[0])
+			run.gain_card(db, offer[0])
 			return "card"
 		return "skip"
 	var pick: Array = options[rng.randi_range(0, options.size() - 1)]

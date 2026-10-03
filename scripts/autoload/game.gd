@@ -94,7 +94,7 @@ func _notification(what: int) -> void:
 		quit_game()
 
 
-func new_run(school_id: StringName = DefsDB.DEFAULT_SCHOOL, difficulty: StringName = Difficulty.NORMAL) -> void:
+func new_run(school_id: StringName = DefsDB.DEFAULT_SCHOOL, difficulty: StringName = Difficulty.NORMAL, trial: int = 0) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
 	# Новый забег поверх сохранённого — старый попадает в летопись как брошенный.
@@ -102,7 +102,7 @@ func new_run(school_id: StringName = DefsDB.DEFAULT_SCHOOL, difficulty: StringNa
 	if old:
 		MetaRewards.abandon_run(profile, old)
 		save_profile()
-	run = RunState.create(defs, rng.seed, school_id, profile, difficulty)
+	run = RunState.create(defs, rng.seed, school_id, profile, difficulty, trial)
 	SaveService.save_run(run)
 	goto(SCENE_MAP)
 
@@ -207,7 +207,7 @@ func finish_battle(outcome: BattleState.Outcome, spell_charges: Array[int] = [],
 	for id in last_rewards:
 		run.gain(id, last_rewards[id])
 	if run.pending_reward_card != &"" and not run.codex.is_full():
-		run.codex.add(defs, run.pending_reward_card)
+		run.gain_card(defs, run.pending_reward_card)
 		last_faded.erase(run.pending_reward_card)
 	goto(SCENE_REWARD)
 
@@ -236,8 +236,27 @@ func to_main_menu() -> void:
 	goto(SCENE_MAIN_MENU)
 
 
+## Музыка экрана (SPEC_SPRINT8 4): во втором акте — своя тема на карте и в боях, у босса — своя.
+func scene_music(scene: String) -> StringName:
+	var act2 := run != null and run.act >= 2 and not run.at_camp
+	if scene == SCENE_BATTLE:
+		if act2 and run.pending_node >= 0 and run.is_boss_battle(defs):
+			return &"boss"
+		return &"act2" if act2 else &"battle"
+	if act2 and scene in [SCENE_MAP, SCENE_PREP, SCENE_REWARD, SCENE_EVENT, SCENE_SHOP, SCENE_HAVEN, SCENE_RELIQUARY]:
+		return &"act2"
+	return &"menu"
+
+
+## Музыка боя по его состоянию: босс второго акта во второй фазе — плотный вариант.
+func battle_music(state: BattleState) -> StringName:
+	if state.biome == &"flooded" and run != null and run.pending_node >= 0 and run.is_boss_battle(defs):
+		return &"boss2" if state.boss_phase >= 2 else &"boss"
+	return &"act2" if state.biome == &"flooded" else &"battle"
+
+
 func goto(scene: String) -> void:
-	Audio.play_music(&"battle" if scene == SCENE_BATTLE else &"menu")
+	Audio.play_music(scene_music(scene))
 	# Переход: затемнение, смена сцены, проявление (SPEC_SPRINT6 5).
 	if _fade_tween and _fade_tween.is_valid():
 		_fade_tween.kill()

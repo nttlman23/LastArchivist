@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UpgradeNodeDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/upgrade_node_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"hall_family"
+name_key = "HALL_FAMILY"
+desc_key = "HALL_FAMILY_DESC"
+branch = &"knowledge"
+tier = 5
+cost = 14
+icon = &"order"

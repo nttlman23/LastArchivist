@@ -13,6 +13,7 @@ enum Kind {
 	UPGRADE_RANDOM,      ## случайное улучшение героя
 	BATTLE,              ## бой уровня tier; после победы — карта memory_id (если задана)
 	RELIC,               ## случайная реликвия, которой ещё нет (SPEC_SPRINT7 12)
+	SCOUT_NEXT,          ## разведать count следующих слоёв карты (SPEC_SPRINT8 2)
 }
 
 @export var kind: Kind = Kind.RESOURCE

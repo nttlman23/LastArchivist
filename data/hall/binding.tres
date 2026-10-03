@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UpgradeNodeDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/upgrade_node_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"hall_binding"
+name_key = "HALL_BINDING"
+desc_key = "HALL_BINDING_DESC"
+branch = &"knowledge"
+tier = 2
+cost = 6
+icon = &"armor"

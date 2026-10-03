@@ -32,8 +32,13 @@ func _run() -> void:
 	Settings.hints = false
 	var school := StringName(args[1]) if args.size() > 1 else DefsDB.DEFAULT_SCHOOL
 	var difficulty := StringName(args[2]) if args.size() > 2 else Difficulty.NORMAL
-	_log.append("школа: %s, сложность: %s" % [school, difficulty])
-	Game.run = RunState.create(Game.defs, seed_value, school, Game.profile, difficulty)
+	# Испытание и полное дерево Зала Архива (SPEC_SPRINT8): -- сид школа сложность [испытание] [all]
+	var trial := int(args[3]) if args.size() > 3 else 0
+	if args.size() > 4 and args[4] == "all":
+		for id in Game.defs.hall_nodes:
+			Game.profile.upgrades.append(id)
+	_log.append("школа: %s, сложность: %s, испытание: %d, улучшений: %d" % [school, difficulty, trial, Game.profile.upgrades.size()])
+	Game.run = RunState.create(Game.defs, seed_value, school, Game.profile, difficulty, trial)
 	SaveService.save_run(Game.run)
 	Game.goto(Game.SCENE_MAP)
 	while _elapsed() < TIMEOUT_SEC:

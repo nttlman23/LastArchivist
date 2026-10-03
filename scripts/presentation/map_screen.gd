@@ -61,6 +61,10 @@ func _build_hud() -> void:
 	var diff := UiKit.difficulty_chip(run.difficulty, 20)
 	diff.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	top.add_child(diff)
+	if run.trial > 0:
+		var trial := UiKit.trial_chip(run.trial, 20)
+		trial.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		top.add_child(trial)
 	_layer_label = UiKit.label("", 22, UiKit.MUTED)
 	_layer_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	top.add_child(_layer_label)
@@ -170,7 +174,7 @@ func _show_info() -> void:
 	else:
 		_info.add_child(_wrapped(tr("MAP_UNREACHABLE"), UiKit.MUTED))
 	if (reachable or flight) and n.content != &"" and not n.scouted:
-		var s := UiKit.icon_button(UnitGlyphs.ICON_AETHER, tr("MAP_SCOUT_SHORT") % MapActions.SCOUT_COST, _scout.bind(n.id),
+		var s := UiKit.icon_button(UnitGlyphs.ICON_AETHER, tr("MAP_SCOUT_SHORT") % MapActions.scout_cost(run), _scout.bind(n.id),
 				tr("MAP_SCOUT_TITLE"), tr("MAP_SCOUT_TIP"), 380)
 		s.disabled = not MapActions.can_scout(run, n.id)
 		_info.add_child(s)
@@ -230,10 +234,10 @@ func _add_node_card(n: MapState.MapNode) -> void:
 func _shop_prices() -> HFlowContainer:
 	var row := UiKit.flow(14)
 	var entries := [
-		[RunState.PARCHMENT, ShopOps.CARD_PRICE, "SHOP_PRICE_CARD"],
+		[RunState.PARCHMENT, ShopOps.adjust_price(run, ShopOps.CARD_PRICE), "SHOP_PRICE_CARD"],
 		[RunState.INK, ShopOps.repair_cost(run), "SHOP_PRICE_REPAIR"],
 		[RunState.AETHER, ShopOps.RECHARGE_COST, "SHOP_PRICE_RECHARGE"],
-		[RunState.PARCHMENT, ShopOps.REWORK_COST, "SHOP_PRICE_REWORK"],
+		[RunState.PARCHMENT, ShopOps.rework_cost(run), "SHOP_PRICE_REWORK"],
 	]
 	for e: Array in entries:
 		var color: Color = UiKit.RESOURCE_COLORS[e[0]] if run.can_afford(e[0], e[1]) else UiKit.MUTED

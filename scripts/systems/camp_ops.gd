@@ -51,7 +51,7 @@ static func apply(db: DefsDB, run: RunState, option: Dictionary) -> void:
 			for card in run.codex.cards:
 				card.durability = db.memory(card.memory_id).max_durability
 		HERO, UNIT:
-			run.codex.add(db, option["id"])
+			run.gain_card(db, option["id"])
 		GIFT:
 			run.gifts.append(option["id"])
 			if option["id"] == GIFT_SPELLS:

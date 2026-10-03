@@ -22,6 +22,8 @@ static func begin_act(db: DefsDB, run: RunState, act: int, profile: ProfileState
 	run.pending_battle = &""
 	run.pending_reward_card = &""
 	run.map = MapGenerator.generate(db, run.run_seed, run.event_pool, act)
+	if act >= 2:
+		MetaUpgrades.apply_camp(run)
 	var school := db.school(run.school_id)
 	if profile:
 		run.card_pool = MetaRewards.card_pool(db, profile, school, act)
@@ -68,6 +70,16 @@ static func path_rewards(db: DefsDB, run: RunState, path: Array[int]) -> Diction
 	return total
 
 
+## Дальность перелёта в полосах: +1 с «Тайными тропами».
+static func flight_lanes(run: RunState) -> int:
+	return FLIGHT_LANES + (1 if MetaUpgrades.has(run, MetaUpgrades.SECRET_PATHS) else 0)
+
+
+## Цена разведки: −1 с «Картой с пометками».
+static func scout_cost(run: RunState) -> int:
+	return maxi(0, SCOUT_COST - (1 if MetaUpgrades.has(run, MetaUpgrades.MARKED_MAP) else 0))
+
+
 ## Острова следующего слоя, доступные только перелётом.
 static func flight_targets(run: RunState) -> Array[int]:
 	var result: Array[int] = []
@@ -76,7 +88,7 @@ static func flight_targets(run: RunState) -> Array[int]:
 	var cur := run.map.node(run.map.current)
 	var linked := reachable(run)
 	for n in run.map.layer_nodes(cur.layer + 1):
-		if not linked.has(n.id) and absi(n.lane - cur.lane) <= FLIGHT_LANES:
+		if not linked.has(n.id) and absi(n.lane - cur.lane) <= flight_lanes(run):
 			result.append(n.id)
 	return result
 
@@ -103,13 +115,13 @@ static func travel(run: RunState, node_id: int) -> bool:
 static func can_scout(run: RunState, node_id: int) -> bool:
 	var n := run.map.node(node_id)
 	var visible := reachable(run).has(node_id) or flight_targets(run).has(node_id)
-	return visible and not n.scouted and n.content != &"" and run.can_afford(RunState.AETHER, SCOUT_COST)
+	return visible and not n.scouted and n.content != &"" and run.can_afford(RunState.AETHER, scout_cost(run))
 
 
 static func scout(run: RunState, node_id: int) -> bool:
 	if not can_scout(run, node_id):
 		return false
-	run.spend(RunState.AETHER, SCOUT_COST)
+	run.spend(RunState.AETHER, scout_cost(run))
 	run.map.node(node_id).scouted = true
 	return true
 

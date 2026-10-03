@@ -11,6 +11,9 @@ const INKWELL := &"kraken_inkwell"           ## заклинания сильн�
 const SCALE := &"siren_scale"                ## +1 скорость отрядам; −10% ОЗ
 const LANTERN := &"abyss_lantern"            ## враги «промокли» в первом раунде; −3 Пергамента сейчас
 const SHELL := &"warden_shell"               ## +15% ОЗ отрядам; −1 атака
+# Открываются узлом Зала Архива «Утерянные реликвии» (SPEC_SPRINT8 2).
+const QUILL := &"chronicler_quill"           ## +1 атака отрядам; −2 Пергамента сейчас
+const CHEST := &"false_bottom_chest"         ## +1 товар в лавке; −2 Чернил сейчас
 
 const OFFER := 2
 const SPELL_POWER := 1.25
@@ -19,16 +22,27 @@ const SHELL_HP := 0.15
 const LANTERN_ROUNDS := 2
 
 
-## Две реликвии на выбор (по сиду острова), без уже полученных.
-static func offer(db: DefsDB, run: RunState, node_id: int) -> Array[StringName]:
+## Реликвии, которые ещё можно получить: не взятые и открытые.
+static func available(db: DefsDB, run: RunState) -> Array[StringName]:
 	var pool: Array[StringName] = []
 	for id in db.relic_ids():
-		if not run.relics.has(id):
+		if not run.relics.has(id) and not MetaUpgrades.relic_locked(run, id):
 			pool.append(id)
+	return pool
+
+
+## Сколько реликвий предлагает реликварий: 3 со «Знакомым реликварием».
+static func offer_size(run: RunState) -> int:
+	return OFFER + (1 if MetaUpgrades.has(run, MetaUpgrades.KNOWN_RELIQUARY) else 0)
+
+
+## Реликвии на выбор (по сиду острова), без уже полученных.
+static func offer(db: DefsDB, run: RunState, node_id: int) -> Array[StringName]:
+	var pool := available(db, run)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = run.node_seed(node_id, "reliquary")
 	var result: Array[StringName] = []
-	while result.size() < OFFER and not pool.is_empty():
+	while result.size() < offer_size(run) and not pool.is_empty():
 		result.append(pool.pop_at(rng.randi_range(0, pool.size() - 1)))
 	return result
 
@@ -49,6 +63,10 @@ static func take(db: DefsDB, run: RunState, id: StringName, seed_value: int = 0)
 			run.gain(RunState.INK, -2)
 		LANTERN:
 			run.gain(RunState.PARCHMENT, -3)
+		QUILL:
+			run.gain(RunState.PARCHMENT, -2)
+		CHEST:
+			run.gain(RunState.INK, -2)
 
 
 ## Эффекты реликвий в бою (после создания боя, до начала).
@@ -60,6 +78,8 @@ static func apply_battle(run: RunState, state: BattleState) -> void:
 			continue
 		if run.relics.has(SALT_CROWN):
 			u.defense += 1
+		if run.relics.has(QUILL):
+			u.attack += 1
 		if run.relics.has(COMPASS):
 			u.initiative -= 1
 		if run.relics.has(SCALE):

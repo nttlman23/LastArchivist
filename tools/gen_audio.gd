@@ -1,5 +1,5 @@
 extends SceneTree
-## Процедурный генератор звука-плейсхолдера: музыка (2 лупа) и звуковые эффекты в res://audio.
+## Процедурный генератор звука-плейсхолдера: музыка (5 лупов) и звуковые эффекты в res://audio.
 ## Всё синтезируется здесь же (синусы, Karplus–Strong, шум), без внешних файлов и лицензий.
 ## Запуск: godot --headless -s res://tools/gen_audio.gd   (затем --headless --import)
 
@@ -30,6 +30,12 @@ func _init() -> void:
 	}
 	for id: String in sfx:
 		_save(OUT_SFX.path_join(id + ".wav"), sfx[id], false)
+	# Второй акт (SPEC_SPRINT8 4): свой сид — прежние файлы при перегенерации не меняются.
+	_wrap = true
+	rng.seed = 2026
+	_save(OUT_MUSIC.path_join("act2.wav"), _music_act2(), true)
+	_save(OUT_MUSIC.path_join("boss.wav"), _music_boss(false), true)
+	_save(OUT_MUSIC.path_join("boss2.wav"), _music_boss(true), true)
 	print("Сгенерировано за %.1f с" % ((Time.get_ticks_msec() - t0) / 1000.0))
 	quit()
 
@@ -94,6 +100,87 @@ func _music_battle() -> PackedFloat32Array:
 		_horn(buf, float(m[0]) * bar, float(m[2]) * beat * 2, _hz(m[1]), 0.07)
 	_echo(buf, 0.3, 0.2)
 	_lowpass(buf, 0.5)
+	return buf
+
+
+## «Затопленные хранилища»: ре дорийский, медленно — низкий пэд, мягкие колокола, «капли».
+## 16 аккордов × 5,5 с ≈ 88 с.
+func _music_act2() -> PackedFloat32Array:
+	var chord_len := 5.5
+	var chords := [
+		[38, [57, 62, 65]], [43, [59, 62, 67]], [36, [55, 60, 64]], [38, [57, 62, 65]],
+		[34, [58, 62, 65]], [36, [55, 60, 64]], [43, [59, 62, 67]], [45, [57, 61, 64]],
+		[38, [57, 62, 65]], [41, [57, 60, 65]], [43, [59, 62, 67]], [36, [55, 60, 64]],
+		[34, [58, 62, 65]], [41, [60, 65, 69]], [43, [59, 62, 67]], [45, [57, 61, 64]],
+	]
+	var buf := _buffer(chord_len * chords.size())
+	for i in chords.size():
+		var t := i * chord_len
+		var bass: int = chords[i][0]
+		_tone(buf, t, chord_len + 1.5, _hz(bass - 12), 0.12, 1.5, 2.0, [1.0, 0.3, 0.05])
+		# Медленный пульс баса — как вода в трубах.
+		_tone(buf, t + chord_len * 0.5, 1.2, _hz(bass), 0.05, 0.2, 0.9, [1.0, 0.2])
+		for note: int in chords[i][1]:
+			_pad(buf, t, chord_len + 1.5, _hz(note - 12), 0.04)
+		if rng.randf() < 0.7:
+			var notes: Array = chords[i][1]
+			_bell(buf, t + rng.randf_range(0.5, 2.5), _hz(notes[rng.randi_range(0, notes.size() - 1)] + 12), 0.045)
+		# Капли: короткие высокие ноты со случайной паузой.
+		var drops := rng.randi_range(2, 5)
+		for d in drops:
+			var notes: Array = chords[i][1]
+			var f := _hz(notes[rng.randi_range(0, notes.size() - 1)] + 24)
+			_tone(buf, t + rng.randf_range(0.0, chord_len), 0.18, f, 0.03, 0.002, 0.16, [1.0, 0.15])
+	_echo(buf, 0.43, 0.4)
+	_echo(buf, 0.71, 0.3)
+	_lowpass(buf, 0.3)
+	_lowpass(buf, 0.35)
+	return buf
+
+
+## «Хозяин Глубин»: ми фригийский, 110 уд/мин, 32 такта ≈ 70 с — бас-остинато и нарастающий пэд.
+## dense — вторая фаза: та же гармония и длина (для кроссфейда), но плотнее — малый, щипки октавой выше, «тарелки».
+func _music_boss(dense: bool) -> PackedFloat32Array:
+	var beat := 60.0 / 110.0
+	var bar := beat * 4
+	var roots := [40, 41, 40, 38, 40, 41, 43, 41]  # E F E D E F G F
+	var pads := [[52, 55, 59], [53, 57, 60], [52, 55, 59], [50, 53, 57], [52, 55, 59], [53, 57, 60], [55, 59, 62], [53, 57, 60]]
+	var bars_per_chord := 4
+	var buf := _buffer(bar * bars_per_chord * roots.size())
+	var ostinato := [0, 0, 12, 0, 1, 0, 7, 0]
+	for c in roots.size():
+		var start := c * bar * bars_per_chord
+		var root: int = roots[c]
+		var swell := 0.025 + 0.012 * c / roots.size()
+		for p: int in pads[c]:
+			_pad(buf, start, bar * bars_per_chord + 0.8, _hz(p), swell)
+		for e in bars_per_chord * 8:
+			var note := root - 12 + int(ostinato[e % ostinato.size()])
+			_pluck(buf, start + e * beat * 0.5, _hz(note), 0.16, 0.4)
+			if dense and e % 2 == 1:
+				_pluck(buf, start + e * beat * 0.5, _hz(note + 24), 0.06, 0.25)
+	for b in bars_per_chord * roots.size():
+		var t := b * bar
+		_kick(buf, t, 0.55)
+		_kick(buf, t + beat * 2.5, 0.35)
+		if dense:
+			_kick(buf, t + beat * 1.5, 0.3)
+			_snare(buf, t + beat, 0.14)
+			_snare(buf, t + beat * 3, 0.17)
+			for h in 8:
+				_noise(buf, t + h * beat * 0.5, 0.05, 0.025, 0.02, 0.9)
+		elif b % 2 == 1:
+			_snare(buf, t + beat * 3, 0.12)
+		if b % 8 == 7:
+			_noise(buf, t + beat * 2, beat * 2, 0.05, 0.0, 0.5, true)
+	# Тяжёлый рог: мотив из полутона, каждые 8 тактов.
+	for k in roots.size() / 2:
+		var t0 := k * bar * 8
+		_horn(buf, t0 + bar * 4, beat * 2, _hz(52), 0.07)
+		_horn(buf, t0 + bar * 4 + beat * 2, beat * 2, _hz(53), 0.07)
+		_horn(buf, t0 + bar * 5, beat * 4, _hz(52), 0.07)
+	_echo(buf, 0.27, 0.22)
+	_lowpass(buf, 0.45)
 	return buf
 
 

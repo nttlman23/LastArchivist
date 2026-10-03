@@ -57,6 +57,9 @@ static func apply(state: BattleState, action: BattleAction) -> Array[BattleEvent
 		SchoolPassives.after_events(state, events)
 		if check_end(state, events):
 			state.active_uid = -1
+		elif state.active_unit() == null or not state.active_unit().is_alive():
+			# Заклинание героя задело и убило свой активный стек (цепная молния) — ход переходит дальше.
+			events.append_array(TurnManager.advance(state))
 		return events
 
 	var u := state.active_unit()

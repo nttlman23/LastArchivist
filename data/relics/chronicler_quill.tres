@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"chronicler_quill"
+name_key = "RELIC_CHRONICLER_QUILL"
+desc_key = "RELIC_CHRONICLER_QUILL_DESC"
+icon = &"melee"
+color = Color(0.95, 0.75, 0.5, 1)

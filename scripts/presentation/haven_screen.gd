@@ -28,7 +28,7 @@ func _show_choices() -> void:
 	_content.add_child(UiKit.label(tr("HAVEN_TITLE"), 44, UiKit.ACCENT))
 	_content.add_child(UiKit.label(tr("HAVEN_TEXT"), 22, UiKit.MUTED))
 	var repairs := ShopOps.haven_repairs(db, run)
-	var repair := UiKit.icon_button(UnitGlyphs.ICON_HEAL, tr("HAVEN_REPAIR") % repairs, _repair, "", "", 640)
+	var repair := UiKit.icon_button(UnitGlyphs.ICON_HEAL, tr("HAVEN_REPAIR") % [ShopOps.haven_repair_amount(run), repairs], _repair, "", "", 640)
 	repair.disabled = repairs == 0
 	_content.add_child(repair)
 	_content.add_child(UiKit.icon_button(UnitGlyphs.ICON_SPELL, tr("HAVEN_REWRITE"), _show_rewrite, "", "", 640))

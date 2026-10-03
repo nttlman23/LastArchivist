@@ -24,7 +24,7 @@ static func points_for_run(run: RunState, won: bool) -> int:
 	var rift := won or run.act >= 2
 	var base := maxi(0, layer - 1) * POINTS_PER_LAYER + run.elites_won * POINTS_PER_ELITE \
 			+ (POINTS_FOR_RIFT if rift else 0) + (POINTS_FOR_ACT2_BOSS if won else 0)
-	return Difficulty.points(run.difficulty, base, won)
+	return Trials.points(run, Difficulty.points(run.difficulty, base, won))
 
 
 ## Все открытия: школы (кроме бесплатных) и каталог. Каждое — {id, kind, target, cost}.
@@ -90,7 +90,7 @@ static func event_pool(db: DefsDB, profile: ProfileState) -> Array[StringName]:
 			locked.append(u["target"])
 	var pool: Array[StringName] = []
 	for id in db.event_ids():
-		if not locked.has(id):
+		if not locked.has(id) and not MetaUpgrades.event_locked(profile, id):
 			pool.append(id)
 	return pool
 
@@ -103,6 +103,8 @@ static func finish_run(profile: ProfileState, run: RunState, won: bool, db: Defs
 	if won:
 		profile.wins += 1
 	profile.best_layer = maxi(profile.best_layer, run.total_layer())
+	if won and run.difficulty == Difficulty.HARD:
+		profile.open_next_trial(run.school_id, run.trial)
 	profile.record_run(chronicle_entry(run, ProfileState.OUTCOME_WON if won else ProfileState.OUTCOME_LOST, gained, db))
 	return gained
 
@@ -124,6 +126,7 @@ static func chronicle_entry(run: RunState, outcome: String, points: int, db: Def
 		"date": "%04d-%02d-%02d" % [date["year"], date["month"], date["day"]],
 		"school": String(run.school_id),
 		"difficulty": String(run.difficulty),
+		"trial": run.trial,
 		"layer": run.total_layer(),
 		"act": run.act,
 		"outcome": outcome,

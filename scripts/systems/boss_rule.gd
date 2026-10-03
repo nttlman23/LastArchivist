@@ -13,7 +13,7 @@ static func check(state: BattleState, events: Array[BattleEvent]) -> void:
 	if state.boss_phase != 1 or state.biome != &"flooded":
 		return
 	var boss := state.get_unit(state.boss_uid)
-	if boss == null or not boss.is_alive() or boss.total_hp() > boss.start_count * boss.hp * PHASE_SHARE:
+	if boss == null or not boss.is_alive() or boss.total_hp() > boss.start_count * boss.hp * state.boss_phase_share:
 		return
 	state.boss_phase = 2
 	boss.defense += PHASE_DEFENSE
