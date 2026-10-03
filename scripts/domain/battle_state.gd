@@ -309,7 +309,8 @@ static func from_dict(d: Dictionary) -> BattleState:
 	s.hold_count = int(d.get("hold_count", 0))
 	s.archive_uid = int(d.get("archive_uid", -1))
 	for r: Dictionary in d.get("reinforcements", []):
-		s.reinforcements.append(r.duplicate(true))
+		# Нормализация чисел после JSON (float -> int): копия боя должна совпадать байт в байт.
+		s.reinforcements.append({"round": int(r["round"]), "unit": UnitState.from_dict(r["unit"]).to_dict()})
 	s.commander_id = StringName(d.get("commander_id", ""))
 	var charges: Dictionary = d.get("commander_charges", {})
 	for id: String in charges:

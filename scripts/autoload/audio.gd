@@ -42,6 +42,8 @@ var settings_path := "user://settings.cfg"
 var music_volume := 0.7
 var sfx_volume := 0.8
 var current_music := &""
+## Проверка сборки (--smoke) выключает музыку: без окна поток не успевает освободиться к выходу.
+var music_allowed := true
 
 var _music_players: Array[AudioStreamPlayer] = []
 var _active_music := 0
@@ -72,8 +74,25 @@ func _ready() -> void:
 
 
 ## Плавно переключает музыку; повторный вызов с той же темой ничего не делает.
+## При выходе останавливаем все голоса: иначе потоки воспроизведения остаются у аудиосервера
+## и движок сообщает об утечке (SPEC_SPRINT6 11).
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_EXIT_TREE:
+		stop_all()
+
+
+func stop_all() -> void:
+	if _music_tween:
+		_music_tween.kill()
+	for p in _music_players + _voices:
+		if is_instance_valid(p):
+			p.stop()
+			p.stream = null
+	current_music = &""
+
+
 func play_music(id: StringName) -> void:
-	if id == current_music or not MUSIC.has(id):
+	if id == current_music or not MUSIC.has(id) or not music_allowed:
 		return
 	current_music = id
 	var stream := _music_stream(MUSIC[id])
@@ -121,8 +140,8 @@ func set_sfx_volume(value: float) -> void:
 
 
 func load_settings() -> void:
-	var cfg := ConfigFile.new()
-	if cfg.load(settings_path) == OK:
+	var cfg := SafeFile.load_config(settings_path)
+	if cfg:
 		music_volume = float(cfg.get_value("audio", "music", music_volume))
 		sfx_volume = float(cfg.get_value("audio", "sfx", sfx_volume))
 	_apply_volume(BUS_MUSIC, music_volume)
@@ -130,11 +149,12 @@ func load_settings() -> void:
 
 
 func save_settings() -> void:
-	var cfg := ConfigFile.new()
-	cfg.load(settings_path)
+	var cfg := SafeFile.load_config(settings_path)
+	if cfg == null:
+		cfg = ConfigFile.new()
 	cfg.set_value("audio", "music", music_volume)
 	cfg.set_value("audio", "sfx", sfx_volume)
-	cfg.save(settings_path)
+	SafeFile.save_config(cfg, settings_path)
 
 
 func _music_stream(path: String) -> AudioStream:

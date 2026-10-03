@@ -2,7 +2,8 @@ class_name RunState
 extends RefCounted
 ## Состояние забега. Сохраняется на чекпоинтах — при возврате на карту экспедиции.
 
-const SAVE_VERSION := 5
+## Версия формата; более старые (от SaveMigrations.MIN_VERSION) переводятся миграциями.
+const SAVE_VERSION := 6
 const REWARD_CHOICES := 3
 
 const INK := &"ink"
@@ -187,8 +188,14 @@ func to_dict() -> Dictionary:
 	}
 
 
+## Поля, без которых сохранение не читается.
+const REQUIRED_KEYS: Array[String] = ["run_seed", "codex", "hero", "loot_rng_seed", "loot_rng_state", "map", "resources",
+		"pending_node", "pending_battle", "pending_reward_card", "battles_won", "elites_won", "cards_lost",
+		"school_id", "difficulty", "card_pool", "event_pool"]
+
+
 static func from_dict(d: Dictionary) -> RunState:
-	if int(d.get("version", 0)) != SAVE_VERSION:
+	if int(d.get("version", 0)) != SAVE_VERSION or not d.has_all(REQUIRED_KEYS):
 		return null
 	var run := RunState.new()
 	run.run_seed = String(d["run_seed"]).to_int()
@@ -205,7 +212,7 @@ static func from_dict(d: Dictionary) -> RunState:
 	run.pending_reward_card = StringName(d["pending_reward_card"])
 	run.battles_won = int(d["battles_won"])
 	run.elites_won = int(d["elites_won"])
-	run.cards_lost = int(d.get("cards_lost", 0))
+	run.cards_lost = int(d["cards_lost"])
 	run.school_id = StringName(d["school_id"])
 	run.difficulty = StringName(d["difficulty"])
 	for id: String in d["card_pool"]:

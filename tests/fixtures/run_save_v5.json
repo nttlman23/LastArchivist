@@ -1,0 +1,326 @@
+{
+	"battles_won": 1,
+	"card_pool": [
+		"ash_chroniclers",
+		"brass_tinkers",
+		"clock_turrets",
+		"deep_jellies",
+		"face_thieves",
+		"faceless_choir",
+		"ghoul_pack",
+		"last_king",
+		"mirror_doubles",
+		"rust_sentinels",
+		"salt_legion",
+		"shard_archers",
+		"storm_wyrm",
+		"tide_wardens",
+		"tide_wardens",
+		"deep_jellies"
+	],
+	"codex": [
+		{
+			"durability": 3,
+			"level": 1,
+			"memory_id": "tide_wardens"
+		},
+		{
+			"durability": 3,
+			"level": 1,
+			"memory_id": "tide_wardens"
+		},
+		{
+			"durability": 3,
+			"level": 1,
+			"memory_id": "deep_jellies"
+		},
+		{
+			"durability": 4,
+			"level": 1,
+			"memory_id": "salt_legion"
+		}
+	],
+	"difficulty": "hard",
+	"elites_won": 0,
+	"event_pool": [
+		"abandoned_altar",
+		"captive_king",
+		"ink_spring",
+		"legion_echo",
+		"memory_merchant",
+		"rift_whisper",
+		"ruined_scriptorium",
+		"storm_bridge"
+	],
+	"hero": {
+		"spells": [],
+		"upgrades": []
+	},
+	"loot_rng_seed": "4201984457",
+	"loot_rng_state": "7635626733878890727",
+	"map": {
+		"current": 0,
+		"edges": {
+			"0": [
+				1,
+				18
+			],
+			"1": [
+				2
+			],
+			"10": [
+				11,
+				4
+			],
+			"11": [
+				5
+			],
+			"12": [
+				21
+			],
+			"13": [
+				1
+			],
+			"14": [
+				15
+			],
+			"15": [
+				16
+			],
+			"16": [
+				17
+			],
+			"17": [
+				21
+			],
+			"18": [
+				19
+			],
+			"19": [
+				10
+			],
+			"2": [
+				3,
+				14
+			],
+			"20": [
+				17
+			],
+			"3": [
+				4
+			],
+			"4": [
+				5,
+				20
+			],
+			"5": [
+				6,
+				12
+			],
+			"6": [
+				21
+			],
+			"7": [
+				8
+			],
+			"8": [
+				9
+			],
+			"9": [
+				10
+			]
+		},
+		"nodes": [
+			{
+				"content": "crypt_1",
+				"id": 0,
+				"lane": 2,
+				"layer": 1,
+				"scouted": false,
+				"type": 0
+			},
+			{
+				"content": "t1_ram",
+				"id": 1,
+				"lane": 3,
+				"layer": 2,
+				"scouted": false,
+				"type": 0
+			},
+			{
+				"content": "t2_bastion",
+				"id": 2,
+				"lane": 3,
+				"layer": 3,
+				"scouted": false,
+				"type": 0
+			},
+			{
+				"content": "crypt_3",
+				"id": 3,
+				"lane": 2,
+				"layer": 4,
+				"scouted": false,
+				"type": 0
+			},
+			{
+				"content": "crypt_4",
+				"id": 4,
+				"lane": 1,
+				"layer": 5,
+				"scouted": false,
+				"type": 0
+			},
+			{
+				"content": "t3_protect",
+				"id": 5,
+				"lane": 0,
+				"layer": 6,
+				"scouted": false,
+				"type": 0
+			},
+			{
+				"content": "",
+				"id": 6,
+				"lane": 1,
+				"layer": 7,
+				"scouted": false,
+				"type": 4
+			},
+			{
+				"content": "t1_wall",
+				"id": 7,
+				"lane": 0,
+				"layer": 1,
+				"scouted": false,
+				"type": 0
+			},
+			{
+				"content": "",
+				"id": 8,
+				"lane": 0,
+				"layer": 2,
+				"scouted": false,
+				"type": 3
+			},
+			{
+				"content": "elite_storm",
+				"id": 9,
+				"lane": 0,
+				"layer": 3,
+				"scouted": false,
+				"type": 1
+			},
+			{
+				"content": "t2_storm",
+				"id": 10,
+				"lane": 0,
+				"layer": 4,
+				"scouted": false,
+				"type": 0
+			},
+			{
+				"content": "t3_assassinate",
+				"id": 11,
+				"lane": 0,
+				"layer": 5,
+				"scouted": false,
+				"type": 0
+			},
+			{
+				"content": "",
+				"id": 12,
+				"lane": 0,
+				"layer": 7,
+				"scouted": false,
+				"type": 4
+			},
+			{
+				"content": "t1_priests",
+				"id": 13,
+				"lane": 3,
+				"layer": 1,
+				"scouted": false,
+				"type": 0
+			},
+			{
+				"content": "crypt_2",
+				"id": 14,
+				"lane": 3,
+				"layer": 4,
+				"scouted": false,
+				"type": 0
+			},
+			{
+				"content": "",
+				"id": 15,
+				"lane": 3,
+				"layer": 5,
+				"scouted": false,
+				"type": 4
+			},
+			{
+				"content": "memory_merchant",
+				"id": 16,
+				"lane": 2,
+				"layer": 6,
+				"scouted": false,
+				"type": 2
+			},
+			{
+				"content": "",
+				"id": 17,
+				"lane": 2,
+				"layer": 7,
+				"scouted": false,
+				"type": 4
+			},
+			{
+				"content": "abandoned_altar",
+				"id": 18,
+				"lane": 2,
+				"layer": 2,
+				"scouted": false,
+				"type": 2
+			},
+			{
+				"content": "",
+				"id": 19,
+				"lane": 1,
+				"layer": 3,
+				"scouted": false,
+				"type": 4
+			},
+			{
+				"content": "",
+				"id": 20,
+				"lane": 1,
+				"layer": 6,
+				"scouted": false,
+				"type": 3
+			},
+			{
+				"content": "rift",
+				"id": 21,
+				"lane": 1,
+				"layer": 8,
+				"scouted": false,
+				"type": 5
+			}
+		],
+		"visited": [
+			0
+		]
+	},
+	"pending_battle": "",
+	"pending_node": -1,
+	"pending_reward_card": "",
+	"resources": {
+		"aether": 2,
+		"ink": 2,
+		"parchment": 3
+	},
+	"run_seed": "4242",
+	"school_id": "tide_order",
+	"version": 5
+}

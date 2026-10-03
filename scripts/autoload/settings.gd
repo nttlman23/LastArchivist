@@ -61,8 +61,8 @@ func set_effects_full(value: bool) -> void:
 
 
 func load_settings() -> void:
-	var cfg := ConfigFile.new()
-	if cfg.load(settings_path) == OK:
+	var cfg := SafeFile.load_config(settings_path)
+	if cfg:
 		detailed = bool(cfg.get_value(SECTION, "detailed", detailed))
 		hints = bool(cfg.get_value(SECTION, "hints", hints))
 		large_icons = bool(cfg.get_value(SECTION, "large_icons", large_icons))
@@ -74,12 +74,13 @@ func load_settings() -> void:
 
 
 func save_settings() -> void:
-	var cfg := ConfigFile.new()
-	cfg.load(settings_path)
+	var cfg := SafeFile.load_config(settings_path)
+	if cfg == null:
+		cfg = ConfigFile.new()
 	cfg.set_value(SECTION, "detailed", detailed)
 	cfg.set_value(SECTION, "hints", hints)
 	cfg.set_value(SECTION, "large_icons", large_icons)
 	cfg.set_value(SECTION, "anim_speed", anim_speed)
 	cfg.set_value(SECTION, "screen_shake", screen_shake)
 	cfg.set_value(SECTION, "effects_full", effects_full)
-	cfg.save(settings_path)
+	SafeFile.save_config(cfg, settings_path)

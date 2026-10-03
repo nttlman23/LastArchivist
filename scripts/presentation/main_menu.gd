@@ -20,11 +20,14 @@ func _ready() -> void:
 	box.add_child(UiKit.button(tr("MENU_NEW_RUN"), Game.goto.bind(Game.SCENE_SCHOOL), 360))
 	var cont := UiKit.button(tr("MENU_CONTINUE"), Game.continue_run, 360)
 	cont.disabled = SaveService.load_run() == null
+	if SaveService.is_broken():
+		# Файл есть, но ни он, ни резервная копия не читаются — подсказка вместо молчания.
+		Tip.attach(cont, tr("MENU_CONTINUE"), tr("MENU_SAVE_BROKEN"))
 	box.add_child(cont)
 	box.add_child(UiKit.button(tr("MENU_META"), Game.goto.bind(Game.SCENE_META), 360))
 	box.add_child(UiKit.button(tr("MENU_CHRONICLE"), Game.goto.bind(Game.SCENE_CHRONICLE), 360))
 	box.add_child(UiKit.button(tr("MENU_SETTINGS"), Game.goto.bind(Game.SCENE_SETTINGS), 360))
-	box.add_child(UiKit.button(tr("MENU_QUIT"), get_tree().quit, 360))
+	box.add_child(UiKit.button(tr("MENU_QUIT"), Game.quit_game, 360))
 
 
 ## Большой бледный силуэт архива за меню; медленно «дышит».

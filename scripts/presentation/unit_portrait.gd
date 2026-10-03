@@ -29,18 +29,30 @@ func set_unit(db: DefsDB, u: UnitState, p_active: bool = false) -> void:
 
 
 func _draw() -> void:
-	var rect := Rect2(Vector2.ZERO, size)
-	var side_color := UiKit.PLAYER_COLOR if side == UnitState.Side.PLAYER else UiKit.ENEMY_COLOR
-	draw_rect(rect, body_color.darkened(0.15))
-	var r := minf(size.x, size.y) * 0.42
-	var center := size * Vector2(0.5, 0.44 if show_count else 0.5)
-	UnitGlyphs.draw_unit(self, def_id, center, r, body_color.darkened(0.15))
-	UnitGlyphs.draw_details(self, def_id, center, r, body_color.darkened(0.15))
-	if show_count:
-		var font := get_theme_default_font()
-		var fs := int(size.y * 0.24)
-		var band := Rect2(0, size.y - fs - 4, size.x, fs + 4)
-		draw_rect(band, side_color.darkened(0.6))
-		draw_string(font, Vector2(0, size.y - 5), str(count), HORIZONTAL_ALIGNMENT_CENTER, size.x, fs, Color.WHITE)
-	var border := UiKit.ACTIVE_BORDER if active else side_color
-	draw_rect(rect, border, false, 4.0 if active else 2.0)
+	draw_portrait(self, Rect2(Vector2.ZERO, size), def_id, body_color, side, count if show_count else -1, active, get_theme_default_font())
+
+
+## Портрет в прямоугольнике rect; count < 0 — без численности. Общий для карточек и полосы очереди.
+static func draw_portrait(ci: CanvasItem, rect: Rect2, p_def: StringName, color: Color, p_side: int, p_count: int,
+		p_active: bool, font: Font, alpha: float = 1.0, lit: bool = false) -> void:
+	var side_color := UiKit.PLAYER_COLOR if p_side == UnitState.Side.PLAYER else UiKit.ENEMY_COLOR
+	var body := color.darkened(0.15)
+	if lit:
+		body = body.lightened(0.25)
+	body.a = alpha
+	ci.draw_rect(rect, body)
+	var r := minf(rect.size.x, rect.size.y) * 0.42
+	var center := rect.position + rect.size * Vector2(0.5, 0.44 if p_count >= 0 else 0.5)
+	var tex := IconAtlas.get_glyph(p_def, Color(body, 1.0))
+	if tex:
+		ci.draw_texture_rect(tex, IconAtlas.glyph_rect(center, r), false, Color(1, 1, 1, alpha))
+	else:
+		UnitGlyphs.draw_unit(ci, p_def, center, r, body, Color(UnitGlyphs.INK, alpha))
+		UnitGlyphs.draw_details(ci, p_def, center, r, body)
+	if p_count >= 0:
+		var fs := int(rect.size.y * 0.24)
+		var band := Rect2(rect.position.x, rect.end.y - fs - 4, rect.size.x, fs + 4)
+		ci.draw_rect(band, Color(side_color.darkened(0.6), alpha))
+		ci.draw_string(font, Vector2(rect.position.x, rect.end.y - 5), str(p_count), HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, fs, Color(1, 1, 1, alpha))
+	var border := UiKit.ACTIVE_BORDER if p_active else (Color.WHITE if lit else side_color)
+	ci.draw_rect(rect, Color(border, alpha), false, 4.0 if p_active or lit else 2.0)

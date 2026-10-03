@@ -22,6 +22,7 @@ const SHOT_TIME := 0.22
 const FADE_TIME := 0.3
 const FLOATER_TIME := 1.2
 const RING_TIME := 0.45
+const FLOATER_FONT := 28
 ## «Дыхание» фишек в покое (SPEC_SPRINT6 6).
 const BREATH := 0.02
 const BREATH_PERIOD := 2.6
@@ -31,8 +32,8 @@ const SHAKE_MAX := 8.0
 const SHOT_ARC := 0.15
 const TRAIL_POINTS := 9
 
-## Гекс полупрозрачный — сквозь него видны плиты арены.
-const HEX_COLOR := Color(0.17, 0.19, 0.24, 0.72)
+## Гекс непрозрачный: под полем плит нет (каждый смешанный пиксель дорог при программной отрисовке).
+const HEX_COLOR := Color(0.16, 0.175, 0.215)
 const BEVEL_LIGHT := Color(1, 1, 1, 0.09)
 const PLATE := Vector2(150, 96)
 const PLATE_GAP := 2.0
@@ -191,6 +192,7 @@ func setup(p_state: BattleState, p_db: DefsDB) -> void:
 		_fx = _add_layer(self, _draw_fx)
 		_fx_pool = FxPool.new()
 		add_child(_fx_pool)
+		_fx_pool.prewarm()
 		_cursor = CursorIcon.new()
 		_cursor.visible = false
 		add_child(_cursor)
@@ -306,6 +308,8 @@ func _ensure_unit_nodes() -> void:
 	for u in state.units:
 		if not _facing.has(u.uid):
 			_facing[u.uid] = 1.0 if u.side == UnitState.Side.PLAYER else -1.0
+		if not _body_tex.has(_body_key(u)):
+			_body_tex[_body_key(u)] = _bake_body(u)
 
 
 ## Слой фишек: во время анимаций — каждый кадр, в покое — каждый третий («дыхание» медленное,
@@ -605,6 +609,8 @@ func _draw_floor(fills: FillBatch) -> void:
 	var center := origin + size * 0.5
 	var reach := (to - from).length() * 0.5
 	fills.add(PackedVector2Array([from, Vector2(to.x, from.y), to, Vector2(from.x, to.y)]), FLOOR_SEAM)
+	# Плиты, целиком скрытые под гексами, не рисуются.
+	var hidden := Rect2(origin + Vector2.ONE * HEX_SIZE, size - Vector2.ONE * HEX_SIZE * 2.0)
 	var row := 0
 	var y := from.y
 	while y < to.y:
@@ -617,7 +623,8 @@ func _draw_floor(fills: FillBatch) -> void:
 			col = col.lerp(UiKit.BG_COLOR, smoothstep(0.45, 1.0, fade))
 			var a := Vector2(x + PLATE_GAP, y + PLATE_GAP)
 			var b := Vector2(x + PLATE.x - PLATE_GAP, y + PLATE.y - PLATE_GAP)
-			fills.add(PackedVector2Array([a, Vector2(b.x, a.y), b, Vector2(a.x, b.y)]), col)
+			if not hidden.encloses(Rect2(a, b - a)):
+				fills.add(PackedVector2Array([a, Vector2(b.x, a.y), b, Vector2(a.x, b.y)]), col)
 			x += PLATE.x
 		y += PLATE.y
 		row += 1
@@ -836,21 +843,24 @@ func _draw_fx(ci: CanvasItem) -> void:
 		ci.draw_circle(_trail[_trail.size() - 1], 4.0, Color(1, 0.95, 0.75))
 	for f in _floaters:
 		var t := float(f["t"])
-		# «Пружина»: число вспухает и оседает в первые доли секунды.
+		# «Пружина»: масштаб трансформом — размер шрифта постоянный, иначе движок растеризует
+		# глифы под каждый новый размер (рывки при программной отрисовке).
 		var pop := 1.0 + 0.35 * maxf(0.0, 1.0 - t / 0.15)
-		var size := int(28 * pop)
+		var size := FLOATER_FONT
 		var pos: Vector2 = f["pos"] + Vector2(-30, -UNIT_RADIUS - 10 - 40 * t)
 		var col: Color = f.get("color", DAMAGE_COLOR)
 		col.a = clampf(1.6 - t * 1.4, 0, 1)
-		ci.draw_string_outline(_font, pos, f["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, size, 7, Color(0, 0, 0, col.a))
-		ci.draw_string(_font, pos, f["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
+		ci.draw_set_transform(pos, 0.0, Vector2.ONE * pop)
+		ci.draw_string_outline(_font, Vector2.ZERO, f["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, size, 7, Color(0, 0, 0, col.a))
+		ci.draw_string(_font, Vector2.ZERO, f["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
 		var kills := int(f.get("kills", 0))
 		if kills > 0:
 			var w := _font.get_string_size(f["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
-			var ip := pos + Vector2(w + 16, -size * 0.35)
+			var ip := Vector2(w + 16, -size * 0.35)
 			UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_KILL, ip, 11, Color(0, 0, 0, 0.6 * col.a), Color(1, 1, 1, col.a))
 			ci.draw_string_outline(_font, ip + Vector2(13, size * 0.35), str(kills), HORIZONTAL_ALIGNMENT_LEFT, -1, size - 4, 6, Color(0, 0, 0, col.a))
 			ci.draw_string(_font, ip + Vector2(13, size * 0.35), str(kills), HORIZONTAL_ALIGNMENT_LEFT, -1, size - 4, col)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 func _rock(c: Vector2) -> PackedVector2Array:
@@ -884,9 +894,10 @@ static func status_icons(u: UnitState) -> Array:
 ## Фишка целиком: тело (зеркально, если смотрит влево), затем значки без поворота.
 ## Тела фишек запекаются в текстуры: при программной отрисовке каждый вызов дорог,
 ## а тело (круг, кольцо, тень, силуэт, акценты) — десяток вызовов. Ключ — вид, сторона, иллюзия.
-## Пока текстура не готова (и в headless, где запечь нельзя) тело рисуется напрямую.
+## Текстура — сама текстура вьюпорта, без чтения из видеопамяти (оно давало рывки до 200 мс);
+## вьюпорт рисуется один раз и остаётся в дереве выключенным. Все тела боя запекаются при открытии.
 const BODY_TEX := 96
-static var _body_tex: Dictionary = {}
+var _body_tex: Dictionary = {}
 
 
 func _draw_units(ci: CanvasItem) -> void:
@@ -920,14 +931,12 @@ func _body_key(u: UnitState) -> String:
 
 func _body_texture(u: UnitState) -> Texture2D:
 	var key := _body_key(u)
-	if _body_tex.has(key):
-		return _body_tex[key] as Texture2D
-	_body_tex[key] = null
-	_bake_body.call_deferred(key, u)
-	return null
+	if not _body_tex.has(key):
+		_body_tex[key] = _bake_body(u)
+	return _body_tex[key] as Texture2D
 
 
-func _bake_body(key: String, u: UnitState) -> void:
+func _bake_body(u: UnitState) -> Texture2D:
 	var vp := SubViewport.new()
 	vp.size = Vector2i(BODY_TEX, BODY_TEX)
 	vp.transparent_bg = true
@@ -935,13 +944,7 @@ func _bake_body(key: String, u: UnitState) -> void:
 	var painter := _add_layer(vp, func(ci: CanvasItem) -> void: _draw_unit_body(ci, u, 1.0))
 	painter.position = Vector2.ONE * BODY_TEX * 0.5
 	add_child(vp)
-	await RenderingServer.frame_post_draw
-	var img := vp.get_texture().get_image()
-	vp.queue_free()
-	if img == null or img.is_empty():
-		return
-	_body_tex[key] = ImageTexture.create_from_image(img)
-	_redraw_units()
+	return vp.get_texture()
 
 
 ## Метки поверх тела (не запекаются): Разлом, мишень цели.

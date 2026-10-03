@@ -18,7 +18,7 @@ var _pending: BattleAction
 var _hover_key := ""
 ## Режим прицеливания: {"label": String, "options": Array[BattleAction]} или пусто.
 var _targeting: Dictionary = {}
-var _queue_box: HBoxContainer
+var _queue: QueueStrip
 var _round_label: Label
 var _status_label: Label
 var _active_panel: UnitInfoPanel
@@ -40,10 +40,11 @@ var _hero_label: Label
 var _hero_box: HBoxContainer
 ## Зоны угрозы врагов на текущий ход игрока (SPEC_SPRINT5 2): uid -> ThreatMap.Zone.
 var _enemy_zones: Dictionary[int, ThreatMap.Zone] = {}
-## Портреты полосы очереди по стекам — для связи наведения с полем.
-var _queue_slots: Dictionary[int, Array] = {}
 ## Действия героя в порядке кнопок (горячие клавиши 1–9): [id, slot].
 var _hero_entries: Array = []
+## Подписи состояния панелей — пересборка только при изменениях.
+var _hero_key := ""
+var _info_key := ""
 var _end_panel: PanelContainer
 
 
@@ -59,7 +60,7 @@ func _ready() -> void:
 
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	Audio.play_music(&"battle")
-	UiKit.add_background(self, true)
+	# Фон боя — цвет очистки кадра (Game), отдельный прямоугольник на весь экран не нужен.
 	if Settings.effects_full:
 		add_child(UiKit.ambient_ash(self))
 	view = BattleView.new()
@@ -123,10 +124,12 @@ func _build_hud() -> void:
 	_round_label.custom_minimum_size = Vector2(150, 0)
 	_round_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	top.add_child(_round_label)
-	_queue_box = HBoxContainer.new()
-	_queue_box.add_theme_constant_override("separation", 6)
-	_queue_box.alignment = BoxContainer.ALIGNMENT_CENTER
-	top.add_child(_queue_box)
+	_queue = QueueStrip.new()
+	_queue.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_queue.mouse_filter = Control.MOUSE_FILTER_STOP
+	_queue.hovered.connect(_on_queue_hover)
+	_queue.tooltip_text = "queue"
+	top.add_child(_queue)
 
 	_status_label = UiKit.label("", 26)
 	_status_label.position = Vector2(24, 98)
@@ -223,23 +226,16 @@ func _small_button(text: String, on_pressed: Callable, width: float) -> Button:
 func _refresh_hud() -> void:
 	_round_label.text = tr("BATTLE_ROUND") % state.round_number
 	_refresh_battle_info()
-	for child in _queue_box.get_children():
-		child.queue_free()
-	_queue_slots.clear()
 	var upcoming: Array[int] = []
 	if state.active_uid >= 0:
 		upcoming.append(state.active_uid)
 	upcoming.append_array(TurnManager.upcoming(state))
+	var slots: Array[Dictionary] = []
 	for uid in upcoming:
-		var is_active := uid == state.active_uid
-		_add_queue_slot(uid, QUEUE_ACTIVE_SLOT if is_active else QUEUE_SLOT, is_active, 1.0)
-	var sep := UiKit.label(tr("QUEUE_NEXT_ROUND") % (state.round_number + 1), 18, UiKit.MUTED)
-	sep.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	sep.mouse_filter = Control.MOUSE_FILTER_STOP
-	Tip.attach(sep, tr("QUEUE_NEXT_ROUND_TIP"), "")
-	_queue_box.add_child(sep)
+		slots.append(_queue_slot(uid, uid == state.active_uid, false))
 	for uid in TurnManager.next_round_order(state):
-		_add_queue_slot(uid, QUEUE_SLOT, false, 0.5)
+		slots.append(_queue_slot(uid, false, true))
+	_queue.set_slots(slots, tr("QUEUE_NEXT_ROUND") % (state.round_number + 1))
 
 	var u := state.active_unit()
 	var player_turn := _is_player_turn()
@@ -260,6 +256,10 @@ func _refresh_hud() -> void:
 ## Цель с прогрессом и намерение командира (значок, действие, цель).
 func _refresh_battle_info() -> void:
 	_battle_info.visible = state.objective != ObjectiveRule.ELIMINATE or state.commander_id != &""
+	var key := "%s|%s|%s|%s" % [state.round_number, state.hold_count, state.intent, state.get_unit(int(state.intent.get("target", -1))) != null]
+	if key == _info_key or not _battle_info.visible:
+		return
+	_info_key = key
 	for child in _objective_box.get_children():
 		child.queue_free()
 	for child in _commander_box.get_children():
@@ -290,34 +290,25 @@ func _refresh_battle_info() -> void:
 			tr("CMDACT_" + String(id).to_upper() + "_DESC") + "\n" + tr("COMMANDER_INTENT_TIP"), 16))
 
 
-func _add_queue_slot(uid: int, slot_size: float, is_active: bool, alpha: float) -> void:
-	var slot := UnitPortrait.create(db, state.get_unit(uid), slot_size, is_active)
-	slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	slot.modulate = Color(1, 1, 1, alpha)
-	slot.set_meta("alpha", alpha)
-	slot.mouse_entered.connect(_on_queue_hover.bind(uid, true))
-	slot.mouse_exited.connect(_on_queue_hover.bind(uid, false))
-	_queue_box.add_child(slot)
-	if not _queue_slots.has(uid):
-		_queue_slots[uid] = []
-	_queue_slots[uid].append(slot)
+func _queue_slot(uid: int, is_active: bool, next: bool) -> Dictionary:
+	var u := state.get_unit(uid)
+	return {
+		"uid": uid, "def": u.def_id, "color": db.unit(u.def_id).color, "side": u.side, "count": u.count,
+		"size": QUEUE_ACTIVE_SLOT if is_active else QUEUE_SLOT, "active": is_active, "next": next,
+		"name": UiKit.unit_name(db, u.def_id),
+	}
 
 
 ## Наведение на портрет очереди подсвечивает стек на поле.
-func _on_queue_hover(uid: int, entered: bool) -> void:
-	view.highlight_uid = uid if entered else -1
-	_highlight_queue(uid if entered else -1)
+func _on_queue_hover(uid: int) -> void:
+	view.highlight_uid = uid
+	_queue.set_highlight(uid)
 	view.refresh_highlights()
 
 
-## Подсветка портретов стека в очереди (наведение на поле или на сам портрет).
+## Подсветка портретов стека в очереди (наведение на поле).
 func _highlight_queue(uid: int) -> void:
-	for id in _queue_slots:
-		for slot: Control in _queue_slots[id]:
-			if not is_instance_valid(slot):
-				continue
-			var alpha: float = slot.get_meta("alpha", 1.0)
-			slot.modulate = Color(1.35, 1.35, 1.35, 1.0) if id == uid else Color(1, 1, 1, alpha)
+	_queue.set_highlight(uid)
 
 
 func _refresh_ability_button(u: UnitState, player_turn: bool) -> void:
@@ -342,10 +333,16 @@ func _refresh_ability_button(u: UnitState, player_turn: bool) -> void:
 
 
 func _refresh_hero_panel() -> void:
+	var can_act := not _busy and state.can_hero_act()
+	# Пересборка кнопок — только при изменениях: новые кнопки и надписи стоят заметного времени
+	# раскладки при программной отрисовке (SPEC_SPRINT6 11).
+	var key := "%s|%s|%s|%s" % [can_act, state.hero_actions_left, state.hero_orders, state.spell_charges()]
+	if key == _hero_key:
+		return
+	_hero_key = key
 	for child in _hero_box.get_children():
 		child.queue_free()
 	_hero_entries.clear()
-	var can_act := not _busy and state.can_hero_act()
 	if state.hero_actions_left > 0:
 		_hero_label.text = tr("HUD_HERO_READY")
 		_hero_label.add_theme_color_override("font_color", UiKit.ACCENT)
@@ -420,10 +417,19 @@ func _compute_threats() -> void:
 		if not ThreatMap.attackers_of(state, _enemy_zones, u, true).is_empty():
 			threatened[u.uid] = true
 	view.threatened = threatened
-	view.enemy_intents = EnemyIntents.predict(state)
-	view._redraw_units()
+	_predict_intents.call_deferred()
 	if not threatened.is_empty():
 		Hints.show_hint(&"threat")
+
+
+## Намерения врагов — на следующем кадре, чтобы расчёт не складывался с началом хода в один кадр.
+func _predict_intents() -> void:
+	if not _is_player_turn() or _busy:
+		return
+	view.enemy_intents = EnemyIntents.predict(state)
+	view._redraw_units()
+	_invalidate_hover()
+	_update_hover()
 
 
 func _show_turn_hints() -> void:

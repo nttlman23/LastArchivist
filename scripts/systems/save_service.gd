@@ -1,6 +1,7 @@
 class_name SaveService
 extends RefCounted
-## Сохранение забега в JSON (SPEC 6.3).
+## Сохранение забега в JSON (SPEC 6.3). Запись атомарная с резервной копией, старые версии
+## переводятся миграциями (SPEC_SPRINT6 13). Повреждённый файл не роняет игру: берётся копия.
 ## Путь по умолчанию можно подменить (автопрогон, тесты), чтобы не трогать сохранение игрока.
 
 const DEFAULT_PATH := "user://run_save.json"
@@ -10,24 +11,28 @@ static var current_path := DEFAULT_PATH
 
 
 static func save_run(run: RunState, path: String = "") -> bool:
-	path = _resolve(path)
-	var file := FileAccess.open(path, FileAccess.WRITE)
-	if file == null:
-		push_error("Cannot write save %s: %s" % [path, FileAccess.get_open_error()])
-		return false
-	file.store_string(JSON.stringify(run.to_dict(), "\t"))
-	return true
+	return SafeFile.write_text(_resolve(path), JSON.stringify(run.to_dict(), "\t"))
 
 
 static func load_run(path: String = "") -> RunState:
-	path = _resolve(path)
-	if not FileAccess.file_exists(path):
+	var text := SafeFile.read_text(_resolve(path), func(t: String) -> bool: return not _parse(t).is_empty())
+	if text == "":
 		return null
+	return RunState.from_dict(_parse(text))
+
+
+## Сохранение есть на диске, но не читается ни оно, ни резервная копия.
+static func is_broken(path: String = "") -> bool:
+	return has_save(path) and load_run(path) == null
+
+
+## Словарь сохранения в текущей версии или пустой (не JSON, не словарь, неподдерживаемая версия).
+static func _parse(text: String) -> Dictionary:
 	var json := JSON.new()
-	if json.parse(FileAccess.get_file_as_string(path)) != OK or not json.data is Dictionary:
-		push_warning("Corrupted save %s" % path)
-		return null
-	return RunState.from_dict(json.data)
+	if json.parse(text) != OK or not json.data is Dictionary:
+		return {}
+	var d := SaveMigrations.migrate(json.data)
+	return d if d.has_all(RunState.REQUIRED_KEYS) else {}
 
 
 static func has_save(path: String = "") -> bool:
@@ -35,9 +40,7 @@ static func has_save(path: String = "") -> bool:
 
 
 static func delete_save(path: String = "") -> void:
-	path = _resolve(path)
-	if FileAccess.file_exists(path):
-		DirAccess.remove_absolute(path)
+	SafeFile.remove(_resolve(path))
 
 
 static func _resolve(path: String) -> String:

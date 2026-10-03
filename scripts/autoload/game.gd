@@ -33,6 +33,8 @@ var profile_path := ProfileState.DEFAULT_PATH
 
 
 const FADE_OUT := 0.12
+## Пауза перед выходом: аудиосервер отпускает остановленные потоки на следующем такте микширования.
+const QUIT_DELAY := 0.15
 const FADE_IN := 0.16
 var _fade: ColorRect
 var _fade_tween: Tween
@@ -41,7 +43,11 @@ var _fade_tween: Tween
 func _ready() -> void:
 	defs = DefsDB.load_default()
 	profile = ProfileState.load_or_new(profile_path)
+	get_tree().auto_accept_quit = false
+	if "--smoke" in OS.get_cmdline_user_args():
+		Audio.music_allowed = false
 	get_tree().root.theme = UiTheme.build(FONT_SIZE)
+	RenderingServer.set_default_clear_color(UiKit.BG_COLOR)
 	_build_fade()
 	Audio.play_music(&"menu")
 	if "--smoke" in OS.get_cmdline_user_args():
@@ -70,7 +76,20 @@ func _smoke_test() -> void:
 	print("SMOKE %s: units=%d memories=%d encounters=%d events=%d map_nodes=%d battle=%s" % [
 		"OK" if ok else "FAIL", defs.units.size(), defs.memories.size(), defs.encounters.size(),
 		defs.events.size(), nodes, BattleState.Outcome.keys()[outcome]])
-	get_tree().quit(0 if ok else 1)
+	quit_game(0 if ok else 1)
+
+
+## Выход из игры: сначала гасим звук и даём аудиосерверу отпустить потоки,
+## иначе движок сообщает об утечке при выходе.
+func quit_game(code: int = 0) -> void:
+	Audio.stop_all()
+	await get_tree().create_timer(QUIT_DELAY).timeout
+	get_tree().quit(code)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		quit_game()
 
 
 func new_run(school_id: StringName = DefsDB.DEFAULT_SCHOOL, difficulty: StringName = Difficulty.NORMAL) -> void:

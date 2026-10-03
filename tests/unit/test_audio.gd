@@ -20,7 +20,7 @@ func after_each() -> void:
 	Audio.music_volume = _saved_music
 	Audio.sfx_volume = _saved_sfx
 	if FileAccess.file_exists(TEST_SETTINGS):
-		DirAccess.remove_absolute(TEST_SETTINGS)
+		SafeFile.remove(TEST_SETTINGS)
 
 
 func test_all_streams_load() -> void:

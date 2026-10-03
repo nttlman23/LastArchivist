@@ -18,7 +18,7 @@ func after_all() -> void:
 	Settings.screen_shake = _real_settings[2]
 	Settings.effects_full = _real_settings[3]
 	if FileAccess.file_exists(SETTINGS_PATH):
-		DirAccess.remove_absolute(SETTINGS_PATH)
+		SafeFile.remove(SETTINGS_PATH)
 
 
 func _battle(enc: StringName) -> BattleState:

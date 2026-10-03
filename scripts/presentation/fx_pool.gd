@@ -45,6 +45,14 @@ func burst(kind: StringName, pos: Vector2, color: Color = Color.WHITE) -> bool:
 	return true
 
 
+## Создать все эмиттеры заранее: первый эффект в бою не создаёт узлы на лету.
+func prewarm() -> void:
+	if not Settings.effects_full:
+		return
+	while _emitters.size() < MAX_EMITTERS:
+		_new_emitter()
+
+
 ## Сколько эмиттеров сейчас работает (для тестов и профилировщика).
 func active_count() -> int:
 	var n := 0
@@ -60,6 +68,10 @@ func _free_emitter() -> CPUParticles2D:
 			return p
 	if _emitters.size() >= MAX_EMITTERS:
 		return null
+	return _new_emitter()
+
+
+func _new_emitter() -> CPUParticles2D:
 	var p := CPUParticles2D.new()
 	p.one_shot = true
 	p.emitting = false

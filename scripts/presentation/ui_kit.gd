@@ -134,9 +134,12 @@ class Medallion:
 			cols.append(body_color.lightened(0.2) if dir.y < 0.0 else body_color.darkened(0.25 * dir.y))
 		draw_polygon(pts, cols)
 		if def_id != &"":
-			UnitGlyphs.draw_unit(self, def_id, c + Vector2(1, 2), r * 0.8, body_color, Color(0, 0, 0, 0.3))
-			UnitGlyphs.draw_unit(self, def_id, c, r * 0.8, body_color)
-			UnitGlyphs.draw_details(self, def_id, c, r * 0.8, body_color)
+			var tex := IconAtlas.get_glyph(def_id, body_color)
+			if tex:
+				draw_texture_rect(tex, IconAtlas.glyph_rect(c, r * 0.8), false)
+			else:
+				UnitGlyphs.draw_unit(self, def_id, c, r * 0.8, body_color)
+				UnitGlyphs.draw_details(self, def_id, c, r * 0.8, body_color)
 		else:
 			UnitGlyphs.draw_icon(self, UnitGlyphs.ICON_SPELL, c, r * 0.6, Color(0, 0, 0, 0), UnitGlyphs.INK, false)
 		draw_arc(c, r, 0, TAU, 40, frame_color, 3.0)

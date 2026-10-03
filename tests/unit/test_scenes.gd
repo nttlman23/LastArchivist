@@ -32,7 +32,7 @@ func after_all() -> void:
 	Settings.hints = _real_hints
 	Game.run = null
 	if FileAccess.file_exists("user://test_profile.cfg"):
-		DirAccess.remove_absolute("user://test_profile.cfg")
+		SafeFile.remove("user://test_profile.cfg")
 
 
 func before_each() -> void:

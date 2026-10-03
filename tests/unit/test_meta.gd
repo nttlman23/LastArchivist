@@ -14,7 +14,7 @@ func before_all() -> void:
 func after_each() -> void:
 	for p in [PROFILE_PATH, SETTINGS_PATH]:
 		if FileAccess.file_exists(p):
-			DirAccess.remove_absolute(p)
+			SafeFile.remove(p)
 
 
 func _unlock(id: StringName) -> Dictionary:

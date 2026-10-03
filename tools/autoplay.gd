@@ -25,8 +25,9 @@ func _run() -> void:
 	var seed_value := int(args[0]) if args.size() > 0 else 7
 	_rng.seed = seed_value
 	# Свой профиль и сохранение не трогаем: автопрогон пишет в отдельный профиль.
-	Game.profile_path = "user://autoplay_profile.cfg"
-	SaveService.current_path = "user://autoplay_save.json"
+	# Свои файлы у каждого процесса: автопрогоны можно запускать параллельно.
+	Game.profile_path = "user://autoplay_profile_%d.cfg" % OS.get_process_id()
+	SaveService.current_path = "user://autoplay_save_%d.json" % OS.get_process_id()
 	Game.profile = ProfileState.new()
 	Settings.hints = false
 	var school := StringName(args[1]) if args.size() > 1 else DefsDB.DEFAULT_SCHOOL
@@ -143,5 +144,6 @@ func _finish(ok: bool) -> void:
 		print(line)
 	print("AUTOPLAY %s за %.0f с" % ["OK" if ok else "FAIL", _elapsed()])
 	SaveService.delete_save()
-	DirAccess.remove_absolute(Game.profile_path)
+	SafeFile.remove(Game.profile_path)
+	SafeFile.remove(SaveService.current_path)
 	get_tree().quit(0 if ok else 1)

@@ -45,7 +45,7 @@ static func _button_box(bg: Color, border: Color) -> StyleBoxFlat:
 	sb.border_width_bottom = 2
 	sb.set_corner_radius_all(6)
 	sb.shadow_color = Color(0, 0, 0, 0.35)
-	sb.shadow_size = 3
+	sb.shadow_size = 0
 	sb.shadow_offset = Vector2(0, 2)
 	sb.content_margin_left = 14
 	sb.content_margin_right = 14

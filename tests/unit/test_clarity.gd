@@ -12,7 +12,7 @@ func before_all() -> void:
 
 func after_all() -> void:
 	if FileAccess.file_exists(PROFILE_PATH):
-		DirAccess.remove_absolute(PROFILE_PATH)
+		SafeFile.remove(PROFILE_PATH)
 
 
 func _codex(ids: Array[StringName]) -> CodexState:

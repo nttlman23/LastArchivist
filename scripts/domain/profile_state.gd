@@ -76,13 +76,13 @@ func save(path: String = DEFAULT_PATH) -> void:
 	for id in school_stats:
 		schools[String(id)] = school_stats[id]
 	cfg.set_value("chronicle", "schools", schools)
-	cfg.save(path)
+	SafeFile.save_config(cfg, path)
 
 
 static func load_or_new(path: String = DEFAULT_PATH) -> ProfileState:
 	var p := ProfileState.new()
-	var cfg := ConfigFile.new()
-	if cfg.load(path) != OK or int(cfg.get_value("profile", "version", 0)) != VERSION:
+	var cfg := SafeFile.load_config(path, func(c: ConfigFile) -> bool: return c.has_section_key("profile", "version"))
+	if cfg == null or int(cfg.get_value("profile", "version", 0)) != VERSION:
 		return p
 	p.points = int(cfg.get_value("profile", "points", 0))
 	for id in cfg.get_value("profile", "unlocked", []):
