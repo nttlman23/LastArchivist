@@ -98,6 +98,12 @@ static func draw_unit(ci: CanvasItem, def_id: StringName, c: Vector2, r: float, 
 			_poly(ci, c, r, [Vector2(-0.75, -0.35), Vector2(0.75, -0.35), Vector2(0.6, 0.25), Vector2(0.15, 0.35), Vector2(0, 0.15), Vector2(-0.15, 0.35), Vector2(-0.6, 0.25)], ink)
 			_poly(ci, c, r, [Vector2(-0.5, -0.12), Vector2(-0.15, -0.12), Vector2(-0.22, 0.02), Vector2(-0.45, 0.02)], body)
 			_poly(ci, c, r, [Vector2(0.5, -0.12), Vector2(0.15, -0.12), Vector2(0.22, 0.02), Vector2(0.45, 0.02)], body)
+		&"archive_relic":
+			# Стопка книг.
+			for i in 3:
+				var y := 0.45 - i * 0.38
+				_poly(ci, c, r, [Vector2(-0.7 + i * 0.08, y - 0.15), Vector2(0.7 - i * 0.05, y - 0.15), Vector2(0.7 - i * 0.05, y + 0.15), Vector2(-0.7 + i * 0.08, y + 0.15)], ink)
+				ci.draw_line(c + Vector2(-0.5 + i * 0.08, y) * r, c + Vector2(0.5 - i * 0.05, y) * r, body, maxf(1.5, r * 0.06))
 		&"rift_warden":
 			for i in 3:
 				ci.draw_arc(c, r * (0.25 + 0.22 * i), i * 1.1, i * 1.1 + PI * 1.5, 20, ink, maxf(2.0, r * 0.12))

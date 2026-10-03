@@ -68,7 +68,7 @@ func _smoke_test() -> void:
 	get_tree().quit(0 if ok else 1)
 
 
-func new_run(school_id: StringName = DefsDB.DEFAULT_SCHOOL) -> void:
+func new_run(school_id: StringName = DefsDB.DEFAULT_SCHOOL, difficulty: StringName = Difficulty.NORMAL) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
 	# Новый забег поверх сохранённого — старый попадает в летопись как брошенный.
@@ -76,7 +76,7 @@ func new_run(school_id: StringName = DefsDB.DEFAULT_SCHOOL) -> void:
 	if old:
 		MetaRewards.abandon_run(profile, old)
 		save_profile()
-	run = RunState.create(defs, rng.seed, school_id, profile)
+	run = RunState.create(defs, rng.seed, school_id, profile, difficulty)
 	SaveService.save_run(run)
 	goto(SCENE_MAP)
 
@@ -155,6 +155,9 @@ func finish_battle(outcome: BattleState.Outcome, spell_charges: Array[int] = [],
 		_end_run(true)
 		return
 	last_rewards = MapActions.battle_rewards(encounter)
+	var bonus := BattleSetup.objective_bonus(run, encounter)
+	if bonus != &"":
+		last_rewards[bonus] += 1
 	for id in last_rewards:
 		run.gain(id, last_rewards[id])
 	if run.pending_reward_card != &"" and not run.codex.is_full():

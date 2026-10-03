@@ -5,7 +5,7 @@ extends CanvasLayer
 const WIDTH := 460.0
 ## Все подсказки (текст — ключ HINT_<ID>).
 const IDS: Array[StringName] = [&"school", &"map", &"battle", &"ability", &"hero", &"targeting", &"rift",
-		&"memory", &"faded", &"shop", &"haven", &"event", &"threat"]
+		&"memory", &"faded", &"shop", &"haven", &"event", &"threat", &"commander", &"objective"]
 
 var _panel: PanelContainer
 var _text: Label

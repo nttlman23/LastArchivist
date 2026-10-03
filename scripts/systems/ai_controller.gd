@@ -9,6 +9,11 @@ const STACK_KILL_BONUS := 1000.0
 const RETALIATION_WEIGHT := 0.5
 ## Урон по Хранителю Разлома ценнее: его гибель сразу выигрывает бой.
 const BOSS_WEIGHT := 3.0
+## Архив цели «Спасти архив» — главная мишень врага.
+const ARCHIVE_WEIGHT := 2.0
+## «Удержать точку»: стоять на знамени и дойти до него.
+const HOLD_STAY_SCORE := 60.0
+const HOLD_MOVE_SCORE := 50.0
 
 
 static func choose_action(state: BattleState, uid: int) -> BattleAction:
@@ -25,6 +30,7 @@ static func choose_action(state: BattleState, uid: int) -> BattleAction:
 	if not melee.is_empty():
 		candidates.append(melee)
 	candidates.append_array(Abilities.ai_candidates(state, u))
+	candidates.append_array(_objective_candidates(state, u))
 
 	var best: BattleAction = null
 	var best_score := 0.0
@@ -34,6 +40,13 @@ static func choose_action(state: BattleState, uid: int) -> BattleAction:
 			best = c[0]
 	if best:
 		return best
+	# Цель «Уничтожить цель»: отмеченный стек держится в тылу.
+	if state.objective == ObjectiveRule.ASSASSINATE and u.is_boss:
+		return BattleAction.defend()
+	if state.objective == ObjectiveRule.HOLD and u.side == UnitState.Side.PLAYER and not state.hold_hexes.is_empty():
+		var step := _step_toward(state, u, state.hold_hexes)
+		if step != u.hex:
+			return BattleAction.move(step)
 
 	var dest := _approach_hex(state, u, enemies)
 	if dest != u.hex:
@@ -56,6 +69,8 @@ static func value(dealt: float, target: UnitState) -> float:
 		score *= RANGED_TARGET_WEIGHT
 	if target.is_boss:
 		score *= BOSS_WEIGHT
+	if target.inert:
+		score *= ARCHIVE_WEIGHT
 	if dealt >= hp:
 		score += STACK_KILL_BONUS
 	return score
@@ -150,6 +165,43 @@ static func _approach_hex(state: BattleState, u: UnitState, enemies: Array[UnitS
 				best_d = d
 				best_hex = h
 		return best_hex
+	var path := res.path_to(goal)
+	return path[mini(u.move_speed(), path.size() - 1)]
+
+
+## Кандидаты цели боя: стоять на знамени или дойти до свободного знамени.
+static func _objective_candidates(state: BattleState, u: UnitState) -> Array:
+	var result: Array = []
+	if state.objective != ObjectiveRule.HOLD or u.side != UnitState.Side.PLAYER:
+		return result
+	if state.hold_hexes.has(u.hex):
+		result.append([BattleAction.defend(), HOLD_STAY_SCORE])
+		return result
+	if ObjectiveRule.holding(state):
+		return result
+	var reach := Pathfinding.reachable(state, u)
+	for h in state.hold_hexes:
+		if reach.has(h):
+			result.append([BattleAction.move(h), HOLD_MOVE_SCORE])
+	return result
+
+
+## Шаг по пути к ближайшей из клеток goals или её соседу (без учёта врагов).
+static func _step_toward(state: BattleState, u: UnitState, goals: Array[Vector2i]) -> Vector2i:
+	if u.speed <= 0:
+		return u.hex
+	var res := Pathfinding.bfs(state, u.hex)
+	var goal := u.hex
+	var best := 1 << 30
+	for g in goals:
+		var near: Array[Vector2i] = [g]
+		near.append_array(state.grid.neighbors(g))
+		for h in near:
+			if res.dist.has(h) and res.dist[h] < best:
+				best = res.dist[h]
+				goal = h
+	if goal == u.hex:
+		return u.hex
 	var path := res.path_to(goal)
 	return path[mini(u.move_speed(), path.size() - 1)]
 

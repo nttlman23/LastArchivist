@@ -113,15 +113,15 @@ static func army_power(db: DefsDB, codex: CodexState) -> float:
 	return total
 
 
-static func encounter_power(db: DefsDB, enc: EncounterDef) -> float:
+static func encounter_power(db: DefsDB, enc: EncounterDef, difficulty: StringName = Difficulty.NORMAL) -> float:
 	var total := 0.0
 	for i in mini(enc.unit_ids.size(), BattleState.MAX_STACKS):
-		total += stack_power(db.unit(enc.unit_ids[i]), enc.counts[i])
+		total += stack_power(db.unit(enc.unit_ids[i]), Difficulty.enemy_count(difficulty, enc.counts[i]))
 	return total
 
 
-static func risk(db: DefsDB, codex: CodexState, enc: EncounterDef) -> Risk:
-	var r := risk_of_power(db, codex, encounter_power(db, enc))
+static func risk(db: DefsDB, codex: CodexState, enc: EncounterDef, difficulty: StringName = Difficulty.NORMAL) -> Risk:
+	var r := risk_of_power(db, codex, encounter_power(db, enc, difficulty))
 	# Разлом опаснее состава: стирание карт и особые правила — на уровень выше.
 	if enc.boss:
 		r = mini(r + 1, Risk.HIGH) as Risk
@@ -129,13 +129,13 @@ static func risk(db: DefsDB, codex: CodexState, enc: EncounterDef) -> Risk:
 
 
 ## Средняя сила встреч уровня tier (элитных или обычных) — для неразведанных островов.
-static func expected_power(db: DefsDB, tier: int, elite: bool) -> float:
+static func expected_power(db: DefsDB, tier: int, elite: bool, difficulty: StringName = Difficulty.NORMAL) -> float:
 	var total := 0.0
 	var n := 0
 	for id in db.encounters:
 		var e := db.encounters[id]
 		if not e.boss and e.elite == elite and (elite or e.tier == tier):
-			total += encounter_power(db, e)
+			total += encounter_power(db, e, difficulty)
 			n += 1
 	return total / n if n > 0 else 0.0
 
@@ -146,8 +146,8 @@ static func node_risk(db: DefsDB, run: RunState, n: MapState.MapNode) -> int:
 		return -1
 	var enc := db.encounter(n.content)
 	if n.scouted or enc.boss:
-		return risk(db, run.codex, enc)
-	return risk_of_power(db, run.codex, expected_power(db, enc.tier, enc.elite))
+		return risk(db, run.codex, enc, run.difficulty)
+	return risk_of_power(db, run.codex, expected_power(db, enc.tier, enc.elite, run.difficulty))
 
 
 static func risk_of_power(db: DefsDB, codex: CodexState, power: float) -> Risk:

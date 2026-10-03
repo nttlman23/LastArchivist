@@ -13,6 +13,7 @@ var orders: Dictionary[StringName, OrderDef] = {}
 var upgrades: Dictionary[StringName, UpgradeDef] = {}
 var events: Dictionary[StringName, EventDef] = {}
 var schools: Dictionary[StringName, SchoolDef] = {}
+var commanders: Dictionary[StringName, CommanderDef] = {}
 const DEFAULT_SCHOOL := &"ash_archive"
 ## Приказы, доступные всегда.
 var base_orders: Array[StringName] = [&"order_advance", &"order_close_ranks"]
@@ -38,12 +39,27 @@ static func load_default() -> DefsDB:
 		db.events[res.id] = res as EventDef
 	for res in _load_dir("schools"):
 		db.schools[res.id] = res as SchoolDef
+	for res in _load_dir("commanders"):
+		db.commanders[res.id] = res as CommanderDef
 	return db
 
 
 func unit(id: StringName) -> UnitDef:
 	assert(units.has(id), "Unknown unit: %s" % id)
 	return units[id]
+
+
+func commander(id: StringName) -> CommanderDef:
+	assert(commanders.has(id), "Unknown commander: %s" % id)
+	return commanders[id]
+
+
+func commander_ids() -> Array[StringName]:
+	var ids: Array[StringName] = []
+	for id in commanders:
+		ids.append(id)
+	ids.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
+	return ids
 
 
 func memory(id: StringName) -> MemoryCardDef:

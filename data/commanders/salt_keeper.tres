@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CommanderDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/commander_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"salt_keeper"
+name_key = "CMD_SALT_KEEPER"
+desc_key = "CMD_SALT_KEEPER_DESC"
+color = Color(0.75, 0.82, 0.9, 1)
+actions = Array[StringName]([&"cmd_wall", &"cmd_guard", &"cmd_heal"])
+charges = 2

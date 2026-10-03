@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"elite_siege"
+name_key = "ENC_ELITE_SIEGE"
+unit_ids = Array[StringName]([&"ash_ghoul", &"rust_sentinel", &"rift_ram"])
+counts = Array[int]([16, 6, 2])
+obstacles = Array[Vector2i]([Vector2i(4, 1), Vector2i(4, 7)])
+tier = 2
+elite = true
+boss = false
+objective = &"hold"
+objective_rounds = 3
+hold_hexes = Array[Vector2i]([Vector2i(5, 4), Vector2i(6, 4)])

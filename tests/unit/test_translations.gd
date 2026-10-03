@@ -45,6 +45,17 @@ func test_data_keys_exist() -> void:
 		assert_true(keys.has(m.name_key), m.name_key)
 	for e: EncounterDef in db.encounters.values():
 		assert_true(keys.has(e.name_key), e.name_key)
+	for c: CommanderDef in db.commanders.values():
+		assert_true(keys.has(c.name_key), c.name_key)
+		assert_true(keys.has(c.desc_key), c.desc_key)
+		for act in c.actions:
+			assert_true(keys.has("CMDACT_" + String(act).to_upper()), "CMDACT_" + String(act).to_upper())
+	for o in ObjectiveRule.ALL:
+		assert_true(keys.has("OBJ_" + String(o).to_upper()), "OBJ_" + String(o).to_upper())
+		assert_true(keys.has("OBJ_" + String(o).to_upper() + "_DESC"), "OBJ_%s_DESC" % String(o).to_upper())
+	for d in Difficulty.ALL:
+		assert_true(keys.has("DIFFICULTY_" + String(d).to_upper()), String(d))
+		assert_true(keys.has("DIFFICULTY_" + String(d).to_upper() + "_DESC"), String(d))
 	for a: AbilityDef in db.abilities.values():
 		assert_true(keys.has(a.name_key), a.name_key)
 		assert_true(keys.has(a.desc_key), a.desc_key)

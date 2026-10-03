@@ -8,16 +8,17 @@ func before_all() -> void:
 
 
 func test_defs_loaded() -> void:
-	assert_eq(db.units.size(), 16)
+	assert_eq(db.units.size(), 17)
 	assert_eq(db.memories.size(), 14)
-	assert_eq(db.encounters.size(), 15)
+	assert_eq(db.encounters.size(), 21)
+	assert_eq(db.commanders.size(), 3)
 	assert_eq(db.abilities.size(), 16)
 	assert_eq(db.events.size(), 8)
 	assert_eq(db.spells.size(), 10)
 	assert_eq(db.orders.size(), 3)
 	assert_eq(db.upgrades.size(), 7)
 	for u: UnitDef in db.units.values():
-		assert_true(db.abilities.has(u.ability_id), "у %s есть способность" % u.id)
+		assert_true(u.inert or db.abilities.has(u.ability_id), "у %s есть способность" % u.id)
 	for m: MemoryCardDef in db.memories.values():
 		if m.is_unit():
 			assert_true(db.units.has(m.unit_id), "карта %s ссылается на существо" % m.id)
@@ -29,9 +30,20 @@ func test_defs_loaded() -> void:
 		assert_true(db.orders.has(id))
 	for e: EncounterDef in db.encounters.values():
 		assert_eq(e.unit_ids.size(), e.counts.size())
+		assert_true(ObjectiveRule.ALL.has(e.objective), "цель %s" % e.id)
+		assert_eq(e.reinforce_ids.size(), e.reinforce_counts.size())
+		assert_eq(e.reinforce_ids.size(), e.reinforce_rounds.size())
+		if e.objective == ObjectiveRule.HOLD:
+			assert_false(e.hold_hexes.is_empty(), "знамёна %s" % e.id)
+		if e.objective != ObjectiveRule.ELIMINATE:
+			assert_false(e.boss, "у Разлома своя цель")
+			assert_true(e.elite or e.tier >= 2, "на слое 1 — только «уничтожить всех»")
+	for c: CommanderDef in db.commanders.values():
+		for a in c.actions:
+			assert_true(CommanderActions.ICONS.has(a), "действие %s командира %s" % [a, c.id])
 	for tier in [1, 2, 3]:
 		assert_gt(db.encounter_pool(tier, false).size(), 2, "шаблоны уровня %d" % tier)
-	assert_eq(db.encounter_pool(0, true).size(), 3, "элитные")
+	assert_eq(db.encounter_pool(0, true).size(), 5, "элитные")
 	assert_true(db.encounter(db.boss_encounter()).boss)
 
 

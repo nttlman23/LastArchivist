@@ -23,6 +23,11 @@ var _round_label: Label
 var _status_label: Label
 var _active_panel: UnitInfoPanel
 var _hover_panel: UnitInfoPanel
+## Цель боя и командир врага (SPEC_SPRINT5 10–11).
+var _battle_info: PanelContainer
+var _objective_box: HBoxContainer
+var _commander_box: HBoxContainer
+var _intent_box: HBoxContainer
 var _preview_label: Label
 ## Короткое превью значками (в режиме «подробно» вместо него — текст в _preview_label).
 var _preview_box: HBoxContainer
@@ -50,8 +55,7 @@ func _ready() -> void:
 		Game.selected = [0, 1, 2, 3]
 		MapActions.travel(Game.run, Game.run.map.next_of(MapState.START)[0])
 	var run := Game.run
-	var encounter := db.encounter(run.current_encounter_id(db))
-	state = BattleState.create(db, encounter, run.codex, Game.selected, run.battle_seed(), run.hero, Game.school_passive())
+	state = BattleSetup.for_run(db, run, Game.selected)
 
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	Audio.play_music(&"battle")
@@ -68,7 +72,36 @@ func _ready() -> void:
 	# Начало боя может добавить стеки (иллюзия «Масок») — показать их сразу.
 	view.sync()
 	_log_events(events)
+	_show_objective_banner()
 	_run_turns()
+
+
+## Плашка цели боя при входе; затем цель видна в панели справа.
+func _show_objective_banner() -> void:
+	if state.objective == ObjectiveRule.ELIMINATE and state.commander_id == &"":
+		return
+	if state.objective != ObjectiveRule.ELIMINATE:
+		Hints.show_hint(&"objective")
+	if state.commander_id != &"":
+		Hints.show_hint(&"commander")
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", UiKit.panel_style(UiKit.PANEL_COLOR, UiKit.OBJECTIVE_COLOR, 2))
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 8)
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	panel.add_child(col)
+	col.add_child(UiKit.label(tr("OBJ_BANNER"), 18, UiKit.MUTED))
+	col.add_child(UiKit.objective_chip(state.objective, state.objective_rounds, "", 30))
+	if state.commander_id != &"":
+		col.add_child(UiKit.commander_chip(db, state.commander_id, 22))
+	add_child(panel)
+	panel.reset_size()
+	panel.position = Vector2((size.x - 420.0 - panel.size.x) * 0.5, BOARD_TOP + 220.0)
+	var tw := create_tween()
+	tw.tween_interval(2.2)
+	tw.tween_property(panel, "modulate:a", 0.0, 0.6)
+	tw.tween_callback(panel.queue_free)
 
 
 func _layout() -> void:
@@ -105,6 +138,19 @@ func _build_hud() -> void:
 	side.offset_bottom = -16
 	side.add_theme_constant_override("separation", 10)
 	add_child(side)
+	_battle_info = PanelContainer.new()
+	_battle_info.add_theme_stylebox_override("panel", UiKit.panel_style(UiKit.PANEL_COLOR))
+	var info_col := VBoxContainer.new()
+	info_col.add_theme_constant_override("separation", 6)
+	_battle_info.add_child(info_col)
+	_objective_box = HBoxContainer.new()
+	info_col.add_child(_objective_box)
+	_commander_box = HBoxContainer.new()
+	_commander_box.add_theme_constant_override("separation", 10)
+	info_col.add_child(_commander_box)
+	_intent_box = HBoxContainer.new()
+	info_col.add_child(_intent_box)
+	side.add_child(_battle_info)
 	_active_panel = UnitInfoPanel.new()
 	side.add_child(_active_panel)
 	_hover_panel = UnitInfoPanel.new()
@@ -174,6 +220,7 @@ func _small_button(text: String, on_pressed: Callable, width: float) -> Button:
 
 func _refresh_hud() -> void:
 	_round_label.text = tr("BATTLE_ROUND") % state.round_number
+	_refresh_battle_info()
 	for child in _queue_box.get_children():
 		child.queue_free()
 	_queue_slots.clear()
@@ -206,6 +253,39 @@ func _refresh_hud() -> void:
 	_status_label.text = (tr("BATTLE_YOUR_TURN") if player_turn else tr("BATTLE_ENEMY_TURN")) % UiKit.unit_name(db, u.def_id)
 	_status_label.add_theme_color_override("font_color", side_color)
 	_active_panel.show_unit(db, u, tr("INFO_ACTIVE"), UiKit.ACTIVE_BORDER)
+
+
+## Цель с прогрессом и намерение командира (значок, действие, цель).
+func _refresh_battle_info() -> void:
+	_battle_info.visible = state.objective != ObjectiveRule.ELIMINATE or state.commander_id != &""
+	for child in _objective_box.get_children():
+		child.queue_free()
+	for child in _commander_box.get_children():
+		child.queue_free()
+	for child in _intent_box.get_children():
+		child.queue_free()
+	var progress := ""
+	match state.objective:
+		ObjectiveRule.SURVIVE, ObjectiveRule.PROTECT:
+			progress = tr("OBJ_PROGRESS_ROUNDS") % [mini(state.round_number, state.objective_rounds), state.objective_rounds]
+		ObjectiveRule.HOLD:
+			progress = tr("OBJ_PROGRESS_HOLD") % [state.hold_count, state.objective_rounds]
+	_objective_box.add_child(UiKit.objective_chip(state.objective, state.objective_rounds, progress, 19))
+	if state.commander_id == &"":
+		return
+	_commander_box.add_child(UiKit.commander_chip(db, state.commander_id, 17))
+	var def := db.commander(state.commander_id)
+	if state.intent.is_empty():
+		_intent_box.add_child(UiKit.label(tr("COMMANDER_IDLE"), 16, UiKit.MUTED))
+		return
+	var id := StringName(state.intent["action"])
+	var what := tr("CMDACT_" + String(id).to_upper())
+	var target := state.get_unit(int(state.intent.get("target", -1)))
+	if target:
+		what += " → " + UiKit.unit_name(db, target.def_id)
+	_intent_box.add_child(UiKit.chip(CommanderActions.ICONS.get(id, UnitGlyphs.ICON_SPELL), what, def.color,
+			tr("COMMANDER_INTENT") % tr("CMDACT_" + String(id).to_upper()),
+			tr("CMDACT_" + String(id).to_upper() + "_DESC") + "\n" + tr("COMMANDER_INTENT_TIP"), 16))
 
 
 func _add_queue_slot(uid: int, slot_size: float, is_active: bool, alpha: float) -> void:
@@ -715,6 +795,8 @@ func _event_label(e: BattleEvent) -> String:
 			return tr("RIFT_MARK_FLOAT")
 		BattleEvent.ERASED:
 			return tr("RIFT_ERASE_FLOAT")
+		BattleEvent.COMMANDER_ACTED:
+			return tr("CMDACT_" + String(e.data["action"]).to_upper())
 		BattleEvent.ABILITY_USED:
 			return tr(db.ability(e.data["ability"]).name_key)
 		BattleEvent.HERO_ACTED:
@@ -749,6 +831,15 @@ func _log_events(events: Array[BattleEvent]) -> void:
 				line = tr("LOG_PUSHED") % _name(e.data["uid"])
 			BattleEvent.SUMMONED:
 				line = tr("LOG_SUMMONED") % _name(e.data["uid"])
+			BattleEvent.COMMANDER_INTENT:
+				line = "[color=#%s]%s[/color]" % [_commander_html(), tr("LOG_COMMANDER_INTENT") % tr("CMDACT_" + String(e.data["action"]).to_upper())]
+			BattleEvent.COMMANDER_ACTED:
+				var act := tr("CMDACT_" + String(e.data["action"]).to_upper())
+				if int(e.data["target"]) >= 0:
+					act += " → " + _name(e.data["target"])
+				line = "[color=#%s]%s[/color]" % [_commander_html(), tr("LOG_COMMANDER_ACTED") % act]
+			BattleEvent.OBJECTIVE_PROGRESS:
+				line = "[color=#%s]%s[/color]" % [UiKit.OBJECTIVE_COLOR.to_html(false), tr("LOG_OBJECTIVE_PROGRESS") % [int(e.data["count"]), int(e.data["need"])]]
 			BattleEvent.ABILITY_USED:
 				line = tr("LOG_ABILITY") % [_name(e.data["uid"]), tr(db.ability(e.data["ability"]).name_key)]
 			BattleEvent.HERO_ACTED:
@@ -778,11 +869,17 @@ func _log_events(events: Array[BattleEvent]) -> void:
 					line = tr("LOG_TIMEOUT")
 				elif e.data.get("reason", "") == "erased":
 					line = tr("LOG_ALL_ERASED")
+				elif e.data.get("reason", "") == "objective":
+					line = tr("LOG_OBJECTIVE_WIN")
 		if line != "":
 			_log_lines.append(line)
 	while _log_lines.size() > LOG_LINES:
 		_log_lines.pop_front()
 	_log.text = "\n".join(_log_lines)
+
+
+func _commander_html() -> String:
+	return db.commander(state.commander_id).color.to_html(false) if state.commander_id != &"" else "c0a0ff"
 
 
 func _name(uid: int) -> String:

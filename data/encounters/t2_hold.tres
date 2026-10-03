@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"t2_hold"
+name_key = "ENC_T2_HOLD"
+unit_ids = Array[StringName]([&"ash_ghoul", &"shard_archer", &"rust_sentinel"])
+counts = Array[int]([12, 8, 3])
+obstacles = Array[Vector2i]([Vector2i(3, 1), Vector2i(7, 7)])
+tier = 2
+elite = false
+boss = false
+objective = &"hold"
+objective_rounds = 3
+hold_hexes = Array[Vector2i]([Vector2i(5, 3), Vector2i(5, 4), Vector2i(5, 5)])

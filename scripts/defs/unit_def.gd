@@ -17,4 +17,6 @@ extends Resource
 @export var ability_id: StringName
 ## Конструкт Машинного Синода (пассивка «Ремонт»).
 @export var construct := false
+## Неживой объект цели боя (архив): не ходит, не отвечает, не считается бойцом.
+@export var inert := false
 @export var color := Color.WHITE

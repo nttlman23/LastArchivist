@@ -15,7 +15,7 @@ const GARDEN_SHARE := 0.75
 static func on_battle_start(state: BattleState, events: Array[BattleEvent]) -> void:
 	if state.passive_id != GARDEN_MASKS:
 		return
-	var mine := state.alive(UnitState.Side.PLAYER)
+	var mine := ObjectiveRule.fighters(state, UnitState.Side.PLAYER)
 	if mine.is_empty():
 		return
 	var src := mine[state.rng.randi_range(0, mine.size() - 1)]

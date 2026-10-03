@@ -2,6 +2,9 @@ extends Control
 ## Выбор школы памяти перед экспедицией (SPEC_SPRINT4 6).
 
 var db: DefsDB
+## Выбранная сложность — запоминается до перезапуска игры.
+static var difficulty := Difficulty.NORMAL
+var _difficulty_buttons: Dictionary[StringName, Button] = {}
 
 
 func _ready() -> void:
@@ -9,6 +12,7 @@ func _ready() -> void:
 	UiKit.add_background(self)
 	var box := UiKit.centered_column(self, 20)
 	box.add_child(UiKit.label(tr("SCHOOL_TITLE"), 44, UiKit.ACCENT))
+	box.add_child(_difficulty_row())
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 18)
 	box.add_child(row)
@@ -16,6 +20,38 @@ func _ready() -> void:
 		row.add_child(_school_card(school))
 	box.add_child(UiKit.button(tr("SETTINGS_BACK"), Game.to_main_menu, 300))
 	Hints.show_hint(&"school")
+
+
+## Три сложности переключателями; описание — в подсказке.
+func _difficulty_row() -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	var title := UiKit.label(tr("DIFFICULTY_TITLE"), 22, UiKit.MUTED)
+	title.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(title)
+	var group := ButtonGroup.new()
+	for d in Difficulty.ALL:
+		var b := Button.new()
+		b.text = tr("DIFFICULTY_" + String(d).to_upper())
+		b.toggle_mode = true
+		b.button_group = group
+		b.custom_minimum_size = Vector2(170, 44)
+		b.focus_mode = Control.FOCUS_NONE
+		b.add_theme_color_override("font_pressed_color", UiKit.DIFFICULTY_COLORS[d])
+		b.add_theme_color_override("font_hover_pressed_color", UiKit.DIFFICULTY_COLORS[d])
+		b.button_pressed = d == difficulty
+		b.pressed.connect(_set_difficulty.bind(d))
+		Tip.attach(b, tr("DIFFICULTY_" + String(d).to_upper()), tr("DIFFICULTY_" + String(d).to_upper() + "_DESC"),
+				UnitGlyphs.ICON_KILL, UiKit.DIFFICULTY_COLORS[d])
+		_difficulty_buttons[d] = b
+		row.add_child(b)
+	return row
+
+
+func _set_difficulty(d: StringName) -> void:
+	difficulty = d
+	Audio.play(&"ui_click")
 
 
 func _school_card(school: SchoolDef) -> Button:
@@ -59,4 +95,4 @@ func _school_card(school: SchoolDef) -> Button:
 
 func _choose(school_id: StringName) -> void:
 	Audio.play(&"ui_click")
-	Game.new_run(school_id)
+	Game.new_run(school_id, difficulty)

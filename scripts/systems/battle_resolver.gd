@@ -111,7 +111,7 @@ static func melee_exchange(state: BattleState, attacker: UnitState, target: Unit
 
 
 static func try_retaliate(state: BattleState, defender: UnitState, attacker: UnitState, events: Array[BattleEvent]) -> void:
-	if not defender.is_alive() or not attacker.is_alive():
+	if not defender.is_alive() or not attacker.is_alive() or defender.inert:
 		return
 	if not HexGrid.are_adjacent(defender.hex, attacker.hex):
 		return
@@ -171,12 +171,9 @@ static func add_temp_obstacle(state: BattleState, hex: Vector2i, rounds: int, ev
 static func check_end(state: BattleState, events: Array[BattleEvent]) -> bool:
 	if state.outcome != BattleState.Outcome.NONE:
 		return true
-	var boss := state.get_unit(state.boss_uid)
-	if state.alive(UnitState.Side.ENEMY).is_empty() or (boss != null and not boss.is_alive()):
-		state.outcome = BattleState.Outcome.PLAYER_WON
-	elif state.alive(UnitState.Side.PLAYER).is_empty():
-		state.outcome = BattleState.Outcome.PLAYER_LOST
-	else:
+	var outcome := ObjectiveRule.evaluate(state)
+	if outcome == BattleState.Outcome.NONE:
 		return false
+	state.outcome = outcome
 	events.append(BattleEvent.new(BattleEvent.BATTLE_ENDED, {"outcome": state.outcome}))
 	return true

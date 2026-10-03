@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"t3_assassinate"
+name_key = "ENC_T3_ASSASSINATE"
+unit_ids = Array[StringName]([&"ash_priest", &"rust_sentinel", &"ash_ghoul", &"shard_archer"])
+counts = Array[int]([5, 5, 12, 8])
+obstacles = Array[Vector2i]([Vector2i(7, 3), Vector2i(7, 5)])
+tier = 3
+elite = false
+boss = false
+objective = &"assassinate"
+objective_rounds = 0
+target_index = 0

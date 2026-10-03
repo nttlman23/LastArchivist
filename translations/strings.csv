@@ -538,3 +538,59 @@ OUTCOME_ABANDONED,Брошен
 DIFFICULTY_EASY,Легко
 DIFFICULTY_NORMAL,Нормально
 DIFFICULTY_HARD,Тяжело
+UNIT_ARCHIVE_RELIC,Архив
+ENC_T2_HOLD,Переправа знамён
+ENC_T2_SURVIVE,Ночь осады
+ENC_T3_PROTECT,Горящий архив
+ENC_T3_ASSASSINATE,Голос Пепла
+ENC_ELITE_HUNT,Охота на Эхо
+ENC_ELITE_SIEGE,Последний рубеж
+CMD_ASH_OVERSEER,Смотритель Пепла
+CMD_ASH_OVERSEER_DESC,"Урон и проклятия: бьёт заклинанием, метит цель, ярит своих."
+CMD_SALT_KEEPER,Хранитель Соли
+CMD_SALT_KEEPER_DESC,"Стены и защита: перекрывает путь, ставит щит, лечит своих."
+CMD_RIFT_HERALD,Вестник Разлома
+CMD_RIFT_HERALD_DESC,"Ускорение и усиление: гонит своих вперёд, ярит, добивает заклинанием."
+CMDACT_CMD_BOLT,Пепельный удар
+CMDACT_CMD_BOLT_DESC,25 урона вашему отряду (без защиты и ответа).
+CMDACT_CMD_CURSE,Проклятие
+CMDACT_CMD_CURSE_DESC,Метка: следующий удар по отряду наносит +50% урона.
+CMDACT_CMD_HEAL,Соляное лечение
+CMDACT_CMD_HEAL_DESC,Лечит вражеский отряд на 30 ОЗ.
+CMDACT_CMD_WALL,Соляная стена
+CMDACT_CMD_WALL_DESC,Стена на клетке на 2 раунда — перекрывает путь.
+CMDACT_CMD_GUARD,Щит
+CMDACT_CMD_GUARD_DESC,Вражеский отряд защищается и отвечает на все удары 2 раунда.
+CMDACT_CMD_HASTE,Рывок
+CMDACT_CMD_HASTE_DESC,Вражеский отряд получает +2 к скорости на следующий ход.
+CMDACT_CMD_FURY,Ярость
+CMDACT_CMD_FURY_DESC,Вражеский отряд получает +2 к атаке до конца боя.
+OBJ_ELIMINATE,Уничтожить всех
+OBJ_ELIMINATE_DESC,Победа — когда все враги погибли.
+OBJ_SURVIVE,Продержаться
+OBJ_SURVIVE_DESC,Победа — если ваша армия жива к концу раунда %d. Враги получают подкрепления.
+OBJ_ASSASSINATE,Уничтожить цель
+OBJ_ASSASSINATE_DESC,Победа — когда погибнет отмеченный мишенью отряд; остальных добивать не нужно.
+OBJ_HOLD,Удержать знамёна
+OBJ_HOLD_DESC,Победа — когда ваш отряд простоит на знамени в конце %d раундов (не обязательно подряд).
+OBJ_PROTECT,Спасти архив
+OBJ_PROTECT_DESC,Победа — если архив цел к концу раунда %d. Архив разрушен — поражение.
+OBJ_BANNER,Цель боя
+OBJ_PROGRESS_ROUNDS,%d / %d р.
+OBJ_PROGRESS_HOLD,%d / %d
+OBJ_BONUS_TIP,За необычную цель — +1 ресурс случайного вида.
+DIFFICULTY_EASY_DESC,"Врагов на 30% меньше, ресурсов на старте в 1,5 раза больше, без командиров и особых целей. Очки памяти ×0,5."
+DIFFICULTY_NORMAL_DESC,Обычный баланс. Командир — в элитных боях и у Разлома (по одному заряду каждого действия). Очки памяти ×1.
+DIFFICULTY_HARD_DESC,"Врагов на 25% больше, командир во всех боях с 3-го слоя и с двойным запасом действий, цели строже на раунд. Очки ×1,5 и +3 за победу."
+DIFFICULTY_TITLE,Сложность
+COMMANDER_TITLE,Командир
+COMMANDER_INTENT,в конце раунда: %s
+COMMANDER_INTENT_TIP,Командир врага объявляет действие в начале раунда и выполняет его в конце — успейте ответить.
+COMMANDER_IDLE,ждёт
+LOG_COMMANDER_INTENT,Командир готовит: %s
+LOG_COMMANDER_ACTED,Командир: %s
+LOG_OBJECTIVE_PROGRESS,Знамя удержано: %d из %d
+LOG_OBJECTIVE_WIN,Цель боя выполнена
+PREP_OBJECTIVE,Цель:
+HINT_COMMANDER,"У врага есть командир: значок над целью показывает, что он сделает в конце раунда."
+HINT_OBJECTIVE,У этого боя особая цель — она в левом верхнем углу. Наведите на неё для подробностей.

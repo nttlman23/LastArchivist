@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CommanderDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/commander_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"ash_overseer"
+name_key = "CMD_ASH_OVERSEER"
+desc_key = "CMD_ASH_OVERSEER_DESC"
+color = Color(0.95, 0.45, 0.3, 1)
+actions = Array[StringName]([&"cmd_bolt", &"cmd_curse", &"cmd_fury"])
+charges = 2

@@ -321,12 +321,50 @@ static func advice_row(db: DefsDB, codex: CodexState, memory_id: StringName) -> 
 	return row
 
 
+const OBJECTIVE_ICONS := {
+	&"eliminate": UnitGlyphs.ICON_KILL,
+	&"survive": UnitGlyphs.ICON_WAIT,
+	&"assassinate": UnitGlyphs.ICON_MARK,
+	&"hold": UnitGlyphs.ICON_ORDER,
+	&"protect": UnitGlyphs.ICON_PARCHMENT,
+}
+const OBJECTIVE_COLOR := Color(0.55, 0.85, 1.0)
+const DIFFICULTY_COLORS := {&"easy": Color(0.45, 0.85, 0.5), &"normal": Color(0.95, 0.8, 0.35), &"hard": Color(1.0, 0.45, 0.4)}
+
+
+## Цель боя чипом: значок, название (и прогресс, если задан); правило — в подсказке.
+static func objective_chip(objective: StringName, rounds: int, progress: String = "", size: int = 18) -> HBoxContainer:
+	var t := func(key: String) -> String: return TranslationServer.translate(key)
+	var key := "OBJ_" + String(objective).to_upper()
+	var name: String = t.call(key)
+	var body: String = t.call(key + "_DESC")
+	if body.contains("%d"):
+		body = body % rounds
+	if objective != &"eliminate":
+		body += "\n" + t.call("OBJ_BONUS_TIP")
+	var text := name if progress == "" else "%s  %s" % [name, progress]
+	return chip(OBJECTIVE_ICONS.get(objective, UnitGlyphs.ICON_KILL), text, OBJECTIVE_COLOR, name, body, size)
+
+
+## Командир чипом: имя цветом командира, описание — в подсказке.
+static func commander_chip(db: DefsDB, id: StringName, size: int = 18) -> HBoxContainer:
+	var def := db.commander(id)
+	var t := func(key: String) -> String: return TranslationServer.translate(key)
+	return chip(UnitGlyphs.ICON_ORDER, t.call(def.name_key), def.color, t.call("COMMANDER_TITLE") + ": " + t.call(def.name_key), t.call(def.desc_key), size)
+
+
+static func difficulty_chip(difficulty: StringName, size: int = 18) -> HBoxContainer:
+	var key := "DIFFICULTY_" + String(difficulty).to_upper()
+	return chip(UnitGlyphs.ICON_KILL, TranslationServer.translate(key), DIFFICULTY_COLORS.get(difficulty, STAT_COLOR),
+			TranslationServer.translate(key), TranslationServer.translate(key + "_DESC"), size)
+
+
 ## Риск боя: сила врагов относительно лучших карт армии (три уровня, подробности в подсказке).
-static func risk_chip(db: DefsDB, codex: CodexState, enc: EncounterDef, size: int = 18) -> HBoxContainer:
-	var risk := CardAdvisor.risk(db, codex, enc)
+static func risk_chip(db: DefsDB, codex: CodexState, enc: EncounterDef, difficulty: StringName = Difficulty.NORMAL, size: int = 18) -> HBoxContainer:
+	var risk := CardAdvisor.risk(db, codex, enc, difficulty)
 	var t := func(key: String) -> String: return TranslationServer.translate(key)
 	var name: String = t.call(CardAdvisor.RISK_KEYS[risk])
-	var body: String = t.call("RISK_TIP") % [roundi(CardAdvisor.encounter_power(db, enc)), roundi(CardAdvisor.army_power(db, codex))]
+	var body: String = t.call("RISK_TIP") % [roundi(CardAdvisor.encounter_power(db, enc, difficulty)), roundi(CardAdvisor.army_power(db, codex))]
 	return chip(UnitGlyphs.ICON_KILL, name, CardAdvisor.RISK_COLORS[risk], t.call("RISK_TITLE") + ": " + name, body, size)
 
 

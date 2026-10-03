@@ -5,6 +5,10 @@ extends RefCounted
 
 static func start_round(state: BattleState) -> Array[BattleEvent]:
 	var events: Array[BattleEvent] = []
+	if state.round_number > 0:
+		ObjectiveRule.on_round_end(state, events)
+		if BattleResolver.check_end(state, events):
+			return events
 	state.round_number += 1
 	if state.round_number > state.max_rounds:
 		state.outcome = BattleState.Outcome.PLAYER_LOST
@@ -12,10 +16,12 @@ static func start_round(state: BattleState) -> Array[BattleEvent]:
 		return events
 	if state.rift:
 		RiftRule.on_round_start(state, events)
-		if state.alive(UnitState.Side.PLAYER).is_empty():
+		if ObjectiveRule.fighters(state, UnitState.Side.PLAYER).is_empty():
 			state.outcome = BattleState.Outcome.PLAYER_LOST
 			events.append(BattleEvent.new(BattleEvent.BATTLE_ENDED, {"outcome": state.outcome, "reason": "erased"}))
 			return events
+	if ObjectiveRule.on_round_start(state, events):
+		return events
 	var order := state.alive_all()
 	for u in order:
 		u.retaliated = false
@@ -30,8 +36,11 @@ static func start_round(state: BattleState) -> Array[BattleEvent]:
 	state.queue.clear()
 	state.wait_queue.clear()
 	for u in order:
-		state.queue.append(u.uid)
+		# Объекты цели (архив) не ходят.
+		if not u.inert:
+			state.queue.append(u.uid)
 	events.append(BattleEvent.new(BattleEvent.ROUND_STARTED, {"round": state.round_number}))
+	ObjectiveRule.announce_intent(state, events)
 	return events
 
 
@@ -98,7 +107,8 @@ static func next_round_order(state: BattleState) -> Array[int]:
 	order.sort_custom(_main_phase_before)
 	var result: Array[int] = []
 	for u in order:
-		result.append(u.uid)
+		if not u.inert:
+			result.append(u.uid)
 	return result
 
 

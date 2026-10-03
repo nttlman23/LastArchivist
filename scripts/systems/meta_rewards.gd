@@ -19,7 +19,8 @@ const CATALOG := [
 
 static func points_for_run(run: RunState, won: bool) -> int:
 	var layer := run.map.current_layer()
-	return maxi(0, layer - 1) * POINTS_PER_LAYER + run.elites_won * POINTS_PER_ELITE + (POINTS_FOR_RIFT if won else 0)
+	var base := maxi(0, layer - 1) * POINTS_PER_LAYER + run.elites_won * POINTS_PER_ELITE + (POINTS_FOR_RIFT if won else 0)
+	return Difficulty.points(run.difficulty, base, won)
 
 
 ## Все открытия: школы (кроме бесплатных) и каталог. Каждое — {id, kind, target, cost}.
@@ -118,7 +119,7 @@ static func chronicle_entry(run: RunState, outcome: String, points: int, db: Def
 	return {
 		"date": "%04d-%02d-%02d" % [date["year"], date["month"], date["day"]],
 		"school": String(run.school_id),
-		"difficulty": "normal",
+		"difficulty": String(run.difficulty),
 		"layer": run.map.current_layer(),
 		"outcome": outcome,
 		"encounter": encounter,

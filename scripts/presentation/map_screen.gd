@@ -55,6 +55,9 @@ func _build_hud() -> void:
 	top.add_theme_constant_override("separation", 24)
 	add_child(top)
 	top.add_child(UiKit.label(tr("MAP_TITLE"), 34, UiKit.ACCENT))
+	var diff := UiKit.difficulty_chip(run.difficulty, 20)
+	diff.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	top.add_child(diff)
 	_layer_label = UiKit.label("", 22, UiKit.MUTED)
 	_layer_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	top.add_child(_layer_label)
@@ -184,7 +187,7 @@ func _add_node_card(n: MapState.MapNode) -> void:
 	if risk >= 0:
 		var enc := db.encounter(n.content)
 		var exact := n.scouted or enc.boss
-		var power := CardAdvisor.encounter_power(db, enc) if exact else CardAdvisor.expected_power(db, enc.tier, enc.elite)
+		var power := CardAdvisor.encounter_power(db, enc, run.difficulty) if exact else CardAdvisor.expected_power(db, enc.tier, enc.elite, run.difficulty)
 		var name := tr(CardAdvisor.RISK_KEYS[risk])
 		var body := tr("RISK_TIP") % [roundi(power), roundi(CardAdvisor.army_power(db, run.codex))]
 		if not exact:
@@ -198,10 +201,16 @@ func _add_node_card(n: MapState.MapNode) -> void:
 		_info.add_child(_shop_prices())
 	if n.is_battle():
 		var enc := db.encounter(n.content)
+		var objective := BattleSetup.objective_of(run, enc)
+		if (n.scouted or n.type == MapState.NodeType.RIFT) and objective != ObjectiveRule.ELIMINATE:
+			_info.add_child(UiKit.objective_chip(objective, enc.objective_rounds + Difficulty.objective_extra(run.difficulty), "", 18))
+		var node_layer := n.layer
+		if Difficulty.has_commander(run.difficulty, enc, node_layer) and not db.commanders.is_empty():
+			_info.add_child(UiKit.chip(UnitGlyphs.ICON_ORDER, tr("COMMANDER_TITLE"), UiKit.DANGER, tr("COMMANDER_TITLE"), tr("COMMANDER_INTENT_TIP"), 18))
 		if n.scouted or n.type == MapState.NodeType.RIFT:
 			var enemies: Array[String] = []
 			for i in enc.unit_ids.size():
-				enemies.append("%d × %s" % [enc.counts[i], UiKit.unit_name(db, enc.unit_ids[i])])
+				enemies.append("%d × %s" % [Difficulty.enemy_count(run.difficulty, enc.counts[i]), UiKit.unit_name(db, enc.unit_ids[i])])
 			_info.add_child(_wrapped("%s %s" % [tr("PREP_ENEMIES"), ", ".join(enemies)], UiKit.ENEMY_COLOR))
 		var rewards := MapActions.battle_rewards(enc)
 		if not rewards.values().all(func(v: int) -> bool: return v == 0):

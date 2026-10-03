@@ -30,7 +30,7 @@ static func on_round_start(state: BattleState, events: Array[BattleEvent]) -> vo
 ## Сильнейший живой стек игрока: наибольшие суммарные ОЗ, при равенстве — меньший uid.
 static func strongest(state: BattleState) -> UnitState:
 	var best: UnitState = null
-	for u in state.alive(UnitState.Side.PLAYER):
+	for u in ObjectiveRule.fighters(state, UnitState.Side.PLAYER):
 		if best == null or u.total_hp() > best.total_hp():
 			best = u
 	return best

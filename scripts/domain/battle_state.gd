@@ -46,10 +46,25 @@ var boss_uid := -1
 ## Пассивка школы Архивариуса (SchoolPassives).
 var passive_id: StringName
 
+# Цель боя (ObjectiveRule): objective — id цели, objective_rounds — N или K.
+var objective_rounds := 0
+var hold_hexes: Array[Vector2i] = []
+var hold_count := 0
+var archive_uid := -1
+## Подкрепления врага: {"round", "unit": UnitState.to_dict()} — появляются в начале раунда.
+var reinforcements: Array[Dictionary] = []
+
+# Вражеский командир (CommanderActions): заряды действий и намерение на конец раунда.
+var commander_id: StringName
+var commander_charges: Dictionary[StringName, int] = {}
+var intent: Dictionary = {}
+
 
 ## Собирает бой из встречи и выбранных карт Кодекса.
+## difficulty — множитель численности врагов и цели; commander — командир врага (или пусто).
 static func create(db: DefsDB, encounter: EncounterDef, codex: CodexState, selected: Array[int], seed_value: int,
-		hero: HeroState = null, passive: StringName = &"") -> BattleState:
+		hero: HeroState = null, passive: StringName = &"", difficulty: StringName = Difficulty.NORMAL,
+		commander: StringName = &"") -> BattleState:
 	assert(selected.size() <= MAX_STACKS)
 	var s := BattleState.new()
 	s.rng.seed = seed_value
@@ -73,11 +88,32 @@ static func create(db: DefsDB, encounter: EncounterDef, codex: CodexState, selec
 		u.card_index = selected[i]
 		HeroState.apply_upgrades(db, upgrades, u)
 	var enemy_col := s.grid.width - 1
+	var objectives := Difficulty.objectives_enabled(difficulty) and encounter.objective != ObjectiveRule.ELIMINATE
 	for i in mini(encounter.unit_ids.size(), MAX_STACKS):
-		var e := s.add_unit(db.unit(encounter.unit_ids[i]), UnitState.Side.ENEMY, encounter.counts[i], Vector2i(enemy_col, START_ROWS[i]))
-		if encounter.boss and i == 0:
+		var count := Difficulty.enemy_count(difficulty, encounter.counts[i])
+		var e := s.add_unit(db.unit(encounter.unit_ids[i]), UnitState.Side.ENEMY, count, Vector2i(enemy_col, START_ROWS[i]))
+		if (encounter.boss and i == 0) or (objectives and encounter.objective == ObjectiveRule.ASSASSINATE and i == encounter.target_index):
+			# Хранитель Разлома или цель «Уничтожить цель»: его гибель — победа.
 			s.boss_uid = e.uid
 			e.is_boss = true
+	if objectives:
+		s.objective = encounter.objective
+		s.objective_rounds = encounter.objective_rounds + Difficulty.objective_extra(difficulty)
+		match encounter.objective:
+			ObjectiveRule.HOLD:
+				s.hold_hexes = encounter.hold_hexes.duplicate()
+			ObjectiveRule.PROTECT:
+				s.archive_uid = s.add_unit(db.unit(ObjectiveRule.ARCHIVE_UNIT), UnitState.Side.PLAYER, 1, encounter.archive_hex).uid
+			ObjectiveRule.SURVIVE:
+				for i in encounter.reinforce_ids.size():
+					var count := Difficulty.enemy_count(difficulty, encounter.reinforce_counts[i])
+					var r := UnitState.from_def(db.unit(encounter.reinforce_ids[i]), -1, UnitState.Side.ENEMY, count, Vector2i(-1, -1))
+					s.reinforcements.append({"round": encounter.reinforce_rounds[i], "unit": r.to_dict()})
+	if commander != &"":
+		var def := db.commander(commander)
+		s.commander_id = commander
+		for id in def.actions:
+			s.commander_charges[id] = Difficulty.commander_charges(difficulty, def.charges)
 	return s
 
 
@@ -208,7 +244,24 @@ func to_dict() -> Dictionary:
 		"hero_actions_left": hero_actions_left, "hero_orders": Array(hero_orders).map(func(x: StringName) -> String: return String(x)),
 		"hero_spells": spells, "last_ability": last, "ability_cooldowns": cds,
 		"rift": rift, "erased_cards": erased_cards.duplicate(), "boss_uid": boss_uid, "passive_id": String(passive_id),
+		"objective_rounds": objective_rounds, "hold_hexes": Array(hold_hexes).map(func(h: Vector2i) -> Array: return [h.x, h.y]),
+		"hold_count": hold_count, "archive_uid": archive_uid, "reinforcements": reinforcements.duplicate(true),
+		"commander_id": String(commander_id), "commander_charges": _charges_dict(), "intent": _intent_dict(),
 	}
+
+
+func _charges_dict() -> Dictionary:
+	var d := {}
+	for id in commander_charges:
+		d[String(id)] = commander_charges[id]
+	return d
+
+
+func _intent_dict() -> Dictionary:
+	if intent.is_empty():
+		return {}
+	var h: Vector2i = intent.get("hex", Vector2i(-1, -1))
+	return {"action": String(intent["action"]), "target": int(intent.get("target", -1)), "hex": [h.x, h.y]}
 
 
 static func from_dict(d: Dictionary) -> BattleState:
@@ -250,4 +303,19 @@ static func from_dict(d: Dictionary) -> BattleState:
 	s.passive_id = StringName(d["passive_id"])
 	for i in d["erased_cards"]:
 		s.erased_cards.append(int(i))
+	s.objective_rounds = int(d.get("objective_rounds", 0))
+	for h: Array in d.get("hold_hexes", []):
+		s.hold_hexes.append(Vector2i(int(h[0]), int(h[1])))
+	s.hold_count = int(d.get("hold_count", 0))
+	s.archive_uid = int(d.get("archive_uid", -1))
+	for r: Dictionary in d.get("reinforcements", []):
+		s.reinforcements.append(r.duplicate(true))
+	s.commander_id = StringName(d.get("commander_id", ""))
+	var charges: Dictionary = d.get("commander_charges", {})
+	for id: String in charges:
+		s.commander_charges[StringName(id)] = int(charges[id])
+	var it: Dictionary = d.get("intent", {})
+	if not it.is_empty():
+		var h: Array = it["hex"]
+		s.intent = {"action": StringName(it["action"]), "target": int(it["target"]), "hex": Vector2i(int(h[0]), int(h[1]))}
 	return s

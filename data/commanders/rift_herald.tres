@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CommanderDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/commander_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"rift_herald"
+name_key = "CMD_RIFT_HERALD"
+desc_key = "CMD_RIFT_HERALD_DESC"
+color = Color(0.75, 0.45, 1.0, 1)
+actions = Array[StringName]([&"cmd_haste", &"cmd_fury", &"cmd_bolt"])
+charges = 2

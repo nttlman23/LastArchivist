@@ -43,7 +43,9 @@ static func options(state: BattleState, id: StringName, slot: int) -> Array[Batt
 			candidates.append(_make(id, slot, -1, NO_HEX))
 		Targeting.Kind.ALLY:
 			for u in state.alive(UnitState.Side.PLAYER):
-				candidates.append(_make(id, slot, u.uid, NO_HEX))
+				# Объект цели (архив) не ходит: приказы и миражи на него не действуют, лечить можно.
+				if not u.inert or id == HUNGER or id == RUST_ARMOR:
+					candidates.append(_make(id, slot, u.uid, NO_HEX))
 		Targeting.Kind.ENEMY:
 			for u in state.alive(UnitState.Side.ENEMY):
 				candidates.append(_make(id, slot, u.uid, NO_HEX))
@@ -64,7 +66,7 @@ static func validate(state: BattleState, action: BattleAction) -> bool:
 	if action.slot < 0:
 		if not state.hero_orders.has(action.ref_id):
 			return false
-		if not _is_side(t, UnitState.Side.PLAYER):
+		if not _is_side(t, UnitState.Side.PLAYER) or t.inert:
 			return false
 		if action.ref_id == ROYAL:
 			return state.has_acted(t)
@@ -87,7 +89,7 @@ static func validate(state: BattleState, action: BattleAction) -> bool:
 		SHARD_RAIN, WHIRLPOOL:
 			return state.grid.in_bounds(action.dest)
 		MIRAGE:
-			return _is_side(t, UnitState.Side.PLAYER) and not t.illusion and Abilities.illusion_hex(state, t, t) != NO_HEX
+			return _is_side(t, UnitState.Side.PLAYER) and not t.illusion and not t.inert and Abilities.illusion_hex(state, t, t) != NO_HEX
 		ECHO_SPELL:
 			return true
 	return false

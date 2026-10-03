@@ -38,12 +38,23 @@ func _ready() -> void:
 		box.add_child(UiKit.label(tr("PREP_RIFT_WARNING"), 0, UiKit.DANGER))
 	var enemies: Array[String] = []
 	for i in encounter.unit_ids.size():
-		enemies.append("%d × %s" % [encounter.counts[i], UiKit.unit_name(db, encounter.unit_ids[i])])
+		enemies.append("%d × %s" % [Difficulty.enemy_count(run.difficulty, encounter.counts[i]), UiKit.unit_name(db, encounter.unit_ids[i])])
 	var enemy_row := HBoxContainer.new()
 	enemy_row.add_theme_constant_override("separation", 20)
 	enemy_row.add_child(UiKit.label("%s %s" % [tr("PREP_ENEMIES"), ", ".join(enemies)], 0, UiKit.ENEMY_COLOR))
-	enemy_row.add_child(UiKit.risk_chip(db, run.codex, encounter))
+	enemy_row.add_child(UiKit.risk_chip(db, run.codex, encounter, run.difficulty))
 	box.add_child(enemy_row)
+	# Цель боя и командир врага (SPEC_SPRINT5 10–11).
+	var objective := BattleSetup.objective_of(run, encounter)
+	var commander := Difficulty.commander_for(db, run, encounter)
+	if objective != ObjectiveRule.ELIMINATE or commander != &"":
+		var goal_row := HBoxContainer.new()
+		goal_row.add_theme_constant_override("separation", 20)
+		goal_row.add_child(UiKit.label(tr("PREP_OBJECTIVE"), 0, UiKit.MUTED))
+		goal_row.add_child(UiKit.objective_chip(objective, encounter.objective_rounds + Difficulty.objective_extra(run.difficulty), "", 20))
+		if commander != &"":
+			goal_row.add_child(UiKit.commander_chip(db, commander, 20))
+		box.add_child(goal_row)
 	box.add_child(UiKit.hero_summary(db, run))
 	var hint_row := HBoxContainer.new()
 	hint_row.add_theme_constant_override("separation", 24)

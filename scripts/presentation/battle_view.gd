@@ -49,6 +49,9 @@ const WAVE_COLOR := Color(0.6, 0.8, 1.0, 0.8)
 const HIGHLIGHT_COLOR := Color(1, 1, 1, 0.9)
 const SIDE_RING_WIDTH := 5.0
 const MAX_STATUS_ICONS := 3
+const HOLD_COLOR := Color(0.55, 0.85, 1.0, 0.28)
+const HOLD_FLAG := Color(0.55, 0.85, 1.0)
+const TARGET_MARK := Color(1.0, 0.35, 0.3)
 
 var state: BattleState
 var db: DefsDB
@@ -256,6 +259,8 @@ const EVENT_SOUNDS := {
 	BattleEvent.ERASED: &"erase",
 	BattleEvent.RIFT_MARKED: &"order",
 	BattleEvent.SUMMONED: &"spell",
+	BattleEvent.COMMANDER_ACTED: &"spell",
+	BattleEvent.OBJECTIVE_PROGRESS: &"order",
 }
 
 
@@ -314,6 +319,18 @@ func play(events: Array[BattleEvent]) -> void:
 				_pos[uid] = hex_center(u.hex)
 				_count[uid] = u.count
 				await _tween_value(func(v: float) -> void: _alpha[uid] = v, 0.0, 1.0, FADE_TIME, _units)
+			BattleEvent.COMMANDER_INTENT:
+				_overlay.queue_redraw()
+			BattleEvent.COMMANDER_ACTED:
+				# Название действия командира — над целью (или над клеткой стены).
+				var label: String = event_label.call(e)
+				var uid: int = e.data["target"]
+				var pos := _pos[uid] if _pos.has(uid) else hex_center(e.data["hex"])
+				_floaters.append({"text": label, "pos": pos + Vector2(0, -26), "t": 0.0, "color": _commander_color()})
+				_overlay.queue_redraw()
+				await get_tree().create_timer(0.45).timeout
+			BattleEvent.OBJECTIVE_PROGRESS:
+				_overlay.queue_redraw()
 			BattleEvent.RIFT_MARKED:
 				_float_text(int(e.data["uid"]), event_label.call(e), RIFT_COLOR, -26.0)
 				_units.queue_redraw()
@@ -428,6 +445,8 @@ func _draw_overlay(ci: CanvasItem) -> void:
 			fills.add(PackedVector2Array([c + Vector2(x, -18), c + Vector2(x + 10, -18), c + Vector2(x + 10, -10), c + Vector2(x, -10)]), wall_dark)
 	for hex in state.water:
 		fills.add(_hex_fill[hex], WATER_COLOR)
+	for hex in state.hold_hexes:
+		fills.add(_hex_fill[hex], HOLD_COLOR)
 	if dim_unreachable and not reachable.is_empty():
 		var active := state.active_unit()
 		for hex in _hex_fill:
@@ -464,6 +483,11 @@ func _draw_overlay(ci: CanvasItem) -> void:
 	for hex in state.temp_obstacles:
 		ci.draw_polyline(_hex_inner[hex], TEMP_WALL_COLOR.lightened(0.2), 2.5)
 		_draw_rounds(ci, hex_center(hex) + Vector2(0, 30), state.temp_obstacles[hex], Color.WHITE)
+	# Знамёна цели «Удержать»: контур и флажок в углу клетки.
+	for hex in state.hold_hexes:
+		ci.draw_polyline(_hex_inner[hex], HOLD_FLAG, 2.5)
+		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_ORDER, hex_center(hex) + Vector2(-26, -22), 11, BADGE_BG, HOLD_FLAG)
+	_draw_intent(ci)
 
 	if not threat.is_empty():
 		var lines := PackedVector2Array()
@@ -488,6 +512,31 @@ func _draw_overlay(ci: CanvasItem) -> void:
 	for uid in affected:
 		if _pos.has(uid):
 			ci.draw_arc(_pos[uid], UNIT_RADIUS + 12, 0, TAU, 32, AFFECTED_ALLY if affected[uid] else AFFECTED_ENEMY, 3.0)
+
+
+func _commander_color() -> Color:
+	return db.commander(state.commander_id).color if state.commander_id != &"" else RIFT_COLOR
+
+
+## Намерение командира: кольцо цвета командира и значок действия над целью или клеткой.
+func _draw_intent(ci: CanvasItem) -> void:
+	if state.intent.is_empty():
+		return
+	var id := StringName(state.intent["action"])
+	var uid := int(state.intent.get("target", -1))
+	var color := _commander_color()
+	var c: Vector2
+	if uid >= 0 and _pos.has(uid):
+		c = _pos[uid]
+	else:
+		var h: Vector2i = state.intent.get("hex", Vector2i(-1, -1))
+		if not _hex_fill.has(h):
+			return
+		c = hex_center(h)
+	for i in 10:
+		var a0 := TAU * i / 10.0
+		ci.draw_arc(c, UNIT_RADIUS + 14, a0, a0 + TAU / 20.0, 4, color, 3.0)
+	UnitGlyphs.draw_icon(ci, CommanderActions.ICONS.get(id, UnitGlyphs.ICON_SPELL), c + Vector2(UNIT_RADIUS * 0.75, -UNIT_RADIUS - 14), 13, BADGE_BG, color)
 
 
 ## Число оставшихся раундов в кружке.
@@ -577,6 +626,11 @@ func _draw_unit(ci: CanvasItem, u: UnitState) -> void:
 		ci.draw_arc(c, UNIT_RADIUS, 0, TAU, 32, ring, SIDE_RING_WIDTH)
 	if u.has_status(UnitState.STATUS_RIFT_MARKED):
 		ci.draw_arc(c, UNIT_RADIUS + 9, 0, TAU, 32, Color(RIFT_COLOR, alpha), 3.0)
+	if u.is_boss and state.objective == ObjectiveRule.ASSASSINATE:
+		# Мишень цели «Уничтожить цель».
+		ci.draw_arc(c, UNIT_RADIUS + 6, 0, TAU, 32, Color(TARGET_MARK, alpha), 2.5)
+		for d: Vector2 in [Vector2.UP, Vector2.DOWN, Vector2.LEFT, Vector2.RIGHT]:
+			ci.draw_line(c + d * (UNIT_RADIUS + 1), c + d * (UNIT_RADIUS + 12), Color(TARGET_MARK, alpha), 3.0)
 	UnitGlyphs.draw_unit(ci, u.def_id, c, UNIT_RADIUS * 0.82, body, ink)
 
 	# Постоянные свойства по бокам: стрелок (с выстрелами) слева, летун справа, способность снизу слева.

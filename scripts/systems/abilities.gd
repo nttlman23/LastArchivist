@@ -96,7 +96,9 @@ static func options(state: BattleState, u: UnitState) -> Array[BattleAction]:
 				candidates.append(BattleAction.ability(u.ability_id, e.uid))
 		Targeting.Kind.ALLY:
 			for a in state.alive(u.side):
-				candidates.append(BattleAction.ability(u.ability_id, a.uid))
+				# Объект цели (архив) можно только лечить.
+				if not a.inert or id == RESTORE:
+					candidates.append(BattleAction.ability(u.ability_id, a.uid))
 			# «Механик» ещё ставит барьер на соседнюю клетку.
 			if id == TINKER:
 				for h in state.grid.neighbors(u.hex):
@@ -148,7 +150,7 @@ static func validate(state: BattleState, u: UnitState, action: BattleAction) -> 
 			return HexGrid.are_adjacent(u.hex, action.dest) and state.is_free(action.dest)
 		REFLECT:
 			return target != null and target.is_alive() and target.side == u.side and not target.illusion \
-					and not target.is_boss and illusion_hex(state, target, u) != NO_HEX
+					and not target.is_boss and not target.inert and illusion_hex(state, target, u) != NO_HEX
 		STEAL:
 			return _is_enemy(u, target) and not steal_options(state, u, target).is_empty()
 	return false

@@ -1,6 +1,6 @@
 extends SceneTree
 ## Балансная симуляция экспедиций: за игрока — AI отрядов, HeroAi в бою и MapAi на карте.
-## Запуск: godot --headless -s res://tools/sim_balance.gd -- [runs] [school_id]
+## Запуск: godot --headless -s res://tools/sim_balance.gd -- [runs] [school_id] [difficulty]
 ## Играет «новичок»: профиль без открытий (закрытые карты и события не выпадают).
 
 const DEFAULT_RUNS := 200
@@ -14,6 +14,7 @@ func _init() -> void:
 	var runs := int(args[0]) if args.size() > 0 else DEFAULT_RUNS
 	db = DefsDB.load_default()
 	var school_id := StringName(args[1]) if args.size() > 1 else DefsDB.DEFAULT_SCHOOL
+	var difficulty := StringName(args[2]) if args.size() > 2 else Difficulty.NORMAL
 	var profile := ProfileState.new()
 	for s in db.schools_sorted():
 		profile.unlocked.append(MetaRewards.school_unlock_id(s.id))
@@ -22,7 +23,7 @@ func _init() -> void:
 	var res_sum := {RunState.INK: 0, RunState.PARCHMENT: 0, RunState.AETHER: 0}
 	var deaths := {}
 	for i in runs:
-		var run := RunState.create(db, i * 7919 + 1, school_id, profile)
+		var run := RunState.create(db, i * 7919 + 1, school_id, profile, difficulty)
 		var rng := RandomNumberGenerator.new()
 		rng.seed = i
 		var result := _play(run, rng)
@@ -33,7 +34,7 @@ func _init() -> void:
 		layers_sum += run.map.current_layer()
 		for id in res_sum:
 			res_sum[id] += run.resources[id]
-	print("Школа: %s" % school_id)
+	print("Школа: %s, сложность: %s" % [school_id, difficulty])
 	print("Экспедиций: %d, пройдено полностью: %d (%.0f%%), средний слой %.1f" % [runs, won, 100.0 * won / runs, float(layers_sum) / runs])
 	print("Поражения: %s" % deaths)
 	for key in stats.keys():
@@ -78,18 +79,21 @@ func _battle(run: RunState, rng: RandomNumberGenerator, key: String, elite: bool
 	for c in run.codex.unit_indices(db).slice(0, BattleState.MAX_STACKS):
 		selected.append(c)
 	var enc := db.encounter(run.current_encounter_id(db))
-	var s := BattleState.create(db, enc, run.codex, selected, run.battle_seed(), run.hero, db.school(run.school_id).passive_id)
+	var s := BattleSetup.for_run(db, run, selected)
+	var okey := key + ":" + String(s.objective) if s.objective != ObjectiveRule.ELIMINATE else key
+	if s.commander_id != &"":
+		okey += "+cmd"
 	BattleResolver.begin(s)
 	while s.outcome == BattleState.Outcome.NONE:
 		var hero := HeroAi.choose(s) if s.can_hero_act() else null
 		BattleResolver.apply(s, hero if hero else AiController.choose_action(s, s.active_uid))
-	if not stats.has(key):
-		stats[key] = [0, 0, 0]
-	stats[key][1] += 1
-	stats[key][2] += s.round_number
+	if not stats.has(okey):
+		stats[okey] = [0, 0, 0]
+	stats[okey][1] += 1
+	stats[okey][2] += s.round_number
 	if s.outcome != BattleState.Outcome.PLAYER_WON:
 		return false
-	stats[key][0] += 1
+	stats[okey][0] += 1
 	run.battles_won += 1
 	run.apply_spell_charges(s.spell_charges())
 	run.after_battle(db, selected, s.erased_cards)
@@ -98,6 +102,9 @@ func _battle(run: RunState, rng: RandomNumberGenerator, key: String, elite: bool
 	var rewards := MapActions.battle_rewards(enc)
 	for id in rewards:
 		run.gain(id, rewards[id])
+	var bonus := BattleSetup.objective_bonus(run, enc)
+	if bonus != &"":
+		run.gain(bonus, 1)
 	if run.pending_reward_card != &"" and not run.codex.is_full():
 		run.codex.add(db, run.pending_reward_card)
 	MapAi.post_battle(db, run, rng, elite)

@@ -48,6 +48,8 @@ var fury := 0
 var construct := false
 ## Иллюзия (Сад Лиц): двойной урон, без карты, исчезает после боя.
 var illusion := false
+## Объект цели боя (архив): не ходит, не отвечает; его гибель — не гибель армии.
+var inert := false
 ## Способность, временно заимствованная «Кражей».
 var borrowed_ability: StringName
 
@@ -78,6 +80,7 @@ static func from_def(def: UnitDef, p_uid: int, p_side: int, p_count: int, p_hex:
 	u.shots_left = def.shots
 	u.ability_id = def.ability_id
 	u.construct = def.construct
+	u.inert = def.inert
 	return u
 
 
@@ -152,7 +155,7 @@ func to_dict() -> Dictionary:
 		"hex": [hex.x, hex.y], "count": count, "start_count": start_count, "top_hp": top_hp, "card_index": card_index,
 		"hp": hp, "attack": attack, "defense": defense, "dmg_min": dmg_min, "dmg_max": dmg_max,
 		"speed": speed, "initiative": initiative, "is_ranged": is_ranged, "is_flying": is_flying,
-		"shots_left": shots_left, "ability_id": String(ability_id), "ability_cd": ability_cd, "is_boss": is_boss, "fury": fury, "construct": construct, "illusion": illusion,
+		"shots_left": shots_left, "ability_id": String(ability_id), "ability_cd": ability_cd, "is_boss": is_boss, "fury": fury, "construct": construct, "illusion": illusion, "inert": inert,
 		"retaliated": retaliated, "waited": waited, "defending": defending, "statuses": st,
 	}
 
@@ -184,6 +187,7 @@ static func from_dict(d: Dictionary) -> UnitState:
 	u.fury = int(d.get("fury", 0))
 	u.construct = bool(d.get("construct", false))
 	u.illusion = bool(d.get("illusion", false))
+	u.inert = bool(d.get("inert", false))
 	u.retaliated = bool(d["retaliated"])
 	u.waited = bool(d["waited"])
 	u.defending = bool(d["defending"])

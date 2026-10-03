@@ -20,6 +20,9 @@ const STATUS_CHANGED := &"status_changed"   # {uid, status, on}
 const RIFT_MARKED := &"rift_marked"         # {uid} — будет стёрт в начале следующего раунда
 const ERASED := &"erased"                   # {uid} — стёрт разломом
 const SUMMONED := &"summoned"               # {uid, source} — появилась иллюзия
+const COMMANDER_INTENT := &"commander_intent"  # {action, target, hex} — намерение на конец раунда
+const COMMANDER_ACTED := &"commander_acted"    # {action, target, hex}
+const OBJECTIVE_PROGRESS := &"objective_progress"  # {count, need} — раунд на точках засчитан
 const DAMAGED := &"damaged"                 # {uid, damage, killed, source} — урон без атаки (заклинания, рикошеты)
 
 var type: StringName

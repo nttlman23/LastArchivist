@@ -2,7 +2,7 @@ class_name RunState
 extends RefCounted
 ## Состояние забега. Сохраняется на чекпоинтах — при возврате на карту экспедиции.
 
-const SAVE_VERSION := 4
+const SAVE_VERSION := 5
 const REWARD_CHOICES := 3
 
 const INK := &"ink"
@@ -25,22 +25,26 @@ var pending_reward_card: StringName
 var battles_won := 0
 var elites_won := 0
 var school_id := DefsDB.DEFAULT_SCHOOL
+## Сложность забега (Difficulty).
+var difficulty := Difficulty.NORMAL
 ## Пул карт наград и лавки (с повторами для веса) и пул событий — фиксируются при старте забега.
 var card_pool: Array[StringName] = []
 var event_pool: Array[StringName] = []
 
 
 ## profile — открытия игрока (пулы карт и событий); без профиля доступно всё.
-static func create(db: DefsDB, seed_value: int, school_id: StringName = DefsDB.DEFAULT_SCHOOL, profile: ProfileState = null) -> RunState:
+static func create(db: DefsDB, seed_value: int, school_id: StringName = DefsDB.DEFAULT_SCHOOL, profile: ProfileState = null,
+		difficulty: StringName = Difficulty.NORMAL) -> RunState:
 	var run := RunState.new()
 	run.run_seed = seed_value
+	run.difficulty = difficulty
 	run.loot_rng.seed = hash("loot:%d" % seed_value)
 	run.school_id = school_id
 	var school := db.school(school_id)
 	for id in school.starting_codex:
 		run.codex.add(db, id)
 	for id in RESOURCE_IDS:
-		run.resources[id] = START_RESOURCES[id]
+		run.resources[id] = Difficulty.start_resource(difficulty, START_RESOURCES[id])
 	if profile:
 		run.card_pool = MetaRewards.card_pool(db, profile, school)
 		run.event_pool = MetaRewards.event_pool(db, profile)
@@ -173,6 +177,7 @@ func to_dict() -> Dictionary:
 		"battles_won": battles_won,
 		"elites_won": elites_won,
 		"school_id": String(school_id),
+		"difficulty": String(difficulty),
 		"card_pool": Array(card_pool).map(func(x: StringName) -> String: return String(x)),
 		"event_pool": Array(event_pool).map(func(x: StringName) -> String: return String(x)),
 	}
@@ -197,6 +202,7 @@ static func from_dict(d: Dictionary) -> RunState:
 	run.battles_won = int(d["battles_won"])
 	run.elites_won = int(d["elites_won"])
 	run.school_id = StringName(d["school_id"])
+	run.difficulty = StringName(d["difficulty"])
 	for id: String in d["card_pool"]:
 		run.card_pool.append(StringName(id))
 	for id: String in d["event_pool"]:
