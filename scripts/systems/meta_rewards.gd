@@ -90,12 +90,38 @@ static func event_pool(db: DefsDB, profile: ProfileState) -> Array[StringName]:
 	return pool
 
 
-## Итог забега: начисляет очки и статистику, возвращает начисленные очки.
-static func finish_run(profile: ProfileState, run: RunState, won: bool) -> int:
+## Итог забега: начисляет очки и статистику, пишет летопись, возвращает начисленные очки.
+static func finish_run(profile: ProfileState, run: RunState, won: bool, db: DefsDB = null) -> int:
 	var gained := points_for_run(run, won)
 	profile.points += gained
 	profile.runs += 1
 	if won:
 		profile.wins += 1
 	profile.best_layer = maxi(profile.best_layer, run.map.current_layer())
+	profile.record_run(chronicle_entry(run, ProfileState.OUTCOME_WON if won else ProfileState.OUTCOME_LOST, gained, db))
 	return gained
+
+
+## Забег брошен (начат новый поверх сохранения): только запись в летопись, без очков.
+static func abandon_run(profile: ProfileState, run: RunState) -> void:
+	profile.record_run(chronicle_entry(run, ProfileState.OUTCOME_ABANDONED, 0, null))
+
+
+static func chronicle_entry(run: RunState, outcome: String, points: int, db: DefsDB) -> Dictionary:
+	var codex: Array = []
+	for card in run.codex.cards:
+		codex.append(String(card.memory_id))
+	var encounter := ""
+	if outcome != ProfileState.OUTCOME_ABANDONED and (run.pending_node >= 0 or run.pending_battle != &""):
+		encounter = String(run.current_encounter_id(db))
+	var date := Time.get_date_dict_from_system()
+	return {
+		"date": "%04d-%02d-%02d" % [date["year"], date["month"], date["day"]],
+		"school": String(run.school_id),
+		"difficulty": "normal",
+		"layer": run.map.current_layer(),
+		"outcome": outcome,
+		"encounter": encounter,
+		"codex": codex,
+		"points": points,
+	}

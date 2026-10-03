@@ -11,6 +11,8 @@ var settings_path := "user://settings.cfg"
 var detailed := false
 ## Одноразовые подсказки обучения.
 var hints := true
+## Крупные значки и числа на поле боя (SPEC_SPRINT5 3).
+var large_icons := false
 
 
 func _ready() -> void:
@@ -29,11 +31,18 @@ func set_hints(value: bool) -> void:
 	changed.emit()
 
 
+func set_large_icons(value: bool) -> void:
+	large_icons = value
+	save_settings()
+	changed.emit()
+
+
 func load_settings() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load(settings_path) == OK:
 		detailed = bool(cfg.get_value(SECTION, "detailed", detailed))
 		hints = bool(cfg.get_value(SECTION, "hints", hints))
+		large_icons = bool(cfg.get_value(SECTION, "large_icons", large_icons))
 
 
 func save_settings() -> void:
@@ -41,4 +50,5 @@ func save_settings() -> void:
 	cfg.load(settings_path)
 	cfg.set_value(SECTION, "detailed", detailed)
 	cfg.set_value(SECTION, "hints", hints)
+	cfg.set_value(SECTION, "large_icons", large_icons)
 	cfg.save(settings_path)

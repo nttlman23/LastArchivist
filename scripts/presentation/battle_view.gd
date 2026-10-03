@@ -40,6 +40,15 @@ const HEAL_COLOR := Color(0.45, 0.95, 0.5)
 const DAMAGE_COLOR := Color(1, 0.4, 0.35)
 const NAME_COLOR := Color(0.95, 0.85, 0.5)
 const RIFT_COLOR := Color(0.8, 0.5, 1.0)
+const ATTACK_ZONE_COLOR := Color(1.0, 0.3, 0.25, 0.22)
+const HEAT_COLOR := Color(1.0, 0.3, 0.25)
+const HEAT_STEP := 0.13
+const HEAT_MAX := 0.55
+const DIM_COLOR := Color(0, 0, 0, 0.22)
+const WAVE_COLOR := Color(0.6, 0.8, 1.0, 0.8)
+const HIGHLIGHT_COLOR := Color(1, 1, 1, 0.9)
+const SIDE_RING_WIDTH := 5.0
+const MAX_STATUS_ICONS := 3
 
 var state: BattleState
 var db: DefsDB
@@ -51,6 +60,18 @@ var preview_target := -1
 var hover_hex := Vector2i(-1, -1)
 ## Клетки, куда может дойти враг под курсором (зона угрозы).
 var threat: Dictionary[Vector2i, int] = {}
+## Клетки, которые враг под курсором может атаковать (кроме тех, куда может дойти).
+var threat_attack: Dictionary[Vector2i, bool] = {}
+## Суммарная угроза всех врагов (удержание Alt): клетка -> число достающих стеков.
+var heat: Dictionary[Vector2i, int] = {}
+## Свои стеки, которых враг может атаковать в этот раунд (значок «под ударом»).
+var threatened: Dictionary[int, bool] = {}
+## Цели выстрела вражеского стрелка под курсором: uid -> дальний выстрел (урон снижен).
+var shot_targets: Dictionary[int, bool] = {}
+## Стек, подсвеченный из полосы очереди (или -1).
+var highlight_uid := -1
+## Затемнять клетки, недоступные для хода (во время хода игрока).
+var dim_unreachable := false
 ## Режим прицеливания: допустимые клетки-цели и стеки, которых заденет действие (uid -> свой ли).
 var targets: Dictionary[Vector2i, bool] = {}
 var affected: Dictionary[int, bool] = {}
@@ -176,8 +197,12 @@ func clear_preview() -> void:
 	preview_path = []
 	preview_target = -1
 	threat = {}
+	threat_attack = {}
+	shot_targets = {}
+	heat = {}
 	targets = {}
 	affected = {}
+	dim_unreachable = false
 	_cursor.kind = &""
 	_overlay.queue_redraw()
 
@@ -403,6 +428,16 @@ func _draw_overlay(ci: CanvasItem) -> void:
 			fills.add(PackedVector2Array([c + Vector2(x, -18), c + Vector2(x + 10, -18), c + Vector2(x + 10, -10), c + Vector2(x, -10)]), wall_dark)
 	for hex in state.water:
 		fills.add(_hex_fill[hex], WATER_COLOR)
+	if dim_unreachable and not reachable.is_empty():
+		var active := state.active_unit()
+		for hex in _hex_fill:
+			if not reachable.has(hex) and (active == null or hex != active.hex) and not state.obstacles.has(hex):
+				fills.add(_hex_fill[hex], DIM_COLOR)
+	for hex in heat:
+		fills.add(_hex_fill[hex], Color(HEAT_COLOR, minf(HEAT_MAX, HEAT_STEP * heat[hex])))
+	for hex in threat_attack:
+		if not threat.has(hex):
+			fills.add(_hex_fill[hex], ATTACK_ZONE_COLOR)
 	for hex in targets:
 		fills.add(_hex_fill[hex], TARGET_HEX_COLOR)
 	for hex in reachable:
@@ -412,10 +447,24 @@ func _draw_overlay(ci: CanvasItem) -> void:
 	if _hex_fill.has(hover_hex):
 		fills.add(_hex_fill[hover_hex], HOVER_COLOR)
 	fills.draw(ci)
-	for hex in state.temp_obstacles:
+
+	# Вода: волнистая штриховка и оставшиеся раунды; временные стены: контур и раунды.
+	var waves := PackedVector2Array()
+	for hex in state.water:
 		var c := hex_center(hex)
-		ci.draw_string_outline(_font, c + Vector2(-20, 36), str(state.temp_obstacles[hex]), HORIZONTAL_ALIGNMENT_CENTER, 40, 18, 4, Color.BLACK)
-		ci.draw_string(_font, c + Vector2(-20, 36), str(state.temp_obstacles[hex]), HORIZONTAL_ALIGNMENT_CENTER, 40, 18, Color.WHITE)
+		for y: float in [-16.0, 0.0, 16.0]:
+			for k in 6:
+				var x0 := -27.0 + k * 9.0
+				waves.append(c + Vector2(x0, y + 4.0 * sin(k * 1.7)))
+				waves.append(c + Vector2(x0 + 9.0, y + 4.0 * sin((k + 1) * 1.7)))
+	if not waves.is_empty():
+		ci.draw_multiline(waves, WAVE_COLOR, 2.0)
+	for hex in state.water:
+		_draw_rounds(ci, hex_center(hex) + Vector2(14, -14), state.water[hex], WAVE_COLOR)
+	for hex in state.temp_obstacles:
+		ci.draw_polyline(_hex_inner[hex], TEMP_WALL_COLOR.lightened(0.2), 2.5)
+		_draw_rounds(ci, hex_center(hex) + Vector2(0, 30), state.temp_obstacles[hex], Color.WHITE)
+
 	if not threat.is_empty():
 		var lines := PackedVector2Array()
 		for hex in threat:
@@ -426,9 +475,25 @@ func _draw_overlay(ci: CanvasItem) -> void:
 		ci.draw_multiline(lines, THREAT_COLOR, 2.5)
 	if preview_target >= 0 and _pos.has(preview_target):
 		ci.draw_arc(_pos[preview_target], UNIT_RADIUS + 7, 0, TAU, 32, TARGET_COLOR, 4.0)
+	for uid in shot_targets:
+		if _pos.has(uid):
+			ci.draw_arc(_pos[uid], UNIT_RADIUS + 7, 0, TAU, 32, THREAT_COLOR, 3.0)
+			if shot_targets[uid]:
+				# Дальний выстрел — половина урона.
+				var p := _pos[uid] + Vector2(UNIT_RADIUS * 0.7, -UNIT_RADIUS * 0.7)
+				ci.draw_circle(p, 12, BADGE_BG)
+				ci.draw_string(_font, p + Vector2(-12, 6), "½", HORIZONTAL_ALIGNMENT_CENTER, 24, 17, THREAT_COLOR)
+	if highlight_uid >= 0 and _pos.has(highlight_uid):
+		ci.draw_arc(_pos[highlight_uid], UNIT_RADIUS + 10, 0, TAU, 40, HIGHLIGHT_COLOR, 3.0)
 	for uid in affected:
 		if _pos.has(uid):
 			ci.draw_arc(_pos[uid], UNIT_RADIUS + 12, 0, TAU, 32, AFFECTED_ALLY if affected[uid] else AFFECTED_ENEMY, 3.0)
+
+
+## Число оставшихся раундов в кружке.
+func _draw_rounds(ci: CanvasItem, pos: Vector2, rounds: int, color: Color) -> void:
+	ci.draw_circle(pos, 11, Color(0, 0, 0, 0.6))
+	ci.draw_string(_font, pos + Vector2(-11, 6), str(rounds), HORIZONTAL_ALIGNMENT_CENTER, 22, 16, color)
 
 
 func _draw_marker_ring(ci: CanvasItem) -> void:
@@ -437,7 +502,7 @@ func _draw_marker_ring(ci: CanvasItem) -> void:
 
 
 func _draw_marker_arrow(ci: CanvasItem) -> void:
-	var tip := Vector2(0, -UNIT_RADIUS - 12)
+	var tip := Vector2(0, -UNIT_RADIUS - 18)
 	ci.draw_colored_polygon(PackedVector2Array([tip, tip + Vector2(-12, -16), tip + Vector2(12, -16)]), ACTIVE_RING)
 
 
@@ -465,10 +530,34 @@ func _rock(c: Vector2) -> PackedVector2Array:
 	return PackedVector2Array([c + Vector2(-24, 14), c + Vector2(-14, -12), c + Vector2(4, -20), c + Vector2(22, -6), c + Vector2(20, 16)])
 
 
+## Значки временных состояний: [значок, цвет]. Порядок — по важности.
+static func status_icons(u: UnitState) -> Array:
+	var list: Array = []
+	if u.has_status(UnitState.STATUS_RIFT_MARKED):
+		list.append([UnitGlyphs.ICON_MARK, RIFT_COLOR])
+	if u.has_status(UnitState.STATUS_MARKED):
+		list.append([UnitGlyphs.ICON_MARK, DAMAGE_COLOR])
+	if u.defending:
+		list.append([UnitGlyphs.ICON_DEFEND, UiKit.PLAYER_COLOR.lightened(0.3)])
+	if u.has_status(UnitState.STATUS_SHIELD_WALL):
+		list.append([UnitGlyphs.ICON_RETALIATION, UiKit.ACCENT])
+	elif u.retaliated:
+		list.append([UnitGlyphs.ICON_RETALIATION_USED, UiKit.MUTED])
+	if u.has_status(UnitState.STATUS_RUST_ARMOR):
+		list.append([UnitGlyphs.ICON_ARMOR, UiKit.ACCENT])
+	if u.has_status(UnitState.STATUS_ADVANCE):
+		list.append([UnitGlyphs.ICON_ORDER, UiKit.ACCENT])
+	if u.fury > 0:
+		list.append([UnitGlyphs.ICON_MELEE, UiKit.DANGER])
+	return list
+
+
 func _draw_unit(ci: CanvasItem, u: UnitState) -> void:
+	var k := 1.3 if Settings.large_icons else 1.0
 	var c: Vector2 = _pos[u.uid]
 	var alpha: float = _alpha[u.uid] * (ILLUSION_ALPHA if u.illusion else 1.0)
-	var side_color := UiKit.PLAYER_COLOR if u.side == UnitState.Side.PLAYER else UiKit.ENEMY_COLOR
+	var is_player := u.side == UnitState.Side.PLAYER
+	var side_color := UiKit.PLAYER_COLOR if is_player else UiKit.ENEMY_COLOR
 	var body := db.unit(u.def_id).color
 	if _flash.has(u.uid):
 		body = body.lerp(Color.WHITE, 0.7)
@@ -479,46 +568,73 @@ func _draw_unit(ci: CanvasItem, u: UnitState) -> void:
 	var bg := Color(BADGE_BG, alpha)
 
 	ci.draw_circle(c, UNIT_RADIUS, body)
-	ci.draw_arc(c, UNIT_RADIUS, 0, TAU, 32, ring, 4.0)
-	UnitGlyphs.draw_unit(ci, u.def_id, c, UNIT_RADIUS * 0.82, body, ink)
-
-	# Значки способностей и состояний вокруг фишки.
-	var badge_r := 11.0
-	if u.is_ranged:
-		var pos := c + Vector2(-UNIT_RADIUS + 2, -UNIT_RADIUS + 4)
-		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_RANGED, pos, badge_r, bg, fg if u.shots_left > 0 else Color(UiKit.MUTED, alpha))
-		ci.draw_string_outline(_font, pos + Vector2(-26, 6), str(u.shots_left), HORIZONTAL_ALIGNMENT_RIGHT, 16, 15, 4, Color(0, 0, 0, alpha))
-		ci.draw_string(_font, pos + Vector2(-26, 6), str(u.shots_left), HORIZONTAL_ALIGNMENT_RIGHT, 16, 15, fg)
-	if u.is_flying:
-		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_FLYING, c + Vector2(UNIT_RADIUS - 2, -UNIT_RADIUS + 4), badge_r, bg, fg)
-	if u.defending:
-		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_DEFEND, c + Vector2(-UNIT_RADIUS - 4, 8), badge_r, bg, Color(UiKit.PLAYER_COLOR.lightened(0.3), alpha))
-	if u.has_status(UnitState.STATUS_SHIELD_WALL):
-		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_RETALIATION, c + Vector2(UNIT_RADIUS + 4, 8), badge_r, bg, Color(UiKit.ACCENT, alpha))
-	elif u.retaliated:
-		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_RETALIATION_USED, c + Vector2(UNIT_RADIUS + 4, 8), badge_r, bg, Color(UiKit.MUTED, alpha))
+	if u.illusion:
+		# Иллюзия: пунктирное кольцо.
+		for i in 12:
+			var a0 := TAU * i / 12.0
+			ci.draw_arc(c, UNIT_RADIUS, a0, a0 + TAU / 24.0, 4, Color(side_color, _alpha[u.uid]), SIDE_RING_WIDTH)
+	else:
+		ci.draw_arc(c, UNIT_RADIUS, 0, TAU, 32, ring, SIDE_RING_WIDTH)
 	if u.has_status(UnitState.STATUS_RIFT_MARKED):
 		ci.draw_arc(c, UNIT_RADIUS + 9, 0, TAU, 32, Color(RIFT_COLOR, alpha), 3.0)
-		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_MARK, c + Vector2(0, UNIT_RADIUS + 24), badge_r, bg, Color(RIFT_COLOR, alpha))
-	if u.has_status(UnitState.STATUS_MARKED):
-		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_MARK, c + Vector2(0, -UNIT_RADIUS + 2), badge_r, bg, Color(DAMAGE_COLOR, alpha))
-	if u.has_status(UnitState.STATUS_RUST_ARMOR):
-		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_ARMOR, c + Vector2(UNIT_RADIUS + 2, UNIT_RADIUS - 12), badge_r, bg, Color(UiKit.ACCENT, alpha))
+	UnitGlyphs.draw_unit(ci, u.def_id, c, UNIT_RADIUS * 0.82, body, ink)
+
+	# Постоянные свойства по бокам: стрелок (с выстрелами) слева, летун справа, способность снизу слева.
+	var badge_r := 11.0 * k
+	var font_size := int(15 * k)
+	if u.is_ranged:
+		var pos := c + Vector2(-UNIT_RADIUS - 2, -6)
+		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_RANGED, pos, badge_r, bg, fg if u.shots_left > 0 else Color(UiKit.MUTED, alpha))
+		_outlined(ci, pos + Vector2(-badge_r - 18 * k, 6 * k), str(u.shots_left), HORIZONTAL_ALIGNMENT_RIGHT, 16 * k, font_size, fg, alpha)
+	if u.is_flying:
+		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_FLYING, c + Vector2(UNIT_RADIUS + 2, -6), badge_r, bg, fg)
 	if u.ability_id != &"":
 		# Способность: золотая звезда — готова, серая с цифрой — раунды до готовности.
-		var pos := c + Vector2(-UNIT_RADIUS - 2, UNIT_RADIUS - 12)
+		var pos := c + Vector2(-UNIT_RADIUS - 2, UNIT_RADIUS - 10)
 		var ready := u.ability_cd <= 0
 		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_ABILITY, pos, badge_r, bg, Color(UiKit.ACCENT if ready else UiKit.MUTED, alpha))
 		if not ready:
-			ci.draw_string_outline(_font, pos + Vector2(-8, 6), str(u.ability_cd), HORIZONTAL_ALIGNMENT_CENTER, 16, 15, 4, Color(0, 0, 0, alpha))
-			ci.draw_string(_font, pos + Vector2(-8, 6), str(u.ability_cd), HORIZONTAL_ALIGNMENT_CENTER, 16, 15, fg)
+			_outlined(ci, pos + Vector2(-8 * k, 6 * k), str(u.ability_cd), HORIZONTAL_ALIGNMENT_CENTER, 16 * k, font_size, fg, alpha)
+	if threatened.has(u.uid):
+		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_THREAT, c + Vector2(UNIT_RADIUS + 2, UNIT_RADIUS - 10), badge_r, bg, Color(UiKit.DANGER, alpha))
+	if u.illusion:
+		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_MASK, c + Vector2(UNIT_RADIUS + 2, UNIT_RADIUS - 10 - (2.2 * badge_r if threatened.has(u.uid) else 0.0)),
+				badge_r, bg, Color(0.85, 0.85, 1.0, _alpha[u.uid]))
 
-	# Численность и полоска здоровья верхнего существа.
-	var badge := Rect2(c + Vector2(-24, UNIT_RADIUS - 12), Vector2(48, 24))
-	ci.draw_rect(badge, Color(side_color.darkened(0.55), alpha))
-	ci.draw_rect(badge, ring, false, 2.0)
-	ci.draw_string(_font, badge.position + Vector2(0, 19), str(_count.get(u.uid, u.count)), HORIZONTAL_ALIGNMENT_CENTER, badge.size.x, 19, fg)
+	# Временные состояния — рядом над фишкой, не больше трёх, остальное «+N».
+	var statuses := status_icons(u)
+	var shown := mini(statuses.size(), MAX_STATUS_ICONS)
+	var step := badge_r * 2.1
+	var extra := statuses.size() - shown
+	var total := shown + (1 if extra > 0 else 0)
+	for i in total:
+		var pos := c + Vector2((i - (total - 1) * 0.5) * step, -UNIT_RADIUS - 2)
+		if i < shown:
+			UnitGlyphs.draw_icon(ci, statuses[i][0], pos, badge_r, bg, Color(statuses[i][1], alpha))
+		else:
+			ci.draw_circle(pos, badge_r, bg)
+			_outlined(ci, pos + Vector2(-badge_r, 5 * k), "+%d" % extra, HORIZONTAL_ALIGNMENT_CENTER, badge_r * 2, int(13 * k), fg, alpha)
+
+	# Численность: у своих — прямоугольник, у врагов — заострённый книзу щиток (различимо без цвета).
+	var bw := 48.0 * k
+	var bh := 24.0 * k
+	var top := c + Vector2(-bw * 0.5, UNIT_RADIUS - 12)
+	var shape := PackedVector2Array([top, top + Vector2(bw, 0), top + Vector2(bw, bh), top + Vector2(0, bh)])
+	var tip := 0.0
+	if not is_player:
+		tip = 7.0 * k
+		shape = PackedVector2Array([top, top + Vector2(bw, 0), top + Vector2(bw, bh), top + Vector2(bw * 0.5, bh + tip), top + Vector2(0, bh)])
+	ci.draw_colored_polygon(shape, Color(side_color.darkened(0.55), alpha))
+	var outline := shape.duplicate()
+	outline.append(shape[0])
+	ci.draw_polyline(outline, ring, 2.0)
+	ci.draw_string(_font, top + Vector2(0, 19 * k), str(_count.get(u.uid, u.count)), HORIZONTAL_ALIGNMENT_CENTER, bw, int(19 * k), fg)
 	var hp_ratio := clampf(float(u.top_hp) / u.hp, 0.0, 1.0) if u.is_alive() else 0.0
-	var bar := Rect2(badge.position + Vector2(0, badge.size.y + 1), Vector2(badge.size.x, 4))
+	var bar := Rect2(top + Vector2(0, bh + tip + 1), Vector2(bw, 4))
 	ci.draw_rect(bar, Color(0.1, 0.1, 0.1, alpha))
 	ci.draw_rect(Rect2(bar.position, Vector2(bar.size.x * hp_ratio, bar.size.y)), Color(Color(0.4, 0.85, 0.4).lerp(UiKit.DANGER, 1.0 - hp_ratio), alpha))
+
+
+func _outlined(ci: CanvasItem, pos: Vector2, text: String, align: HorizontalAlignment, width: float, font_size: int, color: Color, alpha: float) -> void:
+	ci.draw_string_outline(_font, pos, text, align, width, font_size, 4, Color(0, 0, 0, alpha))
+	ci.draw_string(_font, pos, text, align, width, font_size, color)

@@ -19,6 +19,7 @@ var _resources_box: HBoxContainer
 var _layer_label: Label
 var _info: VBoxContainer
 var _codex_overlay: PanelContainer
+var _legend: PanelContainer
 var _selected := -1
 
 
@@ -67,6 +68,11 @@ func _build_hud() -> void:
 	var points := UiKit.chip(UnitGlyphs.ICON_POINTS, str(Game.profile.points), UiKit.ACCENT, tr("META_POINTS"), tr("META_POINTS_TIP"), 20)
 	points.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	top.add_child(points)
+	var help := UiKit.button("?", _toggle_legend, 48)
+	help.custom_minimum_size.y = 44
+	help.focus_mode = Control.FOCUS_NONE
+	Tip.attach(help, tr("MAP_LEGEND"), tr("MAP_LEGEND_TIP"))
+	top.add_child(help)
 
 	var side := PanelContainer.new()
 	side.set_anchors_and_offsets_preset(Control.PRESET_RIGHT_WIDE)
@@ -94,6 +100,13 @@ func _refresh() -> void:
 	_resources_box.add_child(UiKit.resource_row(run.resources, false, 22))
 	_layer_label.text = tr("MAP_LAYER") % [run.map.current_layer(), MapState.LAYERS]
 	view.selected = _selected
+	var risks: Dictionary[int, int] = {}
+	for n in run.map.nodes:
+		if n.layer > run.map.current_layer() or n.id == run.pending_node:
+			var r := CardAdvisor.node_risk(db, run, n)
+			if r >= 0:
+				risks[n.id] = r
+	view.risks = risks
 	view.refresh()
 	_show_info()
 
@@ -107,6 +120,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		var id := view.node_at(view.get_local_mouse_position())
 		if id != view.hovered:
 			view.hovered = id
+			view.hover_path = MapActions.path_to(run, id) if id >= 0 and run.pending_node < 0 else ([] as Array[int])
+			view.hover_rewards = MapActions.path_rewards(db, run, view.hover_path)
 			view.queue_redraw()
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var id := view.node_at(view.get_local_mouse_position())
@@ -165,6 +180,22 @@ func _add_node_card(n: MapState.MapNode) -> void:
 		_info.add_child(_wrapped(tr(TYPE_KEYS[n.type] + "_SHORT"), Color.WHITE))
 	if n.type == MapState.NodeType.BATTLE:
 		_info.add_child(UiKit.label(tr("MAP_TIER") % MapGenerator.tier_for_layer(n.layer), 0, UiKit.MUTED))
+	var risk := CardAdvisor.node_risk(db, run, n)
+	if risk >= 0:
+		var enc := db.encounter(n.content)
+		var exact := n.scouted or enc.boss
+		var power := CardAdvisor.encounter_power(db, enc) if exact else CardAdvisor.expected_power(db, enc.tier, enc.elite)
+		var name := tr(CardAdvisor.RISK_KEYS[risk])
+		var body := tr("RISK_TIP") % [roundi(power), roundi(CardAdvisor.army_power(db, run.codex))]
+		if not exact:
+			body += "\n" + tr("RISK_UNSCOUTED")
+		var line := HBoxContainer.new()
+		line.add_theme_constant_override("separation", 8)
+		line.add_child(UiKit.label(tr("RISK_TITLE"), 18, UiKit.MUTED))
+		line.add_child(UiKit.chip(UnitGlyphs.ICON_KILL, name, CardAdvisor.RISK_COLORS[risk], tr("RISK_TITLE") + ": " + name, body, 18))
+		_info.add_child(line)
+	if n.type == MapState.NodeType.SHOP:
+		_info.add_child(_shop_prices())
 	if n.is_battle():
 		var enc := db.encounter(n.content)
 		if n.scouted or n.type == MapState.NodeType.RIFT:
@@ -181,6 +212,52 @@ func _add_node_card(n: MapState.MapNode) -> void:
 			_info.add_child(line)
 	elif n.type == MapState.NodeType.EVENT and n.scouted:
 		_info.add_child(_wrapped(tr(db.event(n.content).title_key), Color(0.7, 0.8, 1.0)))
+
+
+## Цены лавки значками: серые — сейчас не по карману.
+func _shop_prices() -> HFlowContainer:
+	var row := UiKit.flow(14)
+	var entries := [
+		[RunState.PARCHMENT, ShopOps.CARD_PRICE, "SHOP_PRICE_CARD"],
+		[RunState.INK, ShopOps.REPAIR_COST, "SHOP_PRICE_REPAIR"],
+		[RunState.AETHER, ShopOps.RECHARGE_COST, "SHOP_PRICE_RECHARGE"],
+		[RunState.PARCHMENT, ShopOps.REWORK_COST, "SHOP_PRICE_REWORK"],
+	]
+	for e: Array in entries:
+		var color: Color = UiKit.RESOURCE_COLORS[e[0]] if run.can_afford(e[0], e[1]) else UiKit.MUTED
+		row.add_child(UiKit.chip(UiKit.RESOURCE_ICONS[e[0]], str(e[1]), color, tr(e[2]), tr(e[2] + "_TIP"), 18))
+	return row
+
+
+# --- Легенда --------------------------------------------------------------------
+
+func _toggle_legend() -> void:
+	if _legend:
+		_legend.queue_free()
+		_legend = null
+		return
+	_legend = PanelContainer.new()
+	_legend.add_theme_stylebox_override("panel", UiKit.panel_style(UiKit.BG_COLOR, UiKit.ACCENT, 2))
+	_legend.position = Vector2(24, 76)
+	add_child(_legend)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 8)
+	_legend.add_child(col)
+	col.add_child(UiKit.label(tr("MAP_LEGEND"), 24, UiKit.ACCENT))
+	for type in TYPE_KEYS:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		var swatch := ColorRect.new()
+		swatch.color = MapView.TYPE_COLORS[type]
+		swatch.custom_minimum_size = Vector2(22, 22)
+		swatch.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(swatch)
+		row.add_child(UiKit.label("%s — %s" % [tr(TYPE_KEYS[type]), tr(TYPE_KEYS[type] + "_SHORT")], 18))
+		col.add_child(row)
+	for r in [CardAdvisor.Risk.LOW, CardAdvisor.Risk.EVEN, CardAdvisor.Risk.HIGH]:
+		col.add_child(UiKit.chip(UnitGlyphs.ICON_KILL, "%s: %s" % [tr("RISK_TITLE"), tr(CardAdvisor.RISK_KEYS[r])], CardAdvisor.RISK_COLORS[r], "", "", 18))
+	col.add_child(UiKit.chip(UnitGlyphs.ICON_MARK, tr("MAP_LEGEND_SCOUTED"), MapView.FLIGHT, "", "", 18))
+	col.add_child(UiKit.label(tr("MAP_LEGEND_PATH"), 16, UiKit.MUTED))
 
 
 func _wrapped(text: String, color: Color) -> Label:

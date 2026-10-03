@@ -18,5 +18,6 @@ func _ready() -> void:
 	cont.disabled = SaveService.load_run() == null
 	box.add_child(cont)
 	box.add_child(UiKit.button(tr("MENU_META"), Game.goto.bind(Game.SCENE_META), 360))
+	box.add_child(UiKit.button(tr("MENU_CHRONICLE"), Game.goto.bind(Game.SCENE_CHRONICLE), 360))
 	box.add_child(UiKit.button(tr("MENU_SETTINGS"), Game.goto.bind(Game.SCENE_SETTINGS), 360))
 	box.add_child(UiKit.button(tr("MENU_QUIT"), get_tree().quit, 360))

@@ -12,6 +12,31 @@ var seen_hints: Array[StringName] = []
 var runs := 0
 var wins := 0
 var best_layer := 0
+## Летопись (SPEC_SPRINT5 6): последние забеги, новые — первыми.
+var chronicle: Array[Dictionary] = []
+## Сводка по школам за всё время: id школы -> {"runs", "wins", "best"}.
+var school_stats: Dictionary[StringName, Dictionary] = {}
+
+const CHRONICLE_SIZE := 20
+
+## Исходы забега в летописи.
+const OUTCOME_WON := "won"
+const OUTCOME_LOST := "lost"
+const OUTCOME_ABANDONED := "abandoned"
+
+
+## Запись в летопись и сводку школы. entry: date, school, difficulty, layer, outcome, encounter, codex, points.
+func record_run(entry: Dictionary) -> void:
+	chronicle.push_front(entry)
+	while chronicle.size() > CHRONICLE_SIZE:
+		chronicle.pop_back()
+	var school := StringName(entry.get("school", ""))
+	var stats: Dictionary = school_stats.get(school, {"runs": 0, "wins": 0, "best": 0})
+	stats["runs"] = int(stats["runs"]) + 1
+	if entry.get("outcome", "") == OUTCOME_WON:
+		stats["wins"] = int(stats["wins"]) + 1
+	stats["best"] = maxi(int(stats["best"]), int(entry.get("layer", 0)))
+	school_stats[school] = stats
 
 
 func is_unlocked(id: StringName) -> bool:
@@ -27,6 +52,11 @@ func save(path: String = DEFAULT_PATH) -> void:
 	cfg.set_value("stats", "runs", runs)
 	cfg.set_value("stats", "wins", wins)
 	cfg.set_value("stats", "best_layer", best_layer)
+	cfg.set_value("chronicle", "entries", chronicle)
+	var schools := {}
+	for id in school_stats:
+		schools[String(id)] = school_stats[id]
+	cfg.set_value("chronicle", "schools", schools)
 	cfg.save(path)
 
 
@@ -43,4 +73,11 @@ static func load_or_new(path: String = DEFAULT_PATH) -> ProfileState:
 	p.runs = int(cfg.get_value("stats", "runs", 0))
 	p.wins = int(cfg.get_value("stats", "wins", 0))
 	p.best_layer = int(cfg.get_value("stats", "best_layer", 0))
+	# Летопись появилась в Спринте 5: в старых профилях её нет — пустая.
+	for e in cfg.get_value("chronicle", "entries", []):
+		if e is Dictionary:
+			p.chronicle.append(e)
+	var schools: Dictionary = cfg.get_value("chronicle", "schools", {})
+	for id in schools:
+		p.school_stats[StringName(id)] = schools[id]
 	return p

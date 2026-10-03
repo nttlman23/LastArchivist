@@ -33,6 +33,10 @@ var _wait_btn: Button
 var _defend_btn: Button
 var _hero_label: Label
 var _hero_box: HBoxContainer
+## Зоны угрозы врагов на текущий ход игрока (SPEC_SPRINT5 2): uid -> ThreatMap.Zone.
+var _enemy_zones: Dictionary[int, ThreatMap.Zone] = {}
+## Портреты полосы очереди по стекам — для связи наведения с полем.
+var _queue_slots: Dictionary[int, Array] = {}
 ## Действия героя в порядке кнопок (горячие клавиши 1–9): [id, slot].
 var _hero_entries: Array = []
 var _end_panel: PanelContainer
@@ -172,23 +176,21 @@ func _refresh_hud() -> void:
 	_round_label.text = tr("BATTLE_ROUND") % state.round_number
 	for child in _queue_box.get_children():
 		child.queue_free()
+	_queue_slots.clear()
 	var upcoming: Array[int] = []
 	if state.active_uid >= 0:
 		upcoming.append(state.active_uid)
 	upcoming.append_array(TurnManager.upcoming(state))
 	for uid in upcoming:
 		var is_active := uid == state.active_uid
-		var slot := UnitPortrait.create(db, state.get_unit(uid), QUEUE_ACTIVE_SLOT if is_active else QUEUE_SLOT, is_active)
-		slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		_queue_box.add_child(slot)
-	var sep := UiKit.label("│", 40, UiKit.MUTED)
+		_add_queue_slot(uid, QUEUE_ACTIVE_SLOT if is_active else QUEUE_SLOT, is_active, 1.0)
+	var sep := UiKit.label(tr("QUEUE_NEXT_ROUND") % (state.round_number + 1), 18, UiKit.MUTED)
 	sep.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	sep.mouse_filter = Control.MOUSE_FILTER_STOP
+	Tip.attach(sep, tr("QUEUE_NEXT_ROUND_TIP"), "")
 	_queue_box.add_child(sep)
 	for uid in TurnManager.next_round_order(state):
-		var slot := UnitPortrait.create(db, state.get_unit(uid), QUEUE_SLOT)
-		slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		slot.modulate = Color(1, 1, 1, 0.5)
-		_queue_box.add_child(slot)
+		_add_queue_slot(uid, QUEUE_SLOT, false, 0.5)
 
 	var u := state.active_unit()
 	var player_turn := _is_player_turn()
@@ -204,6 +206,36 @@ func _refresh_hud() -> void:
 	_status_label.text = (tr("BATTLE_YOUR_TURN") if player_turn else tr("BATTLE_ENEMY_TURN")) % UiKit.unit_name(db, u.def_id)
 	_status_label.add_theme_color_override("font_color", side_color)
 	_active_panel.show_unit(db, u, tr("INFO_ACTIVE"), UiKit.ACTIVE_BORDER)
+
+
+func _add_queue_slot(uid: int, slot_size: float, is_active: bool, alpha: float) -> void:
+	var slot := UnitPortrait.create(db, state.get_unit(uid), slot_size, is_active)
+	slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	slot.modulate = Color(1, 1, 1, alpha)
+	slot.set_meta("alpha", alpha)
+	slot.mouse_entered.connect(_on_queue_hover.bind(uid, true))
+	slot.mouse_exited.connect(_on_queue_hover.bind(uid, false))
+	_queue_box.add_child(slot)
+	if not _queue_slots.has(uid):
+		_queue_slots[uid] = []
+	_queue_slots[uid].append(slot)
+
+
+## Наведение на портрет очереди подсвечивает стек на поле.
+func _on_queue_hover(uid: int, entered: bool) -> void:
+	view.highlight_uid = uid if entered else -1
+	_highlight_queue(uid if entered else -1)
+	view.refresh_highlights()
+
+
+## Подсветка портретов стека в очереди (наведение на поле или на сам портрет).
+func _highlight_queue(uid: int) -> void:
+	for id in _queue_slots:
+		for slot: Control in _queue_slots[id]:
+			if not is_instance_valid(slot):
+				continue
+			var alpha: float = slot.get_meta("alpha", 1.0)
+			slot.modulate = Color(1.35, 1.35, 1.35, 1.0) if id == uid else Color(1, 1, 1, alpha)
 
 
 func _refresh_ability_button(u: UnitState, player_turn: bool) -> void:
@@ -275,6 +307,8 @@ func _is_player_turn() -> bool:
 
 func _run_turns() -> void:
 	_busy = true
+	_enemy_zones = {}
+	view.threatened = {}
 	while state.outcome == BattleState.Outcome.NONE and not _is_player_turn():
 		_refresh_hud()
 		await get_tree().create_timer(AI_DELAY).timeout
@@ -288,8 +322,22 @@ func _run_turns() -> void:
 	Audio.play(&"turn")
 	_show_turn_hints()
 	view.reachable = Pathfinding.reachable(state, state.active_unit())
+	view.dim_unreachable = true
+	_compute_threats()
 	_invalidate_hover()
 	_update_hover()
+
+
+## Зоны угрозы всех врагов и свои стеки под ударом — один раз на ход игрока.
+func _compute_threats() -> void:
+	_enemy_zones = ThreatMap.zones(state, UnitState.Side.ENEMY)
+	var threatened: Dictionary[int, bool] = {}
+	for u in state.alive(UnitState.Side.PLAYER):
+		if not ThreatMap.attackers_of(state, _enemy_zones, u, true).is_empty():
+			threatened[u.uid] = true
+	view.threatened = threatened
+	if not threatened.is_empty():
+		Hints.show_hint(&"threat")
 
 
 func _show_turn_hints() -> void:
@@ -363,6 +411,7 @@ func _begin_targeting(label: String, options: Array[BattleAction]) -> void:
 		hexes[u.hex if u else a.dest] = true
 	view.targets = hexes
 	view.reachable = {}
+	view.dim_unreachable = false
 	_invalidate_hover()
 	_update_hover()
 
@@ -375,6 +424,7 @@ func _cancel_targeting() -> void:
 	view.affected = {}
 	if _is_player_turn():
 		view.reachable = Pathfinding.reachable(state, state.active_unit())
+		view.dim_unreachable = true
 	_invalidate_hover()
 	_update_hover()
 
@@ -390,6 +440,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.button_index == MOUSE_BUTTON_LEFT:
 			_update_hover()
 			_player_act(_pending)
+	elif event is InputEventKey and event.keycode == KEY_ALT and not event.echo:
+		_update_hover()
 	elif event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:
 			KEY_W:
@@ -419,7 +471,8 @@ func _update_hover() -> void:
 		icon = _CURSOR_ICONS.get(pending.type, &"") if _targeting.is_empty() else UnitGlyphs.ICON_SPELL
 	view.set_cursor(icon, local)
 	# Мышь шлёт много событий за кадр: пересобираем подсветку и карточки, только если что-то изменилось.
-	var key := "%s|%s|%s|%s" % [hex, pending, can_act, not _targeting.is_empty()]
+	var alt := Input.is_key_pressed(KEY_ALT)
+	var key := "%s|%s|%s|%s|%s" % [hex, pending, can_act, not _targeting.is_empty(), alt]
 	if key == _hover_key:
 		return
 	_hover_key = key
@@ -432,10 +485,14 @@ func _update_hover() -> void:
 		_hover_panel.show_unit(db, hovered, tr("INFO_HOVER"))
 	else:
 		_hover_panel.visible = false
+	_highlight_queue(hovered.uid if hovered else -1)
 
 	view.preview_path = []
 	view.preview_target = -1
 	view.threat = {}
+	view.threat_attack = {}
+	view.shot_targets = {}
+	view.heat = {}
 	view.affected = {}
 	_set_preview("", [])
 	if not _targeting.is_empty():
@@ -443,11 +500,40 @@ func _update_hover() -> void:
 		if _pending:
 			_show_target_preview(_pending)
 	else:
-		# Зона угрозы: куда может дойти враг под курсором.
-		if hovered and active and hovered.side != active.side and not hovered.is_ranged:
-			view.threat = Pathfinding.reachable(state, hovered)
-		_show_preview(_pending)
+		if alt and not _enemy_zones.is_empty():
+			view.heat = ThreatMap.heat(_enemy_zones)
+		elif hovered and hovered.side == UnitState.Side.ENEMY and _enemy_zones.has(hovered.uid):
+			_show_enemy_threat(hovered)
+		if _pending:
+			_show_preview(_pending)
+		elif hovered and hovered.side == UnitState.Side.PLAYER and not _enemy_zones.is_empty():
+			_show_threat_to(hovered)
 	view.refresh_highlights()
+
+
+## Наведение на врага: куда дойдёт, кого ударит, в кого может выстрелить.
+func _show_enemy_threat(enemy: UnitState) -> void:
+	var z := _enemy_zones[enemy.uid]
+	view.threat = z.move
+	view.threat_attack = z.melee
+	view.shot_targets = ThreatMap.shot_targets(state, enemy)
+
+
+## Наведение на свой стек: кто из врагов его достаёт и сколько урона в худшем случае.
+func _show_threat_to(u: UnitState) -> void:
+	var attackers := ThreatMap.attackers_of(state, _enemy_zones, u)
+	if attackers.is_empty():
+		return
+	var affected: Dictionary[int, bool] = {}
+	for uid in attackers:
+		affected[uid] = false
+	view.affected = affected
+	var d := ThreatMap.damage_to(state, _enemy_zones, u)
+	_set_preview(tr("PREVIEW_THREAT") % [attackers.size(), d.x, d.y, d.z], [
+		[UnitGlyphs.ICON_THREAT, str(attackers.size()), UiKit.DANGER, tr("PREVIEW_TIP_THREAT")],
+		[UnitGlyphs.ICON_MELEE, "%d–%d" % [d.x, d.y], UiKit.ACCENT, tr("PREVIEW_TIP_THREAT_DAMAGE")],
+		[UnitGlyphs.ICON_KILL, "≤%d" % d.z, UiKit.DANGER, tr("PREVIEW_TIP_THREAT_KILLS")],
+	])
 
 
 ## Сбрасывает кэш наведения после изменения состояния боя.

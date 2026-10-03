@@ -155,6 +155,8 @@ static func card_button(db: DefsDB, memory_id: StringName, durability: int = -1,
 		line.add_theme_constant_override("separation", 14)
 		line.mouse_filter = Control.MOUSE_FILTER_PASS
 		line.add_child(pips(dur, mem.max_durability))
+		if durability >= 0 and dur <= 1:
+			line.add_child(chip(UnitGlyphs.ICON_KILL, "", DANGER, TranslationServer.translate("CARD_WORN"), TranslationServer.translate("CARD_WORN_TIP"), 16))
 		if def.ability_id != &"":
 			var ab := db.ability(def.ability_id)
 			line.add_child(chip(UnitGlyphs.ICON_ABILITY, TranslationServer.translate(ab.name_key), ACCENT,
@@ -171,6 +173,8 @@ static func card_button(db: DefsDB, memory_id: StringName, durability: int = -1,
 		line.add_theme_constant_override("separation", 14)
 		line.add_child(label(TranslationServer.translate("CARD_HERO"), 0, HERO_CARD_COLOR))
 		line.add_child(pips(dur, mem.max_durability))
+		if durability >= 0 and dur <= 1:
+			line.add_child(chip(UnitGlyphs.ICON_KILL, "", DANGER, TranslationServer.translate("CARD_WORN"), TranslationServer.translate("CARD_WORN_TIP"), 16))
 		col.add_child(line)
 		var desc := label(TranslationServer.translate("MEM_LAST_KING_SHORT") if mem.id == &"last_king" else "", 16, MUTED)
 		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -301,6 +305,41 @@ static func chip(icon: StringName, text: String, color: Color = STAT_COLOR, tip_
 	if tip_title != "" or tip_body != "":
 		Tip.attach(box, tip_title, tip_body, icon, color)
 	return box
+
+
+## Почему стоит взять карту: роль, закрытая дыра Кодекса, слияние; сравнение с похожей картой — в подсказке роли.
+static func advice_row(db: DefsDB, codex: CodexState, memory_id: StringName) -> HFlowContainer:
+	var row := flow(12)
+	var t := func(key: String) -> String: return TranslationServer.translate(key)
+	var reasons := CardAdvisor.reasons(db, codex, memory_id)
+	for i in reasons.size():
+		var r: Array = reasons[i]
+		var tip: String = t.call(r[2])
+		if i == 0:
+			tip += _compare_tip(db, codex, memory_id)
+		row.add_child(chip(r[0], r[1], ACCENT if i > 0 else STAT_COLOR, r[1], tip, 17))
+	return row
+
+
+## Риск боя: сила врагов относительно лучших карт армии (три уровня, подробности в подсказке).
+static func risk_chip(db: DefsDB, codex: CodexState, enc: EncounterDef, size: int = 18) -> HBoxContainer:
+	var risk := CardAdvisor.risk(db, codex, enc)
+	var t := func(key: String) -> String: return TranslationServer.translate(key)
+	var name: String = t.call(CardAdvisor.RISK_KEYS[risk])
+	var body: String = t.call("RISK_TIP") % [roundi(CardAdvisor.encounter_power(db, enc)), roundi(CardAdvisor.army_power(db, codex))]
+	return chip(UnitGlyphs.ICON_KILL, name, CardAdvisor.RISK_COLORS[risk], t.call("RISK_TITLE") + ": " + name, body, size)
+
+
+static func _compare_tip(db: DefsDB, codex: CodexState, memory_id: StringName) -> String:
+	var similar := CardAdvisor.similar_card(db, codex, memory_id)
+	if similar < 0:
+		return ""
+	var card := codex.cards[similar]
+	var mine := CardAdvisor.card_power(db, card.memory_id, card.level)
+	if mine <= 0.0:
+		return ""
+	var ratio := CardAdvisor.card_power(db, memory_id) / mine - 1.0
+	return "\n" + TranslationServer.translate("ADVICE_COMPARE") % [TranslationServer.translate(db.memory(card.memory_id).name_key), "%+d%%" % roundi(ratio * 100.0)]
 
 
 static func flow(separation: int = 10) -> HFlowContainer:

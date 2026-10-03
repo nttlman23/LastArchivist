@@ -5,6 +5,7 @@ var _selected: Array[int] = []
 ## Кнопки карт отрядов: индекс в Кодексе -> кнопка.
 var _buttons: Dictionary[int, Button] = {}
 var _start: Button
+var _hero_cards: Array[Control] = []
 
 
 func _ready() -> void:
@@ -38,9 +39,22 @@ func _ready() -> void:
 	var enemies: Array[String] = []
 	for i in encounter.unit_ids.size():
 		enemies.append("%d × %s" % [encounter.counts[i], UiKit.unit_name(db, encounter.unit_ids[i])])
-	box.add_child(UiKit.label("%s %s" % [tr("PREP_ENEMIES"), ", ".join(enemies)], 0, UiKit.ENEMY_COLOR))
+	var enemy_row := HBoxContainer.new()
+	enemy_row.add_theme_constant_override("separation", 20)
+	enemy_row.add_child(UiKit.label("%s %s" % [tr("PREP_ENEMIES"), ", ".join(enemies)], 0, UiKit.ENEMY_COLOR))
+	enemy_row.add_child(UiKit.risk_chip(db, run.codex, encounter))
+	box.add_child(enemy_row)
 	box.add_child(UiKit.hero_summary(db, run))
-	box.add_child(UiKit.label(tr("PREP_HINT") % BattleState.MAX_STACKS, 0, UiKit.MUTED))
+	var hint_row := HBoxContainer.new()
+	hint_row.add_theme_constant_override("separation", 24)
+	hint_row.add_child(UiKit.label(tr("PREP_HINT") % BattleState.MAX_STACKS, 0, UiKit.MUTED))
+	var only_units := CheckButton.new()
+	only_units.text = tr("PREP_ONLY_UNITS")
+	only_units.focus_mode = Control.FOCUS_NONE
+	only_units.toggled.connect(_on_only_units)
+	Tip.attach(only_units, tr("PREP_ONLY_UNITS"), tr("PREP_ONLY_UNITS_TIP"))
+	hint_row.add_child(only_units)
+	box.add_child(hint_row)
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -51,7 +65,15 @@ func _ready() -> void:
 	grid.add_theme_constant_override("h_separation", 16)
 	grid.add_theme_constant_override("v_separation", 16)
 	scroll.add_child(grid)
+	# Карты по ролям (ближний бой, стрелки, поддержка, летуны, Архивариус), внутри — по силе.
+	var order: Array[int] = []
 	for i in run.codex.cards.size():
+		order.append(i)
+	var key := func(i: int) -> float:
+		var card := run.codex.cards[i]
+		return CardAdvisor.role(db, card.memory_id) * 100000.0 - CardAdvisor.card_power(db, card.memory_id, card.level)
+	order.sort_custom(func(a: int, b: int) -> bool: return key.call(a) < key.call(b))
+	for i in order:
 		var card := run.codex.cards[i]
 		var b := UiKit.card_button(db, card.memory_id, card.durability, card.level)
 		if db.memory(card.memory_id).is_unit():
@@ -61,6 +83,7 @@ func _ready() -> void:
 		else:
 			# Геройская карта действует из Кодекса и в бой не выставляется.
 			b.disabled = true
+			_hero_cards.append(b)
 		grid.add_child(b)
 
 	var buttons := HBoxContainer.new()
@@ -70,11 +93,21 @@ func _ready() -> void:
 	buttons.add_child(_start)
 	buttons.add_child(UiKit.button(tr("PREP_TO_MAP"), Game.abandon_node))
 
-	# По умолчанию — первые карты отрядов.
+	# По умолчанию — сильнейшие карты отрядов (в порядке Кодекса).
 	var units := run.codex.unit_indices(db)
-	for i in units.slice(0, BattleState.MAX_STACKS):
+	units.sort_custom(func(a: int, b: int) -> bool:
+		return CardAdvisor.card_power(db, run.codex.cards[a].memory_id, run.codex.cards[a].level) \
+				> CardAdvisor.card_power(db, run.codex.cards[b].memory_id, run.codex.cards[b].level))
+	var best := units.slice(0, BattleState.MAX_STACKS)
+	best.sort()
+	for i in best:
 		_buttons[i].button_pressed = true
 	_refresh()
+
+
+func _on_only_units(on: bool) -> void:
+	for b in _hero_cards:
+		b.visible = not on
 
 
 func _on_card_toggled(pressed: bool, index: int) -> void:

@@ -57,6 +57,8 @@ func _rebuild() -> void:
 		if reason != "":
 			price_row.add_child(UiKit.label(tr(reason), 18, UiKit.MUTED))
 		col.add_child(price_row)
+		if visit.offer[i] != &"":
+			col.add_child(UiKit.advice_row(db, run.codex, visit.offer[i]))
 
 	_content.add_child(_section(tr("SHOP_REPAIR_SHORT"), UnitGlyphs.ICON_INK, ShopOps.REPAIR_COST, RunState.INK, tr("SHOP_REPAIR") % ShopOps.REPAIR_COST))
 	var grid := GridContainer.new()

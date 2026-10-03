@@ -32,6 +32,11 @@ const FLIGHT := Color(0.75, 0.55, 1.0)
 var run: RunState
 var selected := -1
 var hovered := -1
+## Путь к острову под курсором (SPEC_SPRINT5 5) и ресурсы за бои на нём.
+var hover_path: Array[int] = []
+var hover_rewards: Dictionary[StringName, int] = {}
+## Риск боёв: id острова -> CardAdvisor.Risk.
+var risks: Dictionary[int, int] = {}
 var _pos: Dictionary[int, Vector2] = {}
 var _font: Font
 var _time := 0.0
@@ -109,6 +114,15 @@ func _draw() -> void:
 	draw_multiline(bridges, BRIDGE, 2.0)
 	if not done.is_empty():
 		draw_multiline(done, BRIDGE_DONE, 3.0)
+	if not hover_path.is_empty():
+		var lit := PackedVector2Array()
+		var from := map.current
+		for id in hover_path:
+			if from != MapState.START:
+				lit.append_array(_dashed(_pos[from], _pos[id], 10.0, 8.0))
+			from = id
+		if not lit.is_empty():
+			draw_multiline(lit, Color.WHITE, 3.5)
 
 	var flights := MapActions.flight_targets(run)
 	var reachable := MapActions.reachable(run)
@@ -123,6 +137,29 @@ func _draw() -> void:
 			draw_arc(_pos[n.id], ISLAND_R + 18, 0, TAU, 40, Color.WHITE, 3.0)
 		elif n.id == hovered:
 			draw_arc(_pos[n.id], ISLAND_R + 18, 0, TAU, 40, Color(1, 1, 1, 0.4), 2.0)
+		elif hover_path.has(n.id):
+			draw_arc(_pos[n.id], ISLAND_R + 14, 0, TAU, 40, Color(1, 1, 1, 0.6), 2.0)
+	_draw_path_rewards()
+
+
+## Сумма ресурсов за бои на пути — у острова под курсором.
+func _draw_path_rewards() -> void:
+	if hover_path.is_empty() or hovered < 0 or hover_rewards.values().all(func(v: int) -> bool: return v == 0):
+		return
+	var p := _pos[hovered] + Vector2(ISLAND_R + 24, -ISLAND_R * 0.4)
+	var w := 0.0
+	for k in RunState.RESOURCE_IDS:
+		if hover_rewards.get(k, 0) > 0:
+			w += 52.0
+	draw_rect(Rect2(p + Vector2(-8, -16), Vector2(w + 8, 32)), Color(UiKit.BG_COLOR, 0.85))
+	for k in RunState.RESOURCE_IDS:
+		var v: int = hover_rewards.get(k, 0)
+		if v <= 0:
+			continue
+		var col: Color = UiKit.RESOURCE_COLORS[k]
+		UnitGlyphs.draw_icon(self, UiKit.RESOURCE_ICONS[k], p + Vector2(10, 0), 11, Color(0, 0, 0, 0), col, false)
+		draw_string(_font, p + Vector2(22, 7), "+%d" % v, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, col)
+		p.x += 52.0
 
 
 func _draw_island(n: MapState.MapNode, dim: bool) -> void:
@@ -150,6 +187,9 @@ func _draw_island(n: MapState.MapNode, dim: bool) -> void:
 		draw_polyline(PackedVector2Array([c + Vector2(-9, 2), c + Vector2(-2, 9), c + Vector2(11, -6)]), Color(UiKit.ACCENT, 0.9), 4.0)
 	if n.scouted and not run.map.visited.has(n.id):
 		UnitGlyphs.draw_icon(self, UnitGlyphs.ICON_MARK, c + Vector2(r * 0.9, -r * 0.5), 10, UiKit.BG_COLOR, FLIGHT)
+	if risks.has(n.id) and not dim:
+		# Риск боя: череп цвета уровня (зелёный — ниже, жёлтый — равный, красный — выше).
+		UnitGlyphs.draw_icon(self, UnitGlyphs.ICON_KILL, c + Vector2(-r * 0.95, -r * 0.45), 11, UiKit.BG_COLOR, CardAdvisor.RISK_COLORS[risks[n.id]])
 
 
 func _draw_clouds() -> void:

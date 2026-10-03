@@ -69,9 +69,14 @@ func _show_main() -> void:
 	row.add_theme_constant_override("separation", 16)
 	_content.add_child(row)
 	for id in _offer:
+		# Карта и под ней — почему её стоит взять (роль, какую дыру Кодекса закрывает).
+		var col := VBoxContainer.new()
+		col.add_theme_constant_override("separation", 6)
 		var b := UiKit.card_button(db, id)
 		b.pressed.connect(_on_pick.bind(id))
-		row.add_child(b)
+		col.add_child(b)
+		col.add_child(UiKit.advice_row(db, run.codex, id))
+		row.add_child(col)
 
 	# Секция 2: переработка карты Кодекса.
 	_content.add_child(UiKit.label(tr("MEMORY_REWORK"), 28, UiKit.ACCENT))
@@ -88,7 +93,7 @@ func _show_main() -> void:
 
 
 ## Для тестов и автопрогона.
-var _forms_box: VBoxContainer:
+var _forms_box: HFlowContainer:
 	get:
 		return _rework.forms_box
 

@@ -6,6 +6,8 @@ const SCENES := [
 	"res://scenes/prep/prep.tscn",
 	"res://scenes/reward/reward.tscn",
 	"res://scenes/run_end/run_end.tscn",
+	"res://scenes/chronicle/chronicle.tscn",
+	"res://scenes/map/map.tscn",
 ]
 
 

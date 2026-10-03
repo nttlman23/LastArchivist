@@ -15,6 +15,7 @@ var phase := "idle"
 func _ready() -> void:
 	Game.run = RunState.create(Game.defs, 1)
 	Game.selected = [0, 1, 2, 3]
+	MapActions.travel(Game.run, Game.run.map.next_of(MapState.START)[0])
 	screen = load("res://scenes/battle/battle.tscn").instantiate()
 	add_child(screen)
 	await get_tree().create_timer(3.0).timeout

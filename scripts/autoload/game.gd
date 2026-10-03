@@ -13,6 +13,7 @@ const SCENE_RUN_END := "res://scenes/run_end/run_end.tscn"
 const SCENE_SCHOOL := "res://scenes/school/school.tscn"
 const SCENE_META := "res://scenes/meta/meta.tscn"
 const SCENE_SETTINGS := "res://scenes/settings/settings.tscn"
+const SCENE_CHRONICLE := "res://scenes/chronicle/chronicle.tscn"
 
 const FONT_SIZE := 22
 
@@ -70,6 +71,11 @@ func _smoke_test() -> void:
 func new_run(school_id: StringName = DefsDB.DEFAULT_SCHOOL) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
+	# Новый забег поверх сохранённого — старый попадает в летопись как брошенный.
+	var old := SaveService.load_run()
+	if old:
+		MetaRewards.abandon_run(profile, old)
+		save_profile()
 	run = RunState.create(defs, rng.seed, school_id, profile)
 	SaveService.save_run(run)
 	goto(SCENE_MAP)
@@ -188,7 +194,7 @@ func goto(scene: String) -> void:
 
 func _end_run(won: bool) -> void:
 	run_won = won
-	last_points = MetaRewards.finish_run(profile, run, won)
+	last_points = MetaRewards.finish_run(profile, run, won, defs)
 	save_profile()
 	SaveService.delete_save()
 	goto(SCENE_RUN_END)

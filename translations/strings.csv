@@ -468,3 +468,73 @@ STATUS_IMMOBILE,Не перемещается: стреляет или бьёт 
 CHIP_CONSTRUCT,Конструкт
 STATUS_CONSTRUCT,Конструкт Синода: его чинят «Механик» и пассивка «Ремонт».
 LOG_SUMMONED,Появляется иллюзия: %s
+SETTINGS_LARGE_ICONS,Крупные значки на поле
+SETTINGS_LARGE_ICONS_TIP,"Значки состояний, численность и счётчики на поле боя крупнее."
+QUEUE_NEXT_ROUND,Р. %d
+QUEUE_NEXT_ROUND_TIP,Дальше — очередь следующего раунда
+PREVIEW_THREAT,"Под ударом %d врагов: до %d–%d урона, погибнет до %d"
+PREVIEW_TIP_THREAT,Сколько врагов могут атаковать этот отряд в этом раунде (обведены).
+PREVIEW_TIP_THREAT_DAMAGE,"Суммарный урон, если ударят все."
+PREVIEW_TIP_THREAT_KILLS,Сколько существ погибнет в худшем случае.
+HINT_THREAT,"Красный треугольник у отряда — до него дотянется враг в ближнем бою. Наведите на врага: красные клетки — кого он достанет, кольца — цели стрелка. Удерживайте Alt — общая зона угрозы."
+CARD_WORN,Изношена
+CARD_WORN_TIP,Прочность 1: после следующего боя карта угаснет. Почините её в лавке или гавани.
+CHANGE_CARD,карта
+CHANGE_REPAIR,+1 прочн. ×%d
+ROLE_MELEE,Ближний бой
+ROLE_MELEE_TIP,Отряд ближнего боя: держит строй и бьёт вплотную.
+ROLE_RANGED,Стрелок
+ROLE_RANGED_TIP,"Стреляет издалека, пока рядом нет врага."
+ROLE_SUPPORT,Поддержка
+ROLE_SUPPORT_TIP,"Способность помогает союзникам: лечит, чинит, прикрывает, создаёт иллюзии или воду."
+ROLE_FLYER,Летун
+ROLE_FLYER_TIP,Перелетает препятствия и строй врага.
+ROLE_HERO,Архивариус
+ROLE_HERO_TIP,"Карта Архивариуса: в бой не выходит, усиливает героя."
+ADVICE_GAP,+%s
+ADVICE_GAP_TIP,В Кодексе нет карты этой роли — эта карта закроет пробел.
+ADVICE_MORE_UNITS,+отряд
+ADVICE_MORE_UNITS_TIP,В Кодексе меньше четырёх карт отрядов — в бою будет больше стеков.
+ADVICE_FUSE,Слияние
+ADVICE_FUSE_TIP,Такая карта уже есть: вместе их можно слить в карту уровнем выше.
+ADVICE_COMPARE,Сила против «%s» из Кодекса: %s
+RISK_TITLE,Риск
+RISK_LOW,ниже
+RISK_EVEN,равный
+RISK_HIGH,выше
+RISK_TIP,"Сила врагов %d против %d у лучших карт вашего Кодекса. Способности, герой и местность не учтены."
+PREP_ONLY_UNITS,Только отряды
+PREP_ONLY_UNITS_TIP,Скрыть карты Архивариуса — в бой выходят только отряды.
+SHOP_PRICE_CARD,Новая карта
+SHOP_PRICE_CARD_TIP,Карта воспоминания из предложения лавки (геройская — дороже).
+SHOP_PRICE_REPAIR,Ремонт
+SHOP_PRICE_REPAIR_TIP,+1 прочности карте Кодекса.
+SHOP_PRICE_RECHARGE,Перезаряд
+SHOP_PRICE_RECHARGE_TIP,+1 заряд заклинанию.
+SHOP_PRICE_REWORK,Переработка
+SHOP_PRICE_REWORK_TIP,Превратить карту (один раз за визит).
+RISK_UNSCOUTED,Остров не разведан — оценка по средней силе боёв этого уровня.
+MAP_LEGEND,Легенда
+MAP_LEGEND_TIP,Что означают острова и значки на карте.
+MAP_LEGEND_SCOUTED,Разведан: состав известен
+MAP_LEGEND_PATH,Наведите на остров — подсветится путь и награды за бои на нём.
+MENU_CHRONICLE,Летопись
+CHRONICLE_TITLE,Летопись экспедиций
+CHRONICLE_RUNS,Последние забеги
+CHRONICLE_EMPTY,Пока пусто: летопись пополняется после каждой экспедиции.
+CHRONICLE_ATTEMPTS,Попытки
+CHRONICLE_ATTEMPTS_TIP,Сколько экспедиций начато этой школой и доведено до конца или брошено.
+CHRONICLE_WINS,Победы
+CHRONICLE_WINS_TIP,Сколько раз закрыт Разлом.
+CHRONICLE_BEST,Лучший слой
+CHRONICLE_BEST_TIP,"Самый дальний слой карты, до которого дошла экспедиция."
+CHRONICLE_LAYER,слой %d
+CHRONICLE_DEFEATED_BY,пал в бою: %s
+CHRONICLE_CODEX,Кодекс в конце забега
+CHRONICLE_CODEX_EMPTY,Кодекс пуст
+OUTCOME_WON,Победа
+OUTCOME_LOST,Поражение
+OUTCOME_ABANDONED,Брошен
+DIFFICULTY_EASY,Легко
+DIFFICULTY_NORMAL,Нормально
+DIFFICULTY_HARD,Тяжело

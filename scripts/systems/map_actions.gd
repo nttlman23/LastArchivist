@@ -14,6 +14,43 @@ static func reachable(run: RunState) -> Array[int]:
 	return run.map.next_of(run.map.current)
 
 
+## Путь по мостам от текущего острова до target (без текущего, с target); пусто — не дойти.
+static func path_to(run: RunState, target: int) -> Array[int]:
+	var start := run.map.current
+	var prev: Dictionary[int, int] = {start: start}
+	var frontier: Array[int] = [start]
+	var head := 0
+	while head < frontier.size():
+		var cur := frontier[head]
+		head += 1
+		if cur == target:
+			break
+		for nxt in run.map.next_of(cur):
+			if not prev.has(nxt):
+				prev[nxt] = cur
+				frontier.append(nxt)
+	var path: Array[int] = []
+	if not prev.has(target) or target == start:
+		return path
+	var cur := target
+	while cur != start:
+		path.push_front(cur)
+		cur = prev[cur]
+	return path
+
+
+## Ресурсы за бои на пути (награды за победу).
+static func path_rewards(db: DefsDB, run: RunState, path: Array[int]) -> Dictionary[StringName, int]:
+	var total := _res(0, 0, 0)
+	for id in path:
+		var n := run.map.node(id)
+		if n.is_battle() and n.content != &"":
+			var r := battle_rewards(db.encounter(n.content))
+			for k in r:
+				total[k] += r[k]
+	return total
+
+
 ## Острова следующего слоя, доступные только перелётом.
 static func flight_targets(run: RunState) -> Array[int]:
 	var result: Array[int] = []

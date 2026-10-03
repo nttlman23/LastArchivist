@@ -1,6 +1,6 @@
 class_name ReworkPanel
 extends HBoxContainer
-## Переработка карты: список карт Кодекса → формы превращения с результатом → подтверждение.
+## Переработка карты: список карт Кодекса → четыре плитки «было → станет» → подтверждение.
 ## Используется после боя, в лавке и в гавани. Само превращение делает владелец по сигналу.
 
 signal confirmed(card_index: int, form: CodexOps.Form)
@@ -11,6 +11,7 @@ const FORM_ICONS := {
 	CodexOps.Form.SACRIFICE: UnitGlyphs.ICON_HEAL,
 	CodexOps.Form.FUSE: UnitGlyphs.ICON_RETALIATION,
 }
+const TILE_SIZE := Vector2(235, 118)
 const FORM_KEYS := {
 	CodexOps.Form.SPELL: "FORM_NAME_SPELL",
 	CodexOps.Form.UPGRADE: "FORM_NAME_UPGRADE",
@@ -23,7 +24,7 @@ var run: RunState
 ## Доп. проверка владельца (цена, «уже использовано»): (card_index, form) -> ключ причины или "".
 var extra_reason: Callable = func(_i: int, _f: CodexOps.Form) -> String: return ""
 var selected_card := -1
-var forms_box: VBoxContainer
+var forms_box: HFlowContainer
 var _confirm_box: HBoxContainer
 var _card_buttons: Array[Button] = []
 
@@ -33,7 +34,7 @@ func setup(p_db: DefsDB, p_run: RunState) -> void:
 	run = p_run
 	add_theme_constant_override("separation", 24)
 	var grid := GridContainer.new()
-	grid.columns = 2
+	grid.columns = 1
 	grid.add_theme_constant_override("h_separation", 8)
 	grid.add_theme_constant_override("v_separation", 8)
 	add_child(grid)
@@ -44,6 +45,12 @@ func setup(p_db: DefsDB, p_run: RunState) -> void:
 		b.custom_minimum_size = Vector2(420, 42)
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.focus_mode = Control.FOCUS_NONE
+		if run.codex.cards[i].durability <= 1:
+			# Изношенная карта: угаснет после следующего боя.
+			b.add_theme_color_override("font_color", UiKit.DANGER)
+			b.icon = IconAtlas.get_icon(UnitGlyphs.ICON_KILL)
+			b.add_theme_constant_override("icon_max_width", 18)
+			Tip.attach(b, tr("CARD_WORN"), tr("CARD_WORN_TIP"), UnitGlyphs.ICON_KILL, UiKit.DANGER)
 		b.pressed.connect(select_card.bind(i))
 		grid.add_child(b)
 		_card_buttons.append(b)
@@ -51,8 +58,9 @@ func setup(p_db: DefsDB, p_run: RunState) -> void:
 	right.add_theme_constant_override("separation", 10)
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	add_child(right)
-	forms_box = VBoxContainer.new()
-	forms_box.add_theme_constant_override("separation", 8)
+	forms_box = HFlowContainer.new()
+	forms_box.add_theme_constant_override("h_separation", 10)
+	forms_box.add_theme_constant_override("v_separation", 10)
 	right.add_child(forms_box)
 	_confirm_box = HBoxContainer.new()
 	_confirm_box.add_theme_constant_override("separation", 12)
@@ -77,26 +85,32 @@ func select_card(index: int) -> void:
 	_clear(_confirm_box)
 	_clear(forms_box)
 	for form in CodexOps.ALL_FORMS:
+		# Плитка: значок и название формы, ниже — «было → станет».
 		var b := Button.new()
-		b.custom_minimum_size = Vector2(0, 46)
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.custom_minimum_size = TILE_SIZE
 		b.focus_mode = Control.FOCUS_NONE
 		b.icon = IconAtlas.get_icon(FORM_ICONS[form])
-		b.add_theme_constant_override("icon_max_width", 22)
+		b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		b.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
+		b.expand_icon = false
+		b.add_theme_constant_override("icon_max_width", 30)
+		b.add_theme_font_size_override("font_size", 19)
+		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		var reason: String = extra_reason.call(index, form)
 		if reason == "":
 			reason = CodexOps.unavailable_reason(db, run, index, form)
 		if reason == "":
 			var full := form_preview(db, run, index, form)
-			b.text = full if Settings.detailed else "%s: %s" % [tr(FORM_KEYS[form]), form_short(db, run, index, form)]
+			b.text = "%s\n%s" % [tr(FORM_KEYS[form]), full if Settings.detailed else form_change(db, run, index, form)]
 			var tip_body := full
 			if form == CodexOps.Form.SPELL:
 				tip_body += "\n" + tr(db.spell(db.memory(run.codex.cards[index].memory_id).spell_id).desc_key)
 			Tip.attach(b, tr(FORM_KEYS[form]), tip_body, FORM_ICONS[form])
 			b.pressed.connect(_ask_confirm.bind(form))
 		else:
-			b.text = "%s — %s" % [tr(FORM_KEYS[form]), tr(reason)]
+			b.text = "%s\n%s" % [tr(FORM_KEYS[form]), tr(reason)]
 			b.disabled = true
+			Tip.attach(b, tr(FORM_KEYS[form]), tr(reason), FORM_ICONS[form], UiKit.MUTED)
 		forms_box.add_child(b)
 
 
@@ -114,6 +128,25 @@ static func form_short(p_db: DefsDB, p_run: RunState, index: int, form: CodexOps
 		CodexOps.Form.FUSE:
 			var result := CodexOps.fuse_result(p_run.codex, index)
 			return TranslationServer.translate("FORM_FUSE_SHORT") % [result[0], floori(mem.count * (1.0 + 0.5 * (result[0] - 1)))]
+	return ""
+
+
+## «Было → станет» для плитки: «12 → 18», «Отряд → Цепная молния ×2».
+static func form_change(p_db: DefsDB, p_run: RunState, index: int, form: CodexOps.Form) -> String:
+	var card := p_run.codex.cards[index]
+	var mem := p_db.memory(card.memory_id)
+	var t := func(key: String) -> String: return TranslationServer.translate(key)
+	match form:
+		CodexOps.Form.SPELL:
+			return "%s → %s ×%d" % [t.call("CHANGE_CARD"), t.call(p_db.spell(mem.spell_id).name_key), CodexOps.spell_charges(card)]
+		CodexOps.Form.UPGRADE:
+			return "%s → %s" % [t.call("CHANGE_CARD"), t.call(p_db.upgrade(mem.upgrade_id).name_key)]
+		CodexOps.Form.SACRIFICE:
+			return "%s → %s" % [t.call("CHANGE_CARD"), t.call("CHANGE_REPAIR") % CodexOps.sacrifice_repairs(p_db, p_run.codex, index)]
+		CodexOps.Form.FUSE:
+			var result := CodexOps.fuse_result(p_run.codex, index)
+			var count := floori(mem.count * (1.0 + 0.5 * (result[0] - 1)))
+			return "%d → %d · %s" % [card.count(p_db), count, t.call("CARD_LEVEL") % result[0]]
 	return ""
 
 
