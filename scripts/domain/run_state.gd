@@ -3,7 +3,7 @@ extends RefCounted
 ## Состояние забега. Сохраняется на чекпоинтах — при возврате на карту экспедиции.
 
 ## Версия формата; более старые (от SaveMigrations.MIN_VERSION) переводятся миграциями.
-const SAVE_VERSION := 9
+const SAVE_VERSION := 10
 const REWARD_CHOICES := 3
 ## Награда за элиту с «Широкой полкой» и после обычного боя на Испытании 7.
 const REWARD_CHOICES_WIDE := 4
@@ -51,6 +51,20 @@ var free_rework_act := 0
 ## Пул карт наград и лавки (с повторами для веса) и пул событий — фиксируются при старте забега.
 var card_pool: Array[StringName] = []
 var event_pool: Array[StringName] = []
+## Счётчики забега для достижений (SPEC_SPRINT9 6): выигранные цели боёв, способы переработки,
+## покупки в лавках, типы пройденных островов.
+var objectives_won: Array[StringName] = []
+var reworks: Array[StringName] = []
+var shop_buys := 0
+var node_types: Array[int] = []
+## Реликвии, открытые достижениями (копия из профиля при старте).
+var relic_unlocks: Array[StringName] = []
+## Ежедневный забег (SPEC_SPRINT9 7): дата раскладки ("" — обычный забег), модификаторы дня,
+## засчитывается ли попытка (первая попытка дня) и использован ли бонус «Полных чернильниц».
+var daily_date := ""
+var modifiers: Array[StringName] = []
+var daily_ranked := false
+var inkwell_used := false
 
 
 ## profile — открытия игрока (пулы карт и событий); без профиля доступно всё.
@@ -62,6 +76,7 @@ static func create(db: DefsDB, seed_value: int, school_id: StringName = DefsDB.D
 	run.trial = clampi(trial, 0, Trials.MAX) if Trials.allowed(difficulty) else 0
 	if profile:
 		run.upgrades = profile.upgrades.duplicate()
+		run.relic_unlocks = Achievements.relic_unlocks(db, profile)
 	run.loot_rng.seed = hash("loot:%d" % seed_value)
 	run.school_id = school_id
 	var school := db.school(school_id)
@@ -154,6 +169,7 @@ func after_battle(db: DefsDB, selected: Array[int], erased: Array[int] = []) -> 
 		indices.append(codex.cards.find(card))
 	gone.append_array(codex.decay(indices))
 	cards_lost += gone.size()
+	RelicOps.after_victory(db, self)
 	return gone
 
 
@@ -238,13 +254,23 @@ func to_dict() -> Dictionary:
 		"trial": trial,
 		"reroll_act": reroll_act,
 		"free_rework_act": free_rework_act,
+		"objectives_won": Array(objectives_won).map(func(x: StringName) -> String: return String(x)),
+		"reworks": Array(reworks).map(func(x: StringName) -> String: return String(x)),
+		"shop_buys": shop_buys,
+		"node_types": node_types.duplicate(),
+		"relic_unlocks": Array(relic_unlocks).map(func(x: StringName) -> String: return String(x)),
+		"daily_date": daily_date,
+		"modifiers": Array(modifiers).map(func(x: StringName) -> String: return String(x)),
+		"daily_ranked": daily_ranked,
+		"inkwell_used": inkwell_used,
 	}
 
 
 ## Поля, без которых сохранение не читается.
 const REQUIRED_KEYS: Array[String] = ["run_seed", "codex", "hero", "loot_rng_seed", "loot_rng_state", "map", "resources",
 		"pending_node", "pending_battle", "pending_reward_card", "battles_won", "elites_won", "cards_lost",
-		"school_id", "difficulty", "act", "at_camp", "gifts", "relics", "card_pool", "event_pool", "upgrades", "trial", "reroll_act", "free_rework_act"]
+		"school_id", "difficulty", "act", "at_camp", "gifts", "relics", "card_pool", "event_pool", "upgrades", "trial", "reroll_act", "free_rework_act",
+		"objectives_won", "reworks", "shop_buys", "node_types", "relic_unlocks", "daily_date", "modifiers", "daily_ranked", "inkwell_used"]
 
 
 static func from_dict(d: Dictionary) -> RunState:
@@ -283,4 +309,18 @@ static func from_dict(d: Dictionary) -> RunState:
 	run.trial = int(d["trial"])
 	run.reroll_act = int(d["reroll_act"])
 	run.free_rework_act = int(d["free_rework_act"])
+	for id: String in d["objectives_won"]:
+		run.objectives_won.append(StringName(id))
+	for id: String in d["reworks"]:
+		run.reworks.append(StringName(id))
+	run.shop_buys = int(d["shop_buys"])
+	for t in d["node_types"]:
+		run.node_types.append(int(t))
+	for id: String in d["relic_unlocks"]:
+		run.relic_unlocks.append(StringName(id))
+	run.daily_date = String(d["daily_date"])
+	for id: String in d["modifiers"]:
+		run.modifiers.append(StringName(id))
+	run.daily_ranked = bool(d["daily_ranked"])
+	run.inkwell_used = bool(d["inkwell_used"])
 	return run

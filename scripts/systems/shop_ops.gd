@@ -37,7 +37,7 @@ static func offer_size(run: RunState) -> int:
 	return OFFER_SIZE + (1 if run.relics.has(RelicOps.CHEST) else 0)
 
 
-## Цена карты: «Скидка у знакомых» −1 (не ниже 1), Испытание 8 +1.
+## Цена карты: «Скидка у знакомых» и «Щедрые лавки» ежедневного забега −1 (не ниже 1), Испытание 8 +1.
 static func price(db: DefsDB, memory_id: StringName, run: RunState = null) -> int:
 	return adjust_price(run, CARD_PRICE if db.memory(memory_id).is_unit() else HERO_CARD_PRICE)
 
@@ -45,6 +45,8 @@ static func price(db: DefsDB, memory_id: StringName, run: RunState = null) -> in
 static func adjust_price(run: RunState, base: int) -> int:
 	var p := base
 	if MetaUpgrades.has(run, MetaUpgrades.DISCOUNT):
+		p = maxi(1, p - 1)
+	if DailyRun.has(run, DailyRun.GENEROUS_SHOPS):
 		p = maxi(1, p - 1)
 	if Trials.has(run, Trials.PRICES):
 		p += 1
@@ -68,6 +70,7 @@ static func buy(db: DefsDB, run: RunState, visit: Visit, index: int) -> bool:
 	run.spend(RunState.PARCHMENT, price(db, visit.offer[index], run))
 	run.gain_card(db, visit.offer[index])
 	visit.bought[index] = true
+	run.shop_buys += 1
 	return true
 
 

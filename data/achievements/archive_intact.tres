@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AchievementDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/achievement_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"archive_intact"
+order = 9
+name_key = "ACH_ARCHIVE_INTACT"
+desc_key = "ACH_ARCHIVE_INTACT_DESC"
+icon = &"armor"
+color = Color(0.95, 0.75, 0.45, 1)
+condition = &"archive_intact"
+points = 3

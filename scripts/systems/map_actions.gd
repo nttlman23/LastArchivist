@@ -128,6 +128,9 @@ static func scout(run: RunState, node_id: int) -> bool:
 
 ## Остров пройден: возврат на карту.
 static func complete(run: RunState) -> void:
+	# Типы пройденных островов — для достижения «Полная летопись» (SPEC_SPRINT9 6).
+	if run.pending_node >= 0 and not run.node_types.has(run.map.node(run.pending_node).type):
+		run.node_types.append(run.map.node(run.pending_node).type)
 	if run.pending_node >= 0 and not run.map.visited.has(run.pending_node):
 		run.map.visited.append(run.pending_node)
 	run.pending_node = -1

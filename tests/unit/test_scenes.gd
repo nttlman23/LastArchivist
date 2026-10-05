@@ -8,6 +8,8 @@ const SCENES := [
 	"res://scenes/run_end/run_end.tscn",
 	"res://scenes/chronicle/chronicle.tscn",
 	"res://scenes/map/map.tscn",
+	"res://scenes/achievements/achievements.tscn",
+	"res://scenes/daily/daily.tscn",
 ]
 
 

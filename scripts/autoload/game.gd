@@ -16,6 +16,8 @@ const SCENE_SETTINGS := "res://scenes/settings/settings.tscn"
 const SCENE_CHRONICLE := "res://scenes/chronicle/chronicle.tscn"
 const SCENE_CAMP := "res://scenes/camp/camp.tscn"
 const SCENE_RELIQUARY := "res://scenes/reliquary/reliquary.tscn"
+const SCENE_ACHIEVEMENTS := "res://scenes/achievements/achievements.tscn"
+const SCENE_DAILY := "res://scenes/daily/daily.tscn"
 
 const FONT_SIZE := 22
 
@@ -32,6 +34,10 @@ var run_won := false
 var last_points := 0
 var profile: ProfileState
 var profile_path := ProfileState.DEFAULT_PATH
+## Счёт последнего законченного ежедневного забега и засчитан ли он (SPEC_SPRINT9 7).
+var last_daily_score := 0
+var last_daily_counted := false
+var _toast: AchievementToast
 
 
 const FADE_OUT := 0.12
@@ -45,12 +51,21 @@ var _fade_tween: Tween
 func _ready() -> void:
 	defs = DefsDB.load_default()
 	profile = ProfileState.load_or_new(profile_path)
+	var retro: Array[StringName] = []
+	if profile.needs_retro:
+		# Профиль до Спринта 9: достижения по накопленной статистике (SPEC_SPRINT9 6.2).
+		retro = Achievements.grant_retro(defs, profile)
+		save_profile()
 	get_tree().auto_accept_quit = false
 	if "--smoke" in OS.get_cmdline_user_args():
 		Audio.music_allowed = false
 	get_tree().root.theme = UiTheme.build(FONT_SIZE)
 	RenderingServer.set_default_clear_color(UiKit.BG_COLOR)
 	_build_fade()
+	_toast = AchievementToast.new()
+	add_child(_toast)
+	if not retro.is_empty():
+		_toast.show_ids(retro)
 	Audio.play_music(&"menu")
 	if "--smoke" in OS.get_cmdline_user_args():
 		_smoke_test()
@@ -105,6 +120,47 @@ func new_run(school_id: StringName = DefsDB.DEFAULT_SCHOOL, difficulty: StringNa
 	run = RunState.create(defs, rng.seed, school_id, profile, difficulty, trial)
 	SaveService.save_run(run)
 	goto(SCENE_MAP)
+
+
+## Новая попытка ежедневного забега (SPEC_SPRINT9 7). Прерванная попытка поверх — брошена:
+## если она первая в свой день, засчитывается как брошенная.
+func new_daily() -> void:
+	var old := SaveService.load_run(SaveService.daily_path)
+	if old:
+		_abandon_daily(old)
+	run = DailyRun.create(defs, profile, DailyRun.today())
+	SaveService.save_run(run)
+	goto(SCENE_MAP)
+
+
+func continue_daily() -> bool:
+	run = SaveService.load_run(SaveService.daily_path)
+	if run == null:
+		return false
+	goto(SCENE_CAMP if run.at_camp else SCENE_MAP)
+	return true
+
+
+func _abandon_daily(old: RunState) -> void:
+	if DailyRun.counts(profile, old):
+		MetaRewards.abandon_run(profile, old)
+		DailyRun.record(profile, old, ProfileState.OUTCOME_ABANDONED)
+		_notify(Achievements.check(defs, profile, old, Achievements.Event.DAILY))
+		save_profile()
+	SaveService.delete_save(SaveService.daily_path)
+
+
+## Проверка достижений события забега; новые — в профиль и плашкой на экран.
+func achievement_event(event: Achievements.Event, ctx: Dictionary = {}) -> void:
+	var ids := Achievements.check(defs, profile, run, event, ctx)
+	if not ids.is_empty():
+		save_profile()
+		_notify(ids)
+
+
+func _notify(ids: Array[StringName]) -> void:
+	if not ids.is_empty() and _toast:
+		_toast.show_ids(ids)
 
 
 ## Выбор на привале и начало второго акта.
@@ -171,13 +227,14 @@ func start_battle(cards: Array[int]) -> void:
 
 ## Выход с острова без результата: забег возвращается к чекпоинту входа на остров.
 func abandon_node() -> void:
-	var saved := SaveService.load_run()
+	var saved := SaveService.load_run(SaveService.path_for(run))
 	if saved:
 		run = saved
 	goto(SCENE_MAP)
 
 
-func finish_battle(outcome: BattleState.Outcome, spell_charges: Array[int] = [], erased: Array[int] = []) -> void:
+## state — законченный бой, для условий достижений (без него — только встреча).
+func finish_battle(outcome: BattleState.Outcome, spell_charges: Array[int] = [], erased: Array[int] = [], state: BattleState = null) -> void:
 	if outcome != BattleState.Outcome.PLAYER_WON:
 		_end_run(false)
 		return
@@ -186,11 +243,18 @@ func finish_battle(outcome: BattleState.Outcome, spell_charges: Array[int] = [],
 		run.elites_won += 1
 	run.apply_spell_charges(spell_charges)
 	var encounter := defs.encounter(run.current_encounter_id(defs))
+	var ctx := Achievements.battle_context(state, encounter, run.act) if state else \
+			{"elite": encounter.elite, "boss": encounter.boss, "act": run.act, "objective": BattleSetup.objective_of(run, encounter)}
+	var objective := StringName(ctx["objective"])
+	if objective != ObjectiveRule.ELIMINATE and not run.objectives_won.has(objective):
+		run.objectives_won.append(objective)
 	last_faded = run.after_battle(defs, selected, erased)
+	achievement_event(Achievements.Event.BATTLE_WON, ctx)
 	if encounter.boss:
 		if run.act == 1:
 			# Разлом закрыт — привал перед вторым актом (SPEC_SPRINT7 3).
 			MapActions.complete(run)
+			achievement_event(Achievements.Event.NODE)
 			run.at_camp = true
 			SaveService.save_run(run)
 			goto(SCENE_CAMP)
@@ -220,6 +284,7 @@ func reward_guarantees_hero() -> bool:
 ## Остров пройден (после награды, события, лавки или гавани): возврат на карту.
 func complete_node() -> void:
 	MapActions.complete(run)
+	achievement_event(Achievements.Event.NODE)
 	if not run.codex.has_unit_cards(defs):
 		_end_run(false)
 		return
@@ -281,9 +346,19 @@ func _build_fade() -> void:
 	layer.add_child(_fade)
 
 
+## Повторная попытка ежедневного забега — без очков, летописи и таблицы (SPEC_SPRINT9 7).
 func _end_run(won: bool) -> void:
 	run_won = won
-	last_points = MetaRewards.finish_run(profile, run, won, defs)
+	var daily := run.daily_date != ""
+	last_daily_counted = daily and DailyRun.counts(profile, run)
+	last_daily_score = DailyRun.score(run, won) if daily else 0
+	last_points = 0
+	if not daily or last_daily_counted:
+		last_points = MetaRewards.finish_run(profile, run, won, defs)
+	achievement_event(Achievements.Event.RUN_END, {"won": won})
+	if last_daily_counted:
+		DailyRun.record(profile, run, ProfileState.OUTCOME_WON if won else ProfileState.OUTCOME_LOST)
+		achievement_event(Achievements.Event.DAILY)
 	save_profile()
-	SaveService.delete_save()
+	SaveService.delete_save(SaveService.path_for(run))
 	goto(SCENE_RUN_END)

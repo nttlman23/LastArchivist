@@ -17,6 +17,8 @@ var commanders: Dictionary[StringName, CommanderDef] = {}
 var relics: Dictionary[StringName, RelicDef] = {}
 ## Узлы дерева Зала Архива (SPEC_SPRINT8 2).
 var hall_nodes: Dictionary[StringName, UpgradeNodeDef] = {}
+## Достижения (SPEC_SPRINT9 6).
+var achievements: Dictionary[StringName, AchievementDef] = {}
 const DEFAULT_SCHOOL := &"ash_archive"
 ## Приказы, доступные всегда.
 var base_orders: Array[StringName] = [&"order_advance", &"order_close_ranks"]
@@ -48,6 +50,8 @@ static func load_default() -> DefsDB:
 		db.relics[res.id] = res as RelicDef
 	for res in _load_dir("hall"):
 		db.hall_nodes[res.id] = res as UpgradeNodeDef
+	for res in _load_dir("achievements"):
+		db.achievements[res.id] = res as AchievementDef
 	return db
 
 
@@ -79,6 +83,19 @@ func hall_branch(branch: StringName) -> Array[UpgradeNodeDef]:
 			result.append(n)
 	result.sort_custom(func(a: UpgradeNodeDef, b: UpgradeNodeDef) -> bool: return a.tier < b.tier)
 	return result
+
+
+func achievement(id: StringName) -> AchievementDef:
+	assert(achievements.has(id), "Unknown achievement: %s" % id)
+	return achievements[id]
+
+
+## Достижения в порядке экрана.
+func achievements_sorted() -> Array[AchievementDef]:
+	var list: Array[AchievementDef] = []
+	list.assign(achievements.values())
+	list.sort_custom(func(a: AchievementDef, b: AchievementDef) -> bool: return a.order < b.order)
+	return list
 
 
 func relic_ids() -> Array[StringName]:

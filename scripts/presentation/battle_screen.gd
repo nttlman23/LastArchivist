@@ -988,7 +988,7 @@ func _show_end() -> void:
 	var title := UiKit.label(tr("BATTLE_WON") if won else tr("BATTLE_LOST"), 56, UiKit.ACCENT if won else UiKit.DANGER)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
-	box.add_child(UiKit.button(tr("BATTLE_CONTINUE"), func() -> void: Game.finish_battle(state.outcome, state.spell_charges(), state.erased_cards), 360))
+	box.add_child(UiKit.button(tr("BATTLE_CONTINUE"), func() -> void: Game.finish_battle(state.outcome, state.spell_charges(), state.erased_cards, state), 360))
 	add_child(_end_panel)
 	_end_panel.custom_minimum_size = Vector2(520, 240)
 	_end_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER, Control.PRESET_MODE_MINSIZE)

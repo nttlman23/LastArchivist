@@ -112,6 +112,7 @@ func _apply_form(form: CodexOps.Form) -> void:
 
 func _apply(card_index: int, form: CodexOps.Form) -> void:
 	CodexOps.apply(db, run, card_index, form)
+	Game.achievement_event(Achievements.Event.REWORK)
 	Game.complete_node()
 
 

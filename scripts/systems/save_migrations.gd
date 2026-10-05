@@ -22,9 +22,25 @@ static func migrate(d: Dictionary) -> Dictionary:
 				out = _v7_to_v8(out)
 			8:
 				out = _v8_to_v9(out)
+			9:
+				out = _v9_to_v10(out)
 		v += 1
 		out["version"] = v
 	return out
+
+
+## v10: достижения и ежедневный забег (SPEC_SPRINT9 6–7) — старый забег обычный, счётчики с нуля.
+static func _v9_to_v10(d: Dictionary) -> Dictionary:
+	d["objectives_won"] = []
+	d["reworks"] = []
+	d["shop_buys"] = 0
+	d["node_types"] = []
+	d["relic_unlocks"] = []
+	d["daily_date"] = ""
+	d["modifiers"] = []
+	d["daily_ranked"] = false
+	d["inkwell_used"] = false
+	return d
 
 
 ## v9: Зал Архива и Испытания (SPEC_SPRINT8) — старый забег без улучшений и Испытания.

@@ -819,3 +819,110 @@ TRIAL_RULE_7,После обычного боя — 2 карты на выбор
 TRIAL_RULE_8,Карты в лавке: +1 Пергамент.
 TRIAL_RULE_9,Новые карты: −1 прочности.
 TRIAL_RULE_10,Хозяин Глубин: вторая фаза при 65% ОЗ.
+MENU_ACHIEVEMENTS,Достижения (%d/%d)
+MENU_DAILY,Ежедневный забег
+MENU_DAILY_NEW,Ежедневный забег · новый день
+ACH_TITLE,Достижения
+ACH_COUNT,Получено: %d из %d
+ACH_LOCKED,не получено
+ACH_EARNED_ON,Получено: %s
+ACH_TOAST,Достижение получено
+ACH_REWARD_POINTS,Награда: +%d очков памяти
+ACH_REWARD_CARD,Награда: карта «%s»
+ACH_REWARD_RELIC,Награда: реликвия «%s»
+ACH_REWARD_EVENT,Награда: событие «%s»
+ACH_FIRST_CHAPTER,Первая глава
+ACH_FIRST_CHAPTER_DESC,Закрыть Разлом.
+ACH_DROWNED_VICTORY,Затонувшая победа
+ACH_DROWNED_VICTORY_DESC,Победить Хозяина Глубин.
+ACH_HARD_HAND,Тяжёлая рука
+ACH_HARD_HAND_DESC,Полная победа на «Тяжело».
+ACH_EVERY_SCHOOL,Каждой школой
+ACH_EVERY_SCHOOL_DESC,Полная победа каждой из 4 школ.
+ACH_NO_LOSSES,Без потерь
+ACH_NO_LOSSES_DESC,"Выиграть бой элиты, не потеряв ни одного стека целиком (иллюзии не считаются)."
+ACH_LIGHTNING,Молниеносно
+ACH_LIGHTNING_DESC,"Выиграть бой не позже 3-го раунда. Не считаются бои на время: «Продержаться», «Удержать», «Защитить архив»."
+ACH_FOUR_WARS,Четыре войны
+ACH_FOUR_WARS_DESC,"За один забег выиграть бои с целями «Продержаться», «Убить цель», «Удержать» и «Защитить архив»."
+ACH_ON_THE_EDGE,На волоске
+ACH_ON_THE_EDGE_DESC,"Выиграть бой, в котором из 3 и более выставленных стеков выжил один."
+ACH_ARCHIVE_INTACT,Нетронутый Архив
+ACH_ARCHIVE_INTACT_DESC,"Выиграть бой «Защитить архив», не дав Архиву получить урон."
+ACH_CLEAN_SLATE,Чистый лист
+ACH_CLEAN_SLATE_DESC,Полная победа с Кодексом не больше 6 карт.
+ACH_NOTHING_FORGOTTEN,Ничего не забыто
+ACH_NOTHING_FORGOTTEN_DESC,"Полная победа, потеряв за забег не больше 1 карты."
+ACH_MEMORY_ALCHEMIST,Алхимик памяти
+ACH_MEMORY_ALCHEMIST_DESC,"За один забег переработать карты всеми 4 способами: в заклинание, в улучшение, слиянием и жертвой."
+ACH_MISER,Скупец
+ACH_MISER_DESC,Закончить забег с 15 и более единицами любого ресурса.
+ACH_COLLECTOR,Коллекционер
+ACH_COLLECTOR_DESC,Собрать 3 реликвии за один забег.
+ACH_REGULAR_CUSTOMER,Постоянный покупатель
+ACH_REGULAR_CUSTOMER_DESC,Сделать 4 покупки в лавках за один забег.
+ACH_FULL_CHRONICLE,Полная летопись
+ACH_FULL_CHRONICLE_DESC,"За один забег пройти острова всех 7 типов: бой, элита, событие, лавка, гавань, реликварий, босс."
+ACH_FIRST_STEP,Первая ступень
+ACH_FIRST_STEP_DESC,Победа на Испытании 1 (или выше).
+ACH_TESTED,Испытанный
+ACH_TESTED_DESC,Победа на Испытании 5 (или выше).
+ACH_ARCHIVE_KEEPER,Хранитель Архива
+ACH_ARCHIVE_KEEPER_DESC,Победа на Испытании 10.
+ACH_DAILY_THREE,Ежедневник
+ACH_DAILY_THREE_DESC,Сыграть 3 засчитанных ежедневных забега.
+DAILY_TITLE,Ежедневный забег
+DAILY_SHORT,День
+DAILY_MAP_TIP,"Раскладка дня %s: сид, школа, «Нормально» и два модификатора одинаковы для всех попыток этого дня."
+DAILY_REPEAT,"Повторная попытка: без счёта в истории, без очков памяти и достижений."
+DAILY_HISTORY,История за 30 дней
+DAILY_EMPTY,Засчитанных попыток пока нет.
+DAILY_NOT_PLAYED,Сегодня ещё не сыгран — засчитается первая законченная или брошенная попытка.
+DAILY_PLAYED,"Сегодня засчитано: счёт %d. Можно сыграть ещё раз, но без зачёта."
+DAILY_SCORE_RULE,Счёт: слой × 10 + элита × 15 + боссы × 50 + оставшиеся ресурсы.
+DAILY_CONTINUE,Продолжить попытку (%s)
+DAILY_START,Начать
+DAILY_REPLAY,Сыграть ещё раз
+DAILY_ABANDON_WARN,"Начатая попытка будет брошена; если она первая в свой день, засчитается как брошенная."
+DAILY_BEST,пунктир — лучший счёт: %d
+DAILY_SCORE,счёт %d
+DAILY_MOD_GENEROUS_SHOPS,Щедрые лавки
+DAILY_MOD_GENEROUS_SHOPS_DESC,Карты в лавке на 1 Пергамент дешевле (не дешевле 1).
+DAILY_MOD_OLD_FRIENDS,Старые знакомые
+DAILY_MOD_OLD_FRIENDS_DESC,Старт со случайной реликвией — без её разовой цены.
+DAILY_MOD_QUICK_QUILLS,Быстрые перья
+DAILY_MOD_QUICK_QUILLS_DESC,+1 к инициативе ваших отрядов.
+DAILY_MOD_FULL_INKWELLS,Полные чернильницы
+DAILY_MOD_FULL_INKWELLS_DESC,Первое заклинание забега получает +2 заряда.
+DAILY_MOD_HUNGRY_RIFT,Голодный Разлом
+DAILY_MOD_HUNGRY_RIFT_DESC,Враги в боях с боссами: +20% ОЗ.
+DAILY_MOD_DAMPNESS,Сырость
+DAILY_MOD_DAMPNESS_DESC,"Все бои — с водой: в боях первого акта в середине поля разлита вода."
+DAILY_MOD_HEAVY_DREAMS,Тяжёлые сны
+DAILY_MOD_HEAVY_DREAMS_DESC,Карты Кодекса на старте: −1 прочности (не ниже 1).
+DAILY_MOD_EARLY_COMMANDER,Ранний командир
+DAILY_MOD_EARLY_COMMANDER_DESC,Вражеский командир — во всех боях.
+RUN_DAILY_SCORE,Счёт дня: %d
+RUN_DAILY_NOT_COUNTED,(повторная попытка — не засчитана)
+MEM_ASH_KEEPERS,Хранители пепла
+MEM_DEEP_EELS,Глубинные угри
+RELIC_RIFT_SHARD,Осколок Разлома
+RELIC_RIFT_SHARD_DESC,+1 к инициативе отрядов. Цена: −1 к защите отрядов.
+RELIC_SYNOD_SEAL,Печать Синода
+RELIC_SYNOD_SEAL_DESC,После каждой победы самая потрёпанная карта получает +1 прочности. Цена: −3 Пергамента сейчас.
+EVT_VOICE_FROM_INK_TITLE,Голос из чернил
+EVT_VOICE_FROM_INK_TEXT,"Из чернильной лужи шепчет голос. Он помнит то, что вы забыли, — и просит взамен немного памяти."
+EVT_VOICE_FROM_INK_A,"Выслушать (+1 заряд всем заклинаниям, случайная карта −1 прочности)"
+EVT_VOICE_FROM_INK_A_RES,"Заклинания налились силой, но одно воспоминание поблёкло."
+EVT_VOICE_FROM_INK_B,"Ответить (новая карта отряда с прочностью 1, −2 Эфира)"
+EVT_VOICE_FROM_INK_B_RES,Из чернил поднялся смутный отряд — ненадолго.
+EVT_VOICE_FROM_INK_C,Зачерпнуть чернил (+2 Чернила)
+EVT_VOICE_FROM_INK_C_RES,Голос стих. Чернила остались.
+EVT_FORGOTTEN_SHELF_TITLE,Забытая полка
+EVT_FORGOTTEN_SHELF_TEXT,"Между стеллажами — полка, о которой забыли даже Архивариусы. Корешки целы, переплёты ждут руки."
+EVT_FORGOTTEN_SHELF_A,Переплести карту (выбранная карта +2 прочности)
+EVT_FORGOTTEN_SHELF_A_RES,Старый переплёт держит воспоминание крепче.
+EVT_FORGOTTEN_SHELF_B,"Прочесть старую книгу (случайное улучшение героя, −1 Пергамент)"
+EVT_FORGOTTEN_SHELF_B_RES,Архивариус выучил забытый приём.
+EVT_FORGOTTEN_SHELF_C,"Взять чистые листы (+1 Пергамент, +1 Чернила)"
+EVT_FORGOTTEN_SHELF_C_RES,Пара листов и чернильница — тоже находка.

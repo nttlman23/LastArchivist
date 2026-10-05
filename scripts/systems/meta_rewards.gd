@@ -73,6 +73,8 @@ static func card_pool(db: DefsDB, profile: ProfileState, school: SchoolDef, act:
 	for s in db.schools_sorted():
 		if not is_school_open(profile, s):
 			locked.append_array(s.own_memories)
+	# Карты-награды достижений (SPEC_SPRINT9 6).
+	locked.append_array(Achievements.locked(db, profile, Achievements.CARD))
 	var pool: Array[StringName] = []
 	for id in db.pool_memory_ids(act):
 		if locked.has(id):
@@ -88,6 +90,7 @@ static func event_pool(db: DefsDB, profile: ProfileState) -> Array[StringName]:
 	for u in CATALOG:
 		if u["kind"] == Kind.EVENT and not profile.is_unlocked(u["id"]):
 			locked.append(u["target"])
+	locked.append_array(Achievements.locked(db, profile, Achievements.EVENT))
 	var pool: Array[StringName] = []
 	for id in db.event_ids():
 		if not locked.has(id) and not MetaUpgrades.event_locked(profile, id):
@@ -137,4 +140,6 @@ static func chronicle_entry(run: RunState, outcome: String, points: int, db: Def
 		# Реликвии и дары привала (SPEC_SPRINT7 11) — значками в строке летописи.
 		"relics": Array(run.relics).map(func(x: StringName) -> String: return String(x)),
 		"gifts": Array(run.gifts).map(func(x: StringName) -> String: return String(x)),
+		# Попытка ежедневного забега (SPEC_SPRINT9 7) — отметкой в строке летописи.
+		"daily": run.daily_date,
 	}

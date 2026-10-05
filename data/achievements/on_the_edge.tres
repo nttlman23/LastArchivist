@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AchievementDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/achievement_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"on_the_edge"
+order = 8
+name_key = "ACH_ON_THE_EDGE"
+desc_key = "ACH_ON_THE_EDGE_DESC"
+icon = &"hp"
+color = Color(1.0, 0.55, 0.45, 1)
+condition = &"on_the_edge"
+threshold = 3
+points = 2

@@ -76,9 +76,17 @@ static func apply(db: DefsDB, run: RunState, index: int, form: Form) -> void:
 	var codex := run.codex
 	var card := codex.cards[index]
 	var mem := db.memory(card.memory_id)
+	# Способы переработки за забег — для достижения «Алхимик памяти» (SPEC_SPRINT9 6).
+	var form_id := StringName(String(Form.keys()[form]).to_lower())
+	if not run.reworks.has(form_id):
+		run.reworks.append(form_id)
 	match form:
 		Form.SPELL:
-			run.hero.spells.append(HeroState.SpellSlot.new(mem.spell_id, spell_charges(card), mem.id))
+			var charges := spell_charges(card)
+			if DailyRun.has(run, DailyRun.FULL_INKWELLS) and not run.inkwell_used:
+				charges += DailyRun.INKWELL_CHARGES
+				run.inkwell_used = true
+			run.hero.spells.append(HeroState.SpellSlot.new(mem.spell_id, charges, mem.id))
 			codex.remove_at(index)
 		Form.UPGRADE:
 			run.hero.upgrades.append(mem.upgrade_id)

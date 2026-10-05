@@ -14,6 +14,9 @@ const SHELL := &"warden_shell"               ## +15% ОЗ отрядам; −1 �
 # Открываются узлом Зала Архива «Утерянные реликвии» (SPEC_SPRINT8 2).
 const QUILL := &"chronicler_quill"           ## +1 атака отрядам; −2 Пергамента сейчас
 const CHEST := &"false_bottom_chest"         ## +1 товар в лавке; −2 Чернил сейчас
+# Открываются достижениями (SPEC_SPRINT9 6).
+const SHARD := &"rift_shard"                  ## +1 инициатива отрядам; −1 защита отрядам
+const SEAL := &"synod_seal"                   ## после победы самая потрёпанная карта +1 прочности; −3 Пергамента сейчас
 
 const OFFER := 2
 const SPELL_POWER := 1.25
@@ -26,7 +29,7 @@ const LANTERN_ROUNDS := 2
 static func available(db: DefsDB, run: RunState) -> Array[StringName]:
 	var pool: Array[StringName] = []
 	for id in db.relic_ids():
-		if not run.relics.has(id) and not MetaUpgrades.relic_locked(run, id):
+		if not run.relics.has(id) and not MetaUpgrades.relic_locked(run, id) and not Achievements.relic_locked(db, run, id):
 			pool.append(id)
 	return pool
 
@@ -47,9 +50,11 @@ static func offer(db: DefsDB, run: RunState, node_id: int) -> Array[StringName]:
 	return result
 
 
-## Взять реликвию: запомнить и заплатить разовую цену.
-static func take(db: DefsDB, run: RunState, id: StringName, seed_value: int = 0) -> void:
+## Взять реликвию: запомнить и заплатить разовую цену (pay = false — без неё, «Старые знакомые» ежедневного забега).
+static func take(db: DefsDB, run: RunState, id: StringName, seed_value: int = 0, pay: bool = true) -> void:
 	run.relics.append(id)
+	if not pay:
+		return
 	match id:
 		SALT_CROWN:
 			if not run.codex.cards.is_empty():
@@ -67,6 +72,8 @@ static func take(db: DefsDB, run: RunState, id: StringName, seed_value: int = 0)
 			run.gain(RunState.PARCHMENT, -2)
 		CHEST:
 			run.gain(RunState.INK, -2)
+		SEAL:
+			run.gain(RunState.PARCHMENT, -3)
 
 
 ## Эффекты реликвий в бою (после создания боя, до начала).
@@ -88,6 +95,9 @@ static func apply_battle(run: RunState, state: BattleState) -> void:
 		if run.relics.has(SHELL):
 			u.attack = maxi(0, u.attack - 1)
 			_scale_hp(u, SHELL_HP)
+		if run.relics.has(SHARD):
+			u.initiative += 1
+			u.defense = maxi(0, u.defense - 1)
 	if run.relics.has(HOURGLASS):
 		state.hero_first_round_bonus = 1
 	if run.relics.has(COMPASS):
@@ -98,6 +108,18 @@ static func apply_battle(run: RunState, state: BattleState) -> void:
 	if run.relics.has(LANTERN):
 		for e in state.alive(UnitState.Side.ENEMY):
 			e.statuses[UnitState.STATUS_SOAKED] = LANTERN_ROUNDS
+
+
+## После победы (Печать Синода): карта с наименьшей прочностью ниже максимума +1 прочности.
+static func after_victory(db: DefsDB, run: RunState) -> void:
+	if not run.relics.has(SEAL):
+		return
+	var worst: CodexState.Card = null
+	for c in run.codex.cards:
+		if c.durability < db.memory(c.memory_id).max_durability and (worst == null or c.durability < worst.durability):
+			worst = c
+	if worst:
+		worst.durability += 1
 
 
 ## Пергамент за победу в бою (Жемчужина памяти).

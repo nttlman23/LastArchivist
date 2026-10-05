@@ -11,6 +11,7 @@ static func for_run(db: DefsDB, run: RunState, selected: Array[int]) -> BattleSt
 	CampOps.apply_gifts(run, s)
 	RelicOps.apply_battle(run, s)
 	Trials.apply_battle(run, enc, s)
+	DailyRun.apply_battle(run, enc, s)
 	return s
 
 

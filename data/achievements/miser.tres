@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AchievementDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/achievement_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"miser"
+order = 13
+name_key = "ACH_MISER"
+desc_key = "ACH_MISER_DESC"
+icon = &"ink"
+color = Color(0.6, 0.7, 0.95, 1)
+condition = &"miser"
+threshold = 15
+points = 3

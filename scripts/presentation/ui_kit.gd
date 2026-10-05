@@ -622,6 +622,15 @@ static func trial_chip(trial: int, size: int = 18) -> HBoxContainer:
 			t.call("TRIAL_LEVEL") % trial, Trials.describe(trial), size)
 
 
+## Модификатор ежедневного забега (SPEC_SPRINT9 7): плюсы — зелёные, минусы — красные; описание — в подсказке.
+static func modifier_chip(id: StringName, size: int = 18, with_text: bool = true) -> HBoxContainer:
+	var key := "DAILY_MOD_" + String(id).to_upper()
+	var color := DailyRun.PLUS_COLOR if DailyRun.PLUS.has(id) else DailyRun.MINUS_COLOR
+	var name := TranslationServer.translate(key)
+	return chip(DailyRun.ICONS.get(id, UnitGlyphs.ICON_POINTS), name if with_text else "", color, name,
+			TranslationServer.translate(key + "_DESC"), size)
+
+
 ## Риск боя: сила врагов относительно лучших карт армии (три уровня, подробности в подсказке).
 static func risk_chip(db: DefsDB, codex: CodexState, enc: EncounterDef, difficulty: StringName = Difficulty.NORMAL, size: int = 18) -> HBoxContainer:
 	var risk := CardAdvisor.risk(db, codex, enc, difficulty)

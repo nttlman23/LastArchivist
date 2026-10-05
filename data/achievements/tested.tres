@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="AchievementDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/achievement_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"tested"
+order = 18
+name_key = "ACH_TESTED"
+desc_key = "ACH_TESTED_DESC"
+icon = &"lock"
+color = Color(1.0, 0.5, 0.4, 1)
+condition = &"tested"
+threshold = 5
+unlock_kind = &"relic"
+unlock_id = &"synod_seal"

@@ -1,5 +1,5 @@
 extends Node
-## Скриншоты экранов (SPEC_SPRINT9): меню, карта, подготовка, бой (покой и в процессе), награда.
+## Скриншоты экранов (SPEC_SPRINT9): меню, достижения, ежедневный забег, карта, подготовка, бой (покой и в процессе), награда.
 ## Запуск: godot --path . res://tools/screenshots.tscn [-- папка] (нужно окно, не --headless).
 ## Профиль и сохранение — временные. По умолчанию снимки — в user://screenshots/.
 
@@ -20,10 +20,30 @@ func _run() -> void:
 	Game.profile_path = "user://profile_shots.cfg"
 	Game.profile = ProfileState.new()
 	SaveService.current_path = "user://profile_shots_save.json"
+	SaveService.daily_path = "user://profile_shots_daily.json"
 	Settings.hints = false
 	Game.run = null
 	Game.goto(Game.SCENE_MAIN_MENU)
 	await _shot("menu")
+	# Достижения и ежедневный забег (SPEC_SPRINT9 6–7): часть достижений и история с пропусками дней.
+	for id in [&"first_chapter", &"no_losses", &"miser", &"collector", &"lightning", &"daily_three"]:
+		Achievements.grant(Game.defs, Game.profile, id, "2026-10-0%d" % (Game.profile.achievements.size() + 1))
+	Game.goto(Game.SCENE_ACHIEVEMENTS)
+	await _shot("achievements")
+	var today := DailyRun.today()
+	var outcomes := [ProfileState.OUTCOME_LOST, ProfileState.OUTCOME_WON, ProfileState.OUTCOME_ABANDONED]
+	for d in range(28, 0, -1):
+		if d % 5 == 3:
+			continue
+		var l := DailyRun.layout(Game.defs, Game.profile, DailyRun.shift_date(today, -d))
+		Game.profile.record_daily({"date": DailyRun.shift_date(today, -d), "school": String(l["school"]), "modifiers": l["modifiers"],
+				"layer": 4 + (d * 7) % 12, "score": 60 + (d * 37) % 240, "outcome": outcomes[d % 3]})
+	Game.goto(Game.SCENE_DAILY)
+	await _shot("daily")
+	Game.run = DailyRun.create(Game.defs, Game.profile, today)
+	Game.goto(Game.SCENE_MAP)
+	Game._notify([&"four_wars"] as Array[StringName])
+	await _shot("map_daily")
 	Game.run = RunState.create(Game.defs, 7)
 	Game.goto(Game.SCENE_MAP)
 	await _shot("map")

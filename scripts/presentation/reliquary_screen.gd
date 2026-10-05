@@ -73,4 +73,5 @@ func _tile(id: StringName) -> Button:
 func _take(id: StringName) -> void:
 	Audio.play(&"transform")
 	RelicOps.take(db, run, id, run.node_seed(run.pending_node, "relic_cost"))
+	Game.achievement_event(Achievements.Event.RELIC)
 	Game.complete_node()

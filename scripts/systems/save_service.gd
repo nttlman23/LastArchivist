@@ -5,13 +5,17 @@ extends RefCounted
 ## Путь по умолчанию можно подменить (автопрогон, тесты), чтобы не трогать сохранение игрока.
 
 const DEFAULT_PATH := "user://run_save.json"
+## Ежедневный забег хранится отдельно (SPEC_SPRINT9 8): обычный забег и попытка дня не мешают друг другу.
+const DAILY_PATH := "user://daily_run.json"
 
 ## Текущий путь сохранения; пустой аргумент path у функций означает его.
 static var current_path := DEFAULT_PATH
+static var daily_path := DAILY_PATH
 
 
+## Без path — файл по виду забега (path_for).
 static func save_run(run: RunState, path: String = "") -> bool:
-	return SafeFile.write_text(_resolve(path), JSON.stringify(run.to_dict(), "\t"))
+	return SafeFile.write_text(path if path != "" else path_for(run), JSON.stringify(run.to_dict(), "\t"))
 
 
 static func load_run(path: String = "") -> RunState:
@@ -33,6 +37,11 @@ static func _parse(text: String) -> Dictionary:
 		return {}
 	var d := SaveMigrations.migrate(json.data)
 	return d if d.has_all(RunState.REQUIRED_KEYS) else {}
+
+
+## Файл сохранения забега: ежедневный — свой.
+static func path_for(run: RunState) -> String:
+	return daily_path if run != null and run.daily_date != "" else current_path
 
 
 static func has_save(path: String = "") -> bool:

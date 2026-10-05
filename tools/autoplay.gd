@@ -2,6 +2,7 @@ extends Node
 ## Сквозной прогон экспедиции через настоящие экраны: карта → острова (бой, событие, лавка, гавань) → разлом → итог.
 ## За игрока: AI отрядов и HeroAi в бою, MapAi на карте; после боя чередуются формы переработки.
 ## Запуск: godot --path . res://tools/autoplay.tscn [-- seed [school_id [difficulty]]]  (можно с --headless)
+## Ежедневный забег (SPEC_SPRINT9 7): -- seed daily [ГГГГ-ММ-ДД] — раскладка по дате (по умолчанию сегодня), сид раскладки.
 ## Печатает AUTOPLAY OK/FAIL и путь забега.
 
 const TIMEOUT_SEC := 900.0
@@ -28,6 +29,7 @@ func _run() -> void:
 	# Свои файлы у каждого процесса: автопрогоны можно запускать параллельно.
 	Game.profile_path = "user://autoplay_profile_%d.cfg" % OS.get_process_id()
 	SaveService.current_path = "user://autoplay_save_%d.json" % OS.get_process_id()
+	SaveService.daily_path = "user://autoplay_daily_%d.json" % OS.get_process_id()
 	Game.profile = ProfileState.new()
 	Settings.hints = false
 	var school := StringName(args[1]) if args.size() > 1 else DefsDB.DEFAULT_SCHOOL
@@ -38,7 +40,12 @@ func _run() -> void:
 		for id in Game.defs.hall_nodes:
 			Game.profile.upgrades.append(id)
 	_log.append("школа: %s, сложность: %s, испытание: %d, улучшений: %d" % [school, difficulty, trial, Game.profile.upgrades.size()])
-	Game.run = RunState.create(Game.defs, seed_value, school, Game.profile, difficulty, trial)
+	if school == &"daily":
+		var date := String(args[2]) if args.size() > 2 else DailyRun.today()
+		Game.run = DailyRun.create(Game.defs, Game.profile, date)
+		_log.append("ежедневный забег %s: %s, модификаторы: %s" % [date, Game.run.school_id, Game.run.modifiers])
+	else:
+		Game.run = RunState.create(Game.defs, seed_value, school, Game.profile, difficulty, trial)
 	SaveService.save_run(Game.run)
 	Game.goto(Game.SCENE_MAP)
 	while _elapsed() < TIMEOUT_SEC:
@@ -85,6 +92,9 @@ func _run() -> void:
 				scene._choose(choice)
 			Game.SCENE_RUN_END:
 				_log.append("итог: %s, слой %d, побед %d" % ["победа" if Game.run_won else "поражение", Game.run.total_layer(), Game.run.battles_won])
+				if Game.run.daily_date != "":
+					_log.append("счёт дня: %d, засчитан: %s, в истории: %d" % [Game.last_daily_score, Game.last_daily_counted, Game.profile.daily.size()])
+				_log.append("достижения: %s" % ", ".join(Game.profile.achievements.keys()))
 				_finish(true)
 				return
 		await _wait_scene_change(scene)
@@ -104,7 +114,7 @@ func _play_battle(scene: Node) -> void:
 	while scene._end_panel == null and _elapsed() < TIMEOUT_SEC:
 		await get_tree().process_frame
 	_log.append("  бой %s: %s за %d р., стёрто %d" % [state.units[-1].def_id if state.rift else &"", BattleState.Outcome.keys()[state.outcome], state.round_number, state.erased_cards.size()])
-	Game.finish_battle(state.outcome, state.spell_charges(), state.erased_cards)
+	Game.finish_battle(state.outcome, state.spell_charges(), state.erased_cards, state)
 	await _wait_scene_change(scene)
 
 
@@ -164,4 +174,5 @@ func _finish(ok: bool) -> void:
 	SaveService.delete_save()
 	SafeFile.remove(Game.profile_path)
 	SafeFile.remove(SaveService.current_path)
+	SafeFile.remove(SaveService.daily_path)
 	get_tree().quit(0 if ok else 1)

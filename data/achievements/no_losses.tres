@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AchievementDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/achievement_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"no_losses"
+order = 5
+name_key = "ACH_NO_LOSSES"
+desc_key = "ACH_NO_LOSSES_DESC"
+icon = &"defend"
+color = Color(0.6, 0.85, 1.0, 1)
+condition = &"no_losses"
+unlock_kind = &"card"
+unlock_id = &"ash_keepers"

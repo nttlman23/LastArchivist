@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AchievementDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/achievement_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"drowned_victory"
+order = 2
+name_key = "ACH_DROWNED_VICTORY"
+desc_key = "ACH_DROWNED_VICTORY_DESC"
+icon = &"water"
+color = Color(0.45, 0.75, 1.0, 1)
+condition = &"drowned_victory"
+points = 5

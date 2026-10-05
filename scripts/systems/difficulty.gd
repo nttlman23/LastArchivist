@@ -62,7 +62,7 @@ static func has_commander(difficulty: StringName, encounter: EncounterDef, layer
 static func commander_for(db: DefsDB, run: RunState, encounter: EncounterDef) -> StringName:
 	var node := run.pending()
 	var layer := node.layer if node else 0
-	var all_battles := Trials.has(run, Trials.COMMANDERS)
+	var all_battles := Trials.has(run, Trials.COMMANDERS) or DailyRun.has(run, DailyRun.EARLY_COMMANDER)
 	if not (all_battles or has_commander(run.difficulty, encounter, layer)) or db.commanders.is_empty():
 		return &""
 	var ids := db.commander_ids()

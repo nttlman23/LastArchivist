@@ -1,5 +1,5 @@
 extends Control
-## Главное меню: экспедиция, архив открытий, настройки (громкость переехала в настройки).
+## Главное меню: экспедиция, ежедневный забег, Зал Архива, летопись, достижения, настройки.
 
 
 func _ready() -> void:
@@ -28,8 +28,16 @@ func _ready() -> void:
 		# Файл есть, но ни он, ни резервная копия не читаются — подсказка вместо молчания.
 		Tip.attach(cont, tr("MENU_CONTINUE"), tr("MENU_SAVE_BROKEN"))
 	box.add_child(cont)
+	var daily := UiKit.button(tr("MENU_DAILY"), Game.goto.bind(Game.SCENE_DAILY), 360)
+	if DailyRun.entry_for(Game.profile, DailyRun.today()).is_empty():
+		# Отметка: сегодняшний забег ещё не сыгран (SPEC_SPRINT9 7).
+		daily.text = tr("MENU_DAILY_NEW")
+		daily.add_theme_color_override("font_color", UiKit.ACCENT)
+	box.add_child(daily)
 	box.add_child(UiKit.button(tr("MENU_META"), Game.goto.bind(Game.SCENE_META), 360))
 	box.add_child(UiKit.button(tr("MENU_CHRONICLE"), Game.goto.bind(Game.SCENE_CHRONICLE), 360))
+	box.add_child(UiKit.button(tr("MENU_ACHIEVEMENTS") % [Game.profile.achievements.size(), Game.defs.achievements.size()],
+			Game.goto.bind(Game.SCENE_ACHIEVEMENTS), 360))
 	box.add_child(UiKit.button(tr("MENU_SETTINGS"), Game.goto.bind(Game.SCENE_SETTINGS), 360))
 	box.add_child(UiKit.button(tr("MENU_QUIT"), Game.quit_game, 360))
 

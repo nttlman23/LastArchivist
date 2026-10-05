@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AchievementDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/achievement_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"first_chapter"
+order = 1
+name_key = "ACH_FIRST_CHAPTER"
+desc_key = "ACH_FIRST_CHAPTER_DESC"
+icon = &"kill"
+color = Color(0.75, 0.55, 1.0, 1)
+condition = &"first_chapter"
+points = 3

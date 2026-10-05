@@ -62,4 +62,5 @@ func _show_rewrite() -> void:
 
 func _rewrite(card_index: int, form: CodexOps.Form) -> void:
 	CodexOps.apply(db, run, card_index, form)
+	Game.achievement_event(Achievements.Event.REWORK)
 	Game.complete_node()

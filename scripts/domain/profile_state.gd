@@ -4,7 +4,7 @@ extends RefCounted
 ## Хранится отдельно от сохранения забега.
 
 const DEFAULT_PATH := "user://profile.cfg"
-const VERSION := 2
+const VERSION := 3
 ## Читаются и более старые версии (поля, которых в них нет, пусты).
 const MIN_VERSION := 1
 
@@ -22,8 +22,19 @@ var school_stats: Dictionary[StringName, Dictionary] = {}
 var upgrades: Array[StringName] = []
 ## Наибольшая открытая ступень Испытаний по школам (SPEC_SPRINT8 3).
 var trials: Dictionary[StringName, int] = {}
+## Полученные достижения: id -> дата (SPEC_SPRINT9 6).
+var achievements: Dictionary[StringName, String] = {}
+## Ежедневный забег (SPEC_SPRINT9 7): засчитанные попытки (новые первыми, не больше DAILY_SIZE),
+## дата последней засчитанной, лучший счёт и сколько попыток засчитано за всё время.
+var daily: Array[Dictionary] = []
+var daily_last := ""
+var daily_best := 0
+var daily_count := 0
+## Профиль прочитан из версии до 3: достижения по накопленной статистике выдаёт Achievements.grant_retro.
+var needs_retro := false
 
 const CHRONICLE_SIZE := 20
+const DAILY_SIZE := 30
 
 ## Исходы забега в летописи.
 const OUTCOME_WON := "won"
@@ -69,6 +80,20 @@ static func is_better_codex(entry: Dictionary, best: Dictionary) -> bool:
 	return int(entry.get("lost", 0)) <= int(best.get("lost", 0))
 
 
+## Засчитанная попытка ежедневного забега. entry: date, school, modifiers, layer, score, outcome.
+func record_daily(entry: Dictionary) -> void:
+	daily.push_front(entry)
+	while daily.size() > DAILY_SIZE:
+		daily.pop_back()
+	daily_last = String(entry.get("date", ""))
+	daily_best = maxi(daily_best, int(entry.get("score", 0)))
+	daily_count += 1
+
+
+func has_achievement(id: StringName) -> bool:
+	return achievements.has(id)
+
+
 func is_unlocked(id: StringName) -> bool:
 	return unlocked.has(id)
 
@@ -102,6 +127,14 @@ func save(path: String = DEFAULT_PATH) -> void:
 	for id in trials:
 		t[String(id)] = trials[id]
 	cfg.set_value("hall", "trials", t)
+	var ach := {}
+	for id in achievements:
+		ach[String(id)] = achievements[id]
+	cfg.set_value("achievements", "earned", ach)
+	cfg.set_value("daily", "history", daily)
+	cfg.set_value("daily", "last", daily_last)
+	cfg.set_value("daily", "best", daily_best)
+	cfg.set_value("daily", "count", daily_count)
 	SafeFile.save_config(cfg, path)
 
 
@@ -134,4 +167,15 @@ static func load_or_new(path: String = DEFAULT_PATH) -> ProfileState:
 	var t: Dictionary = cfg.get_value("hall", "trials", {})
 	for id in t:
 		p.trials[StringName(id)] = int(t[id])
+	# Достижения и ежедневный забег появились в версии 3.
+	var ach: Dictionary = cfg.get_value("achievements", "earned", {})
+	for id in ach:
+		p.achievements[StringName(id)] = String(ach[id])
+	for e in cfg.get_value("daily", "history", []):
+		if e is Dictionary:
+			p.daily.append(e)
+	p.daily_last = String(cfg.get_value("daily", "last", ""))
+	p.daily_best = int(cfg.get_value("daily", "best", 0))
+	p.daily_count = int(cfg.get_value("daily", "count", 0))
+	p.needs_retro = version < 3
 	return p

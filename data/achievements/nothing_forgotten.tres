@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AchievementDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/achievement_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"nothing_forgotten"
+order = 11
+name_key = "ACH_NOTHING_FORGOTTEN"
+desc_key = "ACH_NOTHING_FORGOTTEN_DESC"
+icon = &"heal"
+color = Color(0.55, 0.9, 0.6, 1)
+condition = &"nothing_forgotten"
+threshold = 1
+points = 6

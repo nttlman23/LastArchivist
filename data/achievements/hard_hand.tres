@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AchievementDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/achievement_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"hard_hand"
+order = 3
+name_key = "ACH_HARD_HAND"
+desc_key = "ACH_HARD_HAND_DESC"
+icon = &"threat"
+color = Color(1.0, 0.45, 0.4, 1)
+condition = &"hard_hand"
+points = 5

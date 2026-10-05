@@ -120,6 +120,7 @@ func _row_button(text: String, cb: Callable) -> Button:
 
 func _buy(index: int) -> void:
 	if ShopOps.buy(db, run, visit, index):
+		Game.achievement_event(Achievements.Event.PURCHASE)
 		_rebuild()
 
 
@@ -137,4 +138,5 @@ func _recharge(slot: int) -> void:
 
 func _rework(card_index: int, form: CodexOps.Form) -> void:
 	if ShopOps.rework(db, run, visit, card_index, form):
+		Game.achievement_event(Achievements.Event.REWORK)
 		_rebuild()

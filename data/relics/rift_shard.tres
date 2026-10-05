@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"rift_shard"
+name_key = "RELIC_RIFT_SHARD"
+desc_key = "RELIC_RIFT_SHARD_DESC"
+icon = &"speed"
+color = Color(0.75, 0.55, 1.0, 1)

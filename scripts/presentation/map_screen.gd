@@ -66,6 +66,15 @@ func _build_hud() -> void:
 		var trial := UiKit.trial_chip(run.trial, 20)
 		trial.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		top.add_child(trial)
+	if run.daily_date != "":
+		var daily := UiKit.chip(UnitGlyphs.ICON_WAIT, tr("DAILY_SHORT"), UiKit.ACCENT, tr("DAILY_TITLE"),
+				tr("DAILY_MAP_TIP") % run.daily_date + ("" if run.daily_ranked else "\n\n" + tr("DAILY_REPEAT")), 20)
+		daily.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		top.add_child(daily)
+		for id in run.modifiers:
+			var m := UiKit.modifier_chip(id, 20, false)
+			m.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			top.add_child(m)
 	_layer_label = UiKit.label("", 22, UiKit.MUTED)
 	_layer_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	top.add_child(_layer_label)
