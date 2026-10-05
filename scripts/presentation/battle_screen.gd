@@ -63,7 +63,13 @@ func _ready() -> void:
 	# Фон боя — цвет очистки кадра (Game), отдельный прямоугольник на весь экран не нужен.
 	if Settings.effects_full:
 		add_child(UiKit.ambient_ash(self))
+	# Рисованный пол первого акта (SPEC_SPRINT9 4); во втором акте — прежние плиты.
+	var floor_tex := ArtDB.background(&"battle_act1") if state.biome != &"flooded" else null
+	if floor_tex:
+		add_child(UiKit.art_background(floor_tex, 0.6))
+		move_child(get_child(get_child_count() - 1), 0)
 	view = BattleView.new()
+	view.art_floor = floor_tex != null
 	add_child(view)
 	view.setup(state, db)
 	view.event_label = _event_label
@@ -103,6 +109,45 @@ func _show_objective_banner() -> void:
 	panel.position = Vector2((size.x - 420.0 - panel.size.x) * 0.5, BOARD_TOP + 220.0)
 	var tw := create_tween()
 	tw.tween_interval(2.2)
+	tw.tween_property(panel, "modulate:a", 0.0, 0.6)
+	tw.tween_callback(panel.queue_free)
+
+
+## Полоса ОЗ босса второго акта с отметкой половины — порога второй фазы (SPEC_SPRINT7 6).
+func _boss_bar(hp: int, full: int) -> Control:
+	var bar := Control.new()
+	bar.custom_minimum_size = Vector2(320, 14)
+	bar.mouse_filter = Control.MOUSE_FILTER_PASS
+	var share := clampf(float(hp) / float(maxi(1, full)), 0.0, 1.0)
+	var mark := state.boss_phase_share
+	var phase2 := state.boss_phase >= 2
+	bar.draw.connect(func() -> void:
+		var r := Rect2(Vector2.ZERO, bar.size)
+		bar.draw_rect(r, Color(0, 0, 0, 0.45))
+		bar.draw_rect(Rect2(r.position, Vector2(r.size.x * share, r.size.y)), BattleView.RIFT_COLOR.darkened(0.25 if phase2 else 0.0))
+		var x := r.size.x * mark
+		bar.draw_line(Vector2(x, -3), Vector2(x, r.size.y + 3), UiKit.ACCENT if not phase2 else UiKit.MUTED, 2.0)
+		bar.draw_rect(r, Color(1, 1, 1, 0.35), false, 1.0))
+	Tip.attach(bar, tr("BOSS_BAR"), tr("BOSS_PHASE_TIP"))
+	return bar
+
+
+## Плашка второй фазы босса: что изменилось на поле.
+func _show_phase_banner(uid: int) -> void:
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", UiKit.panel_style(UiKit.PANEL_COLOR, BattleView.RIFT_COLOR, 2, true))
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 8)
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	panel.add_child(col)
+	col.add_child(UiKit.label(tr("BOSS_PHASE_BANNER") % _name(uid), 28, BattleView.RIFT_COLOR))
+	col.add_child(UiKit.label(tr("BOSS_PHASE_BANNER_TEXT"), 18, UiKit.MUTED))
+	add_child(panel)
+	panel.reset_size()
+	panel.position = Vector2((size.x - 420.0 - panel.size.x) * 0.5, BOARD_TOP + 220.0)
+	var tw := create_tween()
+	tw.tween_interval(2.6)
 	tw.tween_property(panel, "modulate:a", 0.0, 0.6)
 	tw.tween_callback(panel.queue_free)
 
@@ -282,6 +327,7 @@ func _refresh_battle_info() -> void:
 		var full := boss.start_count * boss.hp
 		_objective_box.add_child(UiKit.chip(UnitGlyphs.ICON_HP, "%d/%d · %s" % [boss_hp, full, tr("BOSS_PHASE") % state.boss_phase],
 				BattleView.RIFT_COLOR, UiKit.unit_name(db, boss.def_id), tr("BOSS_PHASE_TIP"), 17))
+		_objective_box.add_child(_boss_bar(boss_hp, full))
 	if state.commander_id == &"":
 		return
 	_commander_box.add_child(UiKit.commander_chip(db, state.commander_id, 17))
@@ -869,6 +915,7 @@ func _log_events(events: Array[BattleEvent]) -> void:
 			BattleEvent.PHASE_CHANGED:
 				line = "[color=#%s]%s[/color]" % [BattleView.RIFT_COLOR.to_html(false), tr("LOG_BOSS_PHASE") % _name(e.data["uid"])]
 				Hints.show_hint(&"flooded")
+				_show_phase_banner(int(e.data["uid"]))
 			BattleEvent.SUMMONED:
 				line = tr("LOG_SUMMONED") % _name(e.data["uid"])
 			BattleEvent.COMMANDER_INTENT:

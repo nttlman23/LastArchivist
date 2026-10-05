@@ -1,0 +1,410 @@
+{
+	"items": {
+		"bg/battle_act1": {
+			"file": "res://art/backgrounds/battle_act1.png",
+			"id": "battle_act1",
+			"kind": "bg",
+			"md5": "d243aeed866fd4ec88fe2f12c976113b",
+			"size": [
+				1920.0,
+				1080.0
+			],
+			"src": "bg_battle_act1.png"
+		},
+		"bg/map_act1": {
+			"file": "res://art/backgrounds/map_act1.png",
+			"id": "map_act1",
+			"kind": "bg",
+			"md5": "b49f115c50394d560e3af09a3e599241",
+			"size": [
+				1920.0,
+				1080.0
+			],
+			"src": "bg_map_act1.png"
+		},
+		"bg/menu": {
+			"file": "res://art/backgrounds/menu.png",
+			"id": "menu",
+			"kind": "bg",
+			"md5": "defcf5989e80dc8af008e823a121fde9",
+			"size": [
+				1920.0,
+				1080.0
+			],
+			"src": "bg_menu.png"
+		},
+		"card/ash_chroniclers": {
+			"file": "res://art/cards/ash_chroniclers.png",
+			"id": "ash_chroniclers",
+			"kind": "card",
+			"md5": "083193000754c7f9621c1a05abf5989e",
+			"size": [
+				512.0,
+				384.0
+			],
+			"src": "card_ash_chroniclers.png"
+		},
+		"card/ghoul_pack": {
+			"file": "res://art/cards/ghoul_pack.png",
+			"id": "ghoul_pack",
+			"kind": "card",
+			"md5": "679107c913490a9db674422d447a0122",
+			"size": [
+				512.0,
+				384.0
+			],
+			"src": "card_ghoul_pack.png"
+		},
+		"card/last_king": {
+			"file": "res://art/cards/last_king.png",
+			"id": "last_king",
+			"kind": "card",
+			"md5": "5b5fe9ee440fbe6d0edf6ba20753cbed",
+			"size": [
+				512.0,
+				384.0
+			],
+			"src": "card_last_king.png"
+		},
+		"card/rust_sentinels": {
+			"file": "res://art/cards/rust_sentinels.png",
+			"id": "rust_sentinels",
+			"kind": "card",
+			"md5": "799d16dbc102c2eaceb693094971e353",
+			"size": [
+				512.0,
+				384.0
+			],
+			"src": "card_rust_sentinels.png"
+		},
+		"card/salt_legion": {
+			"file": "res://art/cards/salt_legion.png",
+			"id": "salt_legion",
+			"kind": "card",
+			"md5": "57f93584dd31860d20da56c610acf1f5",
+			"size": [
+				512.0,
+				384.0
+			],
+			"src": "card_salt_legion.png"
+		},
+		"card/shard_archers": {
+			"file": "res://art/cards/shard_archers.png",
+			"id": "shard_archers",
+			"kind": "card",
+			"md5": "becef53b84b3d770976627af1bad98e8",
+			"size": [
+				512.0,
+				384.0
+			],
+			"src": "card_shard_archers.png"
+		},
+		"card/storm_wyrm": {
+			"file": "res://art/cards/storm_wyrm.png",
+			"id": "storm_wyrm",
+			"kind": "card",
+			"md5": "9711459bb77e436310e21dd27a9d98a1",
+			"size": [
+				512.0,
+				384.0
+			],
+			"src": "card_storm_wyrm.png"
+		},
+		"portrait/archivist": {
+			"file": "res://art/portraits/archivist.png",
+			"id": "archivist",
+			"kind": "portrait",
+			"md5": "14257d2217ecbcc22874e91e45925f5c",
+			"size": [
+				256.0,
+				256.0
+			],
+			"src": "portrait_archivist.png"
+		},
+		"portrait/ash_overseer": {
+			"file": "res://art/portraits/ash_overseer.png",
+			"id": "ash_overseer",
+			"kind": "portrait",
+			"md5": "930f2f12ba9d6b5a6bd3578df8e5e4c7",
+			"size": [
+				256.0,
+				256.0
+			],
+			"src": "portrait_ash_overseer.png"
+		},
+		"portrait/rift_herald": {
+			"file": "res://art/portraits/rift_herald.png",
+			"id": "rift_herald",
+			"kind": "portrait",
+			"md5": "7685cd69ebfc6a87b51ed0c1207a0014",
+			"size": [
+				256.0,
+				256.0
+			],
+			"src": "portrait_rift_herald.png"
+		},
+		"portrait/salt_keeper": {
+			"file": "res://art/portraits/salt_keeper.png",
+			"id": "salt_keeper",
+			"kind": "portrait",
+			"md5": "f2ddcb61f6b3bde0941e5996b8add07e",
+			"size": [
+				256.0,
+				256.0
+			],
+			"src": "portrait_salt_keeper.png"
+		},
+		"ui/button": {
+			"file": "res://art/ui/button.png",
+			"id": "button",
+			"kind": "ui",
+			"md5": "8866e86cb0f0b1712436ce09aca7e47b",
+			"patch": 14,
+			"size": [
+				196,
+				64
+			],
+			"src": "ui_button.png"
+		},
+		"ui/card_frame": {
+			"file": "res://art/ui/card_frame.png",
+			"id": "card_frame",
+			"kind": "ui",
+			"md5": "da670deb2bb4303b496808f2479ded2d",
+			"size": [
+				438,
+				640
+			],
+			"src": "ui_card_frame.png",
+			"window": [
+				0.105,
+				0.103,
+				0.788,
+				0.411
+			]
+		},
+		"ui/panel": {
+			"file": "res://art/ui/panel.png",
+			"id": "panel",
+			"kind": "ui",
+			"md5": "236b0c9b0c935956b3960bfa34aaa952",
+			"patch": 38,
+			"size": [
+				640,
+				419
+			],
+			"src": "ui_panel.png"
+		},
+		"unit/archive_relic": {
+			"anchor": [
+				0.514,
+				0.979
+			],
+			"file": "res://art/units/archive_relic.png",
+			"id": "archive_relic",
+			"kind": "unit",
+			"md5": "f3694e8b2e5327daf0c26cfae0d3f59c",
+			"portrait": [
+				0.152,
+				0.0,
+				0.652,
+				0.55
+			],
+			"size": [
+				324.0,
+				384.0
+			],
+			"src": "unit_archive_relic.png"
+		},
+		"unit/ash_ghoul": {
+			"anchor": [
+				0.414,
+				0.979
+			],
+			"file": "res://art/units/ash_ghoul.png",
+			"id": "ash_ghoul",
+			"kind": "unit",
+			"md5": "39e120f48e921b3d226e2516bff16371",
+			"portrait": [
+				0.179,
+				0.0,
+				0.65,
+				0.55
+			],
+			"size": [
+				325.0,
+				384.0
+			],
+			"src": "unit_ash_ghoul.png"
+		},
+		"unit/ash_priest": {
+			"anchor": [
+				0.464,
+				0.979
+			],
+			"file": "res://art/units/ash_priest.png",
+			"id": "ash_priest",
+			"kind": "unit",
+			"md5": "fe67f6cc632b2c982d7d160ed3e3168b",
+			"portrait": [
+				0.204,
+				0.0,
+				0.607,
+				0.55
+			],
+			"size": [
+				348.0,
+				384.0
+			],
+			"src": "unit_ash_priest.png"
+		},
+		"unit/chronicler": {
+			"anchor": [
+				0.503,
+				0.979
+			],
+			"file": "res://art/units/chronicler.png",
+			"id": "chronicler",
+			"kind": "unit",
+			"md5": "8ac262110a9e1ada7c2404dbe9e49d68",
+			"portrait": [
+				0.083,
+				0.0,
+				0.652,
+				0.55
+			],
+			"size": [
+				324.0,
+				384.0
+			],
+			"src": "unit_chronicler.png"
+		},
+		"unit/rift_ram": {
+			"anchor": [
+				0.48,
+				0.982
+			],
+			"file": "res://art/units/rift_ram.png",
+			"id": "rift_ram",
+			"kind": "unit",
+			"md5": "256d56ecc73d7337ae566559843108ed",
+			"portrait": [
+				0.294,
+				0.0,
+				0.435,
+				0.55
+			],
+			"size": [
+				567.0,
+				448.0
+			],
+			"src": "unit_rift_ram.png"
+		},
+		"unit/rift_warden": {
+			"anchor": [
+				0.493,
+				0.982
+			],
+			"file": "res://art/units/rift_warden.png",
+			"id": "rift_warden",
+			"kind": "unit",
+			"md5": "cc80e5fd210826eb8d6b0222c9e7e641",
+			"portrait": [
+				0.132,
+				0.0,
+				0.576,
+				0.55
+			],
+			"size": [
+				428.0,
+				448.0
+			],
+			"src": "unit_rift_warden.png"
+		},
+		"unit/rust_sentinel": {
+			"anchor": [
+				0.343,
+				0.979
+			],
+			"file": "res://art/units/rust_sentinel.png",
+			"id": "rust_sentinel",
+			"kind": "unit",
+			"md5": "a00a595ccc58522bac56b44bfa67ccdb",
+			"portrait": [
+				0.136,
+				0.0,
+				0.607,
+				0.55
+			],
+			"size": [
+				348.0,
+				384.0
+			],
+			"src": "unit_rust_sentinel.png"
+		},
+		"unit/salt_guard": {
+			"anchor": [
+				0.482,
+				0.979
+			],
+			"file": "res://art/units/salt_guard.png",
+			"id": "salt_guard",
+			"kind": "unit",
+			"md5": "e988fe87422b93688820501e971af703",
+			"portrait": [
+				0.063,
+				0.0,
+				0.88,
+				0.55
+			],
+			"size": [
+				240.0,
+				384.0
+			],
+			"src": "unit_salt_guard.png"
+		},
+		"unit/shard_archer": {
+			"anchor": [
+				0.48,
+				0.979
+			],
+			"file": "res://art/units/shard_archer.png",
+			"id": "shard_archer",
+			"kind": "unit",
+			"md5": "9d784682e2d3149d58cfca6997e7f348",
+			"portrait": [
+				0.23,
+				0.0,
+				0.618,
+				0.55
+			],
+			"size": [
+				342.0,
+				384.0
+			],
+			"src": "unit_shard_archer.png"
+		},
+		"unit/storm_wyrm_echo": {
+			"anchor": [
+				0.543,
+				0.92
+			],
+			"file": "res://art/units/storm_wyrm_echo.png",
+			"id": "storm_wyrm_echo",
+			"kind": "unit",
+			"md5": "41cff04a86fab76eff9e2bc778551dfd",
+			"portrait": [
+				0.137,
+				0.0,
+				0.544,
+				0.55
+			],
+			"size": [
+				453.0,
+				448.0
+			],
+			"src": "unit_storm_wyrm_echo.png"
+		}
+	},
+	"version": 1.0
+}

@@ -179,3 +179,22 @@ func test_battle_hero_panel() -> void:
 	assert_eq(enemy.total_hp(), maxi(0, before - 60))
 	assert_eq(state.active_unit().side, UnitState.Side.PLAYER, "ход отряда продолжается")
 	assert_false(state.can_hero_act())
+
+
+## Рисованный арт (SPEC_SPRINT9): те же экраны и бой собираются с картинками.
+func test_screens_build_with_art() -> void:
+	ArtDB.reset()
+	ArtDB.enabled = true
+	for path: String in SCENES:
+		var scene: Node = load(path).instantiate()
+		add_child_autofree(scene)
+		await wait_physics_frames(2)
+		assert_gt(scene.get_child_count(), 0, path)
+	var battle: Node = load("res://scenes/battle/battle.tscn").instantiate()
+	add_child_autofree(battle)
+	await wait_seconds(1.0)
+	assert_true(battle.view.art_floor, "пол первого акта — рисованный")
+	var u: UnitState = battle.state.alive(UnitState.Side.PLAYER)[0]
+	assert_gt(battle.view.figure_height(u), 0.0, "фигура вместо глифа")
+	ArtDB.enabled = false
+	ArtDB.reset()

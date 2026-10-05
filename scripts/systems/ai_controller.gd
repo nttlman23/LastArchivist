@@ -14,6 +14,8 @@ const ARCHIVE_WEIGHT := 2.0
 ## «Удержать точку»: стоять на знамени и дойти до него.
 const HOLD_STAY_SCORE := 60.0
 const HOLD_MOVE_SCORE := 50.0
+## Удар с клетки течения, которое унесёт стек от цели (SPEC_SPRINT7 4).
+const CURRENT_DRIFT_PENALTY := 5.0
 
 
 static func choose_action(state: BattleState, uid: int) -> BattleAction:
@@ -124,6 +126,8 @@ static func _best_melee(state: BattleState, u: UnitState, enemies: Array[UnitSta
 				continue
 			# Небольшой штраф за длину пути — при равенстве не бегать зря.
 			var s := score - 0.01 * HexGrid.distance(u.hex, origin)
+			if not HexGrid.are_adjacent(drift_hex(state, u, origin), e.hex):
+				s -= CURRENT_DRIFT_PENALTY
 			if s > best_score:
 				best_score = s
 				best = BattleAction.melee(origin, e.uid)
@@ -160,13 +164,43 @@ static func _approach_hex(state: BattleState, u: UnitState, enemies: Array[UnitS
 		var best_hex := u.hex
 		var best_d := _nearest_enemy_distance(u.hex, enemies)
 		for h in reach:
-			var d := _nearest_enemy_distance(h, enemies)
+			var d := _nearest_enemy_distance(drift_hex(state, u, h), enemies)
 			if d < best_d:
 				best_d = d
 				best_hex = h
 		return best_hex
 	var path := res.path_to(goal)
-	return path[mini(u.move_speed(), path.size() - 1)]
+	return _settle(state, u, path, mini(u.move_speed(), path.size() - 1), enemies)
+
+
+## Клетка остановки на пути: не дальше far, с учётом сноса течением в начале раунда —
+## если течение унесёт дальше от врагов, лучше встать раньше (SPEC_SPRINT7 4).
+static func _settle(state: BattleState, u: UnitState, path: Array[Vector2i], far: int, enemies: Array[UnitState]) -> Vector2i:
+	if state.currents.is_empty() or far <= 0:
+		return path[far]
+	var best := far
+	var best_d := _nearest_enemy_distance(drift_hex(state, u, path[far]), enemies)
+	for i in range(far - 1, 0, -1):
+		var d := _nearest_enemy_distance(drift_hex(state, u, path[i]), enemies)
+		if d < best_d:
+			best_d = d
+			best = i
+	return path[best]
+
+
+## Где окажется стек, вставший на hex, после сноса течением в начале следующего раунда.
+static func drift_hex(state: BattleState, u: UnitState, hex: Vector2i) -> Vector2i:
+	if u.is_flying or u.inert or not state.currents.has(hex):
+		return hex
+	if state.player_ignores_currents and u.side == UnitState.Side.PLAYER:
+		return hex
+	var to := HexGrid.step(hex, state.currents[hex])
+	if not state.grid.in_bounds(to) or state.is_obstacle(to):
+		return hex
+	var other := state.unit_at(to)
+	if other and other != u:
+		return hex
+	return to
 
 
 ## Кандидаты цели боя: стоять на знамени или дойти до свободного знамени.

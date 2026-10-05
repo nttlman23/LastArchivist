@@ -107,6 +107,7 @@ func _run_row(e: Dictionary) -> PanelContainer:
 	var enc_id := StringName(e.get("encounter", ""))
 	if enc_id != &"" and db.encounters.has(enc_id) and outcome == ProfileState.OUTCOME_LOST:
 		row.add_child(UiKit.label(tr("CHRONICLE_DEFEATED_BY") % tr(db.encounter(enc_id).name_key), 18, UiKit.ENEMY_COLOR))
+	_add_relic_chips(row, e)
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(spacer)
@@ -125,3 +126,16 @@ func _codex_text(ids: Array) -> String:
 		var name: String = tr(db.memory(StringName(id)).name_key) if db.memories.has(StringName(id)) else String(id)
 		lines.append("%s ×%d" % [name, counts[id]] if counts[id] > 1 else name)
 	return "\n".join(lines) if not lines.is_empty() else tr("CHRONICLE_CODEX_EMPTY")
+
+
+## Дары привала и реликвии забега (SPEC_SPRINT7 11): значки, описание — в подсказке.
+## Старые записи летописи этих полей не имеют.
+func _add_relic_chips(row: HBoxContainer, e: Dictionary) -> void:
+	for g in e.get("gifts", []):
+		var key := "CAMP_" + String(g).to_upper()
+		row.add_child(UiKit.chip(UnitGlyphs.ICON_POINTS, "", Color(0.55, 0.85, 1.0), tr(key), tr(key + "_TIP"), 18))
+	for id in e.get("relics", []):
+		if not db.relics.has(StringName(id)):
+			continue
+		var r := db.relic(StringName(id))
+		row.add_child(UiKit.chip(r.icon, "", r.color, tr(r.name_key), tr(r.desc_key), 18))

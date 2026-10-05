@@ -88,10 +88,12 @@ func relic_ids() -> Array[StringName]:
 	return ids
 
 
-func commander_ids() -> Array[StringName]:
+## Командиры для обычных встреч; include_boss — вместе с командирами боссов (SPEC_SPRINT7 20).
+func commander_ids(include_boss: bool = false) -> Array[StringName]:
 	var ids: Array[StringName] = []
 	for id in commanders:
-		ids.append(id)
+		if include_boss or not commanders[id].boss_only:
+			ids.append(id)
 	ids.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
 	return ids
 

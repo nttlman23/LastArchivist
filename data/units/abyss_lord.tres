@@ -18,3 +18,4 @@ shots = 0
 is_flying = false
 ability_id = &"undertow"
 color = Color(0.15, 0.35, 0.45, 1)
+size_class = &"large"

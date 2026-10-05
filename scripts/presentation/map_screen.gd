@@ -32,9 +32,10 @@ func _ready() -> void:
 	db = Game.defs
 	run = Game.run
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var bg := UiKit.add_background(self)
-	# Второй акт — Затопленные хранилища: фон глубже и зеленее.
-	bg.color = Color(0.03, 0.07, 0.08) if run.act >= 2 else Color(0.06, 0.08, 0.13)
+	# Первый акт — рисованное небо (SPEC_SPRINT9 4); второй — Затопленные хранилища: фон глубже и зеленее.
+	var bg := UiKit.add_background(self, false, &"map_act1" if run.act == 1 else &"")
+	if bg is ColorRect:
+		bg.color = Color(0.03, 0.07, 0.08) if run.act >= 2 else Color(0.06, 0.08, 0.13)
 	view = MapView.new()
 	add_child(view)
 	view.setup(run)

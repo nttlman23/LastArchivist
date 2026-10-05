@@ -3,12 +3,16 @@ extends Control
 
 
 func _ready() -> void:
-	UiKit.add_background(self)
-	var emblem := MenuEmblem.new()
-	emblem.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	emblem.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(emblem)
+	var bg := UiKit.add_background(self, false, &"menu")
+	if bg is ColorRect:
+		var emblem := MenuEmblem.new()
+		emblem.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		emblem.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		add_child(emblem)
 	var box := UiKit.centered_column(self, 18)
+	if not bg is ColorRect:
+		# Рисованный фон: справа Архивариус над книгой, меню — в левой трети.
+		box.get_parent().anchor_right = 0.42
 	var title := UiKit.label(tr("GAME_TITLE"), 64, UiKit.ACCENT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)

@@ -77,6 +77,13 @@ const MAX_STATUS_ICONS := 3
 const HOLD_COLOR := Color(0.55, 0.85, 1.0, 0.28)
 const HOLD_FLAG := Color(0.55, 0.85, 1.0)
 const TARGET_MARK := Color(1.0, 0.35, 0.3)
+## Рисованные фигуры (SPEC_SPRINT9 3): высота на поле, где стоят ноги, тень и подставка стороны.
+const FIGURE_HEIGHT := HEX_SIZE * 2.6
+const FIGURE_HEIGHT_LARGE := HEX_SIZE * 3.1
+const FEET_Y := HEX_SIZE * 0.22
+const FLYER_BOB := 4.0
+const SHADOW_COLOR := Color(0, 0, 0, 0.38)
+const ART_HEX_ALPHA := 0.32
 
 var state: BattleState
 var db: DefsDB
@@ -111,6 +118,8 @@ var affected: Dictionary[int, bool] = {}
 ## Подпись для ABILITY_USED/HERO_ACTED (название способности, приказа, заклинания); задаёт экран.
 var event_label: Callable = func(_e: BattleEvent) -> String: return ""
 var show_active := true
+## Рисованный пол под полем (SPEC_SPRINT9 4): гексы полупрозрачные, плиты не рисуются. Задаёт экран до setup().
+var art_floor := false
 
 # Отображаемое состояние стеков — отстаёт от BattleState на время анимаций.
 var _pos: Dictionary[int, Vector2] = {}
@@ -650,14 +659,18 @@ func _draw_floor(fills: FillBatch) -> void:
 
 func _draw_board(ci: CanvasItem) -> void:
 	var fills := FillBatch.new()
-	_draw_floor(fills)
+	if not art_floor:
+		_draw_floor(fills)
 	var outlines := PackedVector2Array()
 	var light := PackedVector2Array()
 	var dark := PackedVector2Array()
 	for hex in _hex_fill:
 		var pts := _hex_fill[hex]
 		var c := hex_center(hex)
-		fills.add(pts, OBSTACLE_COLOR if state.obstacles.has(hex) else (FLOODED_HEX if state.biome == &"flooded" else HEX_COLOR))
+		var hex_col := OBSTACLE_COLOR if state.obstacles.has(hex) else (FLOODED_HEX if state.biome == &"flooded" else HEX_COLOR)
+		if art_floor and not state.obstacles.has(hex):
+			hex_col.a = ART_HEX_ALPHA
+		fills.add(pts, hex_col)
 		for i in 6:
 			outlines.append(pts[i])
 			outlines.append(pts[(i + 1) % 6])
@@ -944,16 +957,64 @@ var _body_tex: Dictionary = {}
 
 
 func _draw_units(ci: CanvasItem) -> void:
+	# Ближние (ниже на экране) перекрывают дальних — рисованные фигуры выше гекса.
+	var order: Array[UnitState] = []
 	for u in state.units:
-		var a: float = _alpha.get(u.uid, 0.0)
-		if a > 0.0 and _pos.has(u.uid):
-			_draw_unit_node(ci, u, a * (ILLUSION_ALPHA if u.illusion else 1.0))
+		if float(_alpha.get(u.uid, 0.0)) > 0.0 and _pos.has(u.uid):
+			order.append(u)
+	order.sort_custom(func(a: UnitState, b: UnitState) -> bool:
+		return _pos[a.uid].y < _pos[b.uid].y or (_pos[a.uid].y == _pos[b.uid].y and a.uid < b.uid))
+	for u in order:
+		_draw_unit_node(ci, u, float(_alpha[u.uid]) * (ILLUSION_ALPHA if u.illusion else 1.0))
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## Высота рисованной фигуры на поле (0 — фигуры нет, рисуется глиф).
+func figure_height(u: UnitState) -> float:
+	if ArtDB.unit(u.def_id) == null:
+		return 0.0
+	return FIGURE_HEIGHT_LARGE if db.unit(u.def_id).size_class == &"large" else FIGURE_HEIGHT
+
+
+## Рисованная фигура: тень и подставка цвета стороны, затем картинка по точке опоры
+## («дыхание» — по вертикали от ног, летуны покачиваются, вспышка — осветлением, гибель — в чернила).
+func _draw_figure(ci: CanvasItem, u: UnitState, pos: Vector2, alpha: float, tex: Texture2D) -> void:
+	var feet := pos + Vector2(0, FEET_Y)
+	var side_color := UiKit.PLAYER_COLOR if u.side == UnitState.Side.PLAYER else UiKit.ENEMY_COLOR
+	var base_r := HEX_SIZE * (0.62 if db.unit(u.def_id).size_class == &"large" else 0.5)
+	ci.draw_set_transform(feet, 0.0, Vector2(1.0, 0.34))
+	ci.draw_circle(Vector2.ZERO, base_r, Color(SHADOW_COLOR, SHADOW_COLOR.a * alpha))
+	ci.draw_arc(Vector2.ZERO, base_r, 0, TAU, 40, Color(side_color, 0.85 * alpha), 6.0 if show_active and u.uid == state.active_uid else 4.0)
+	var breath := 1.0 + BREATH * 0.75 * sin(_time * TAU / BREATH_PERIOD + u.uid * 1.7)
+	if u.is_flying:
+		feet.y -= FLYER_BOB * (1.0 + sin(_time * 1.8 + u.uid))
+	if show_active and u.uid == state.active_uid:
+		feet.y -= 4.0
+	var h := figure_height(u)
+	var size := tex.get_size() * (h / tex.get_size().y)
+	var anchor := ArtDB.anchor(u.def_id)
+	ci.draw_set_transform(feet, 0.0, Vector2(_facing.get(u.uid, 1.0), breath))
+	var mod := Color(1, 1, 1, alpha)
+	var life: float = _alpha.get(u.uid, 1.0)
+	if life < 1.0 and not u.is_alive():
+		# Гибель: фигура темнеет в чернила, пока тает.
+		mod = Color(UnitGlyphs.INK.lerp(Color.WHITE, life * life), alpha)
+	if _flash.has(u.uid):
+		var f := 1.0 + 1.6 * clampf(_flash[u.uid] / 0.25, 0.0, 1.0)
+		mod = Color(mod.r * f, mod.g * f, mod.b * f, mod.a)
+	ci.draw_texture_rect(tex, Rect2(-anchor * size, size), false, mod)
 
 
 ## Фишка: тело (зеркально, если смотрит влево, с «дыханием»), вспышка, метки, значки.
 func _draw_unit_node(ci: CanvasItem, u: UnitState, alpha: float) -> void:
 	var pos := _pos[u.uid]
+	var art := ArtDB.unit(u.def_id)
+	if art:
+		_draw_figure(ci, u, pos, alpha, art)
+		ci.draw_set_transform(pos, 0.0, Vector2.ONE)
+		_draw_unit_marks(ci, u, alpha)
+		_draw_unit_badges(ci, u, alpha)
+		return
 	var breath := 1.0 + BREATH * sin(_time * TAU / BREATH_PERIOD + u.uid * 1.7)
 	var tex := _body_texture(u)
 	ci.draw_set_transform(pos, 0.0, Vector2(_facing.get(u.uid, 1.0) * breath, breath))
@@ -1068,12 +1129,15 @@ func _draw_unit_badges(ci: CanvasItem, u: UnitState, alpha: float) -> void:
 
 	# Временные состояния — рядом над фишкой, не больше трёх, остальное «+N».
 	var statuses := status_icons(u)
+	# Над головой рисованной фигуры, иначе — над фишкой.
+	var fig_h := figure_height(u)
+	var status_y := FEET_Y - fig_h * 0.92 if fig_h > 0.0 else -UNIT_RADIUS - 2.0
 	var shown := mini(statuses.size(), MAX_STATUS_ICONS)
 	var step := badge_r * 2.1
 	var extra := statuses.size() - shown
 	var total := shown + (1 if extra > 0 else 0)
 	for i in total:
-		var pos := c + Vector2((i - (total - 1) * 0.5) * step, -UNIT_RADIUS - 2)
+		var pos := c + Vector2((i - (total - 1) * 0.5) * step, status_y)
 		if i < shown:
 			UnitGlyphs.draw_icon(ci, statuses[i][0], pos, badge_r, bg, Color(statuses[i][1], alpha))
 		else:

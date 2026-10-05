@@ -20,3 +20,5 @@ extends Resource
 ## Неживой объект цели боя (архив): не ходит, не отвечает, не считается бойцом.
 @export var inert := false
 @export var color := Color.WHITE
+## Размер фигуры на поле (SPEC_SPRINT9 2): normal или large (крупные существа и боссы).
+@export var size_class: StringName = &"normal"

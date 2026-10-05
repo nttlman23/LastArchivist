@@ -327,7 +327,8 @@ static func undertow_path(state: BattleState, u: UnitState, target: UnitState) -
 
 
 ## Клетки «Разлива»: центр и соседи, кроме препятствий.
-## «Зов»: до CALL_STEPS шагов цели к сирене по свободным клеткам (каждый шаг — ближе).
+## «Зов»: до CALL_STEPS шагов цели к сирене по свободным клеткам (каждый шаг — ближе);
+## нелетающая цель останавливается в первой клетке воды.
 static func call_path(state: BattleState, u: UnitState, target: UnitState) -> Array[Vector2i]:
 	var path: Array[Vector2i] = []
 	var dist := HexGrid.distance(u.hex, target.hex)
@@ -344,6 +345,9 @@ static func call_path(state: BattleState, u: UnitState, target: UnitState) -> Ar
 			break
 		path.append(best)
 		cur = best
+		# Вода останавливает перемещение (летунов — нет).
+		if state.water.has(best) and not target.is_flying:
+			break
 	return path
 
 

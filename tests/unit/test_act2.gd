@@ -228,3 +228,62 @@ func test_camp_state_saved() -> void:
 	var loaded := RunState.from_dict(run.to_dict())
 	assert_true(loaded.at_camp)
 	assert_eq(loaded.gifts, [CampOps.GIFT_VIGOR] as Array[StringName])
+
+
+# --- Сверка со спекой (SPEC_SPRINT7 20) -----------------------------------------------------
+
+func test_boss_commander_not_in_random_pool() -> void:
+	assert_false(db.commander_ids().has(&"abyss_lord_cmd"), "командир босса не выпадает обычным встречам")
+	assert_true(db.commander_ids(true).has(&"abyss_lord_cmd"))
+	var run := RunState.create(db, 11, DefsDB.DEFAULT_SCHOOL, null, Difficulty.HARD)
+	for n in run.map.nodes:
+		if n.is_battle() and n.content != &"":
+			run.pending_node = n.id
+			assert_ne(Difficulty.commander_for(db, run, db.encounter(n.content)), &"abyss_lord_cmd")
+
+
+func test_ai_avoids_current_that_breaks_contact() -> void:
+	var s := TestHelpers.empty_battle()
+	var target := TestHelpers.add(s, 0, Vector2i(5, 4), 5)
+	var brute := TestHelpers.add(s, 1, Vector2i(8, 4), 5, {"speed": 4})
+	var near := Vector2i(6, 4)
+	# Течение уносит с ближайшей клетки прочь от цели.
+	s.currents[near] = HexGrid.line_direction(target.hex, near)
+	TestHelpers.activate(s, brute)
+	assert_ne(AiController.drift_hex(s, brute, near), near)
+	var a := AiController.choose_action(s, brute.uid)
+	assert_eq(a.type, BattleAction.Type.MELEE)
+	assert_ne(a.dest, near, "не встаёт на течение, которое унесёт от цели")
+	assert_true(HexGrid.are_adjacent(AiController.drift_hex(s, brute, a.dest), target.hex))
+
+
+func test_drift_ignored_for_flyers_and_compass() -> void:
+	var s := TestHelpers.empty_battle()
+	var flyer := TestHelpers.add(s, 0, Vector2i(3, 3), 5, {"is_flying": true})
+	var walker := TestHelpers.add(s, 0, Vector2i(3, 5), 5)
+	s.currents[Vector2i(4, 4)] = 0
+	assert_eq(AiController.drift_hex(s, flyer, Vector2i(4, 4)), Vector2i(4, 4))
+	assert_ne(AiController.drift_hex(s, walker, Vector2i(4, 4)), Vector2i(4, 4))
+	s.player_ignores_currents = true
+	assert_eq(AiController.drift_hex(s, walker, Vector2i(4, 4)), Vector2i(4, 4), "Компас прилива")
+
+
+func test_siren_call_stops_in_water() -> void:
+	var s := TestHelpers.empty_battle()
+	var siren := TestHelpers.add(s, 1, Vector2i(8, 4), 5, {"ability_id": Abilities.SIREN_CALL, "is_flying": true})
+	var target := TestHelpers.add(s, 0, Vector2i(3, 4), 5)
+	var path := Abilities.call_path(s, siren, target)
+	assert_eq(path.size(), Abilities.CALL_STEPS)
+	s.water[path[0]] = BattleState.WATER_PERMANENT
+	assert_eq(Abilities.call_path(s, siren, target), [path[0]] as Array[Vector2i], "вода останавливает притягивание")
+	target.is_flying = true
+	assert_eq(Abilities.call_path(s, siren, target).size(), Abilities.CALL_STEPS, "летуна вода не держит")
+
+
+func test_chronicle_keeps_relics_and_gifts() -> void:
+	var run := RunState.create(db, 5)
+	run.relics.append(RelicOps.SALT_CROWN)
+	run.gifts.append(CampOps.GIFT_VIGOR)
+	var e := MetaRewards.chronicle_entry(run, ProfileState.OUTCOME_LOST, 0, db)
+	assert_eq(e["relics"], ["salt_crown"])
+	assert_eq(e["gifts"], ["gift_vigor"])

@@ -12,3 +12,4 @@ actions = Array[StringName]([&"cmd_wave", &"cmd_summon", &"cmd_deep_strike"])
 charges = 99
 summon_unit = &"deep_eel"
 summon_count = 5
+boss_only = true

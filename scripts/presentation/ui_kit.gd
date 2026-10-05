@@ -26,7 +26,31 @@ const BAKE_SIZE := Vector2(1920, 1080)
 static var _baked: Dictionary = {}
 
 
-static func add_background(parent: Control, plain: bool = false) -> ColorRect:
+## Яркость рисованных фонов: под картой и интерфейсом фон приглушён, чтобы читался текст.
+const ART_BG_BRIGHTNESS := {&"menu": 0.9, &"map_act1": 0.62}
+
+
+## Рисованный фон на весь экран с затемнением (SPEC_SPRINT9 4).
+static func art_background(tex: Texture2D, brightness: float = 1.0) -> TextureRect:
+	var r := TextureRect.new()
+	r.texture = tex
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	r.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	r.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	r.modulate = Color(brightness, brightness, brightness)
+	return r
+
+
+## Фон экрана: рисованный art_id, если есть, иначе процедурный.
+static func add_background(parent: Control, plain: bool = false, art_id: StringName = &"") -> Control:
+	var art := ArtDB.background(art_id) if not plain else null
+	if art:
+		var r := art_background(art, ART_BG_BRIGHTNESS.get(art_id, 0.85))
+		parent.add_child(r)
+		if Settings.effects_full:
+			r.add_child(ambient_ash(r))
+		return r
 	var bg := ColorRect.new()
 	bg.color = BG_COLOR
 	if plain:
@@ -116,9 +140,15 @@ static func role_color(db: DefsDB, memory_id: StringName) -> Color:
 
 
 ## Круглый медальон карты: объёмный круг, рамка роли, силуэт; без существа — ромб-герб.
+## С какого кегля подпись — заголовок (шрифт заголовков, SPEC_SPRINT9 4).
+const HEADING_SIZE := 26
+
+
 class Medallion:
 	extends Control
 	var def_id: StringName
+	## Карта Кодекса — для рисованной иллюстрации.
+	var memory_id: StringName
 	var body_color := Color.GRAY
 	var frame_color := Color.WHITE
 
@@ -133,7 +163,25 @@ class Medallion:
 			pts.append(c + dir * r)
 			cols.append(body_color.lightened(0.2) if dir.y < 0.0 else body_color.darkened(0.25 * dir.y))
 		draw_polygon(pts, cols)
-		if def_id != &"":
+		var art := ArtDB.card(memory_id)
+		var region := Rect2()
+		if art:
+			# Иллюстрация карты (SPEC_SPRINT9 4): центральный квадрат в круге.
+			var s := art.get_size()
+			region = Rect2((s.x - s.y) * 0.5, 0, s.y, s.y)
+		elif def_id != &"" and ArtDB.unit(def_id):
+			art = ArtDB.unit(def_id)
+			region = ArtDB.portrait_region(def_id)
+		if art:
+			var uvs := PackedVector2Array()
+			var circle := PackedVector2Array()
+			var ts := art.get_size()
+			for i in 40:
+				var dir := Vector2.from_angle(TAU * i / 40.0)
+				circle.append(c + dir * (r - 2))
+				uvs.append((region.position + region.size * (dir * 0.5 + Vector2(0.5, 0.5))) / ts)
+			draw_polygon(circle, PackedColorArray([Color.WHITE]), uvs, art)
+		elif def_id != &"":
 			var tex := IconAtlas.get_glyph(def_id, body_color)
 			if tex:
 				draw_texture_rect(tex, IconAtlas.glyph_rect(c, r * 0.8), false)
@@ -151,6 +199,8 @@ static func label(text: String, size: int = 0, color: Color = Color.WHITE) -> La
 	l.text = text
 	if size > 0:
 		l.add_theme_font_size_override("font_size", size)
+	if size >= HEADING_SIZE and UiTheme.heading_font:
+		l.add_theme_font_override("font", UiTheme.heading_font)
 	if color != Color.WHITE:
 		l.add_theme_color_override("font_color", color)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -279,9 +329,10 @@ static func card_button(db: DefsDB, memory_id: StringName, durability: int = -1,
 	# Медальон с силуэтом существа (у геройской карты — герб Архивариуса).
 	var medal := Medallion.new()
 	medal.def_id = mem.unit_id if mem.is_unit() else &""
+	medal.memory_id = memory_id
 	medal.body_color = db.unit(mem.unit_id).color if mem.is_unit() else HERO_CARD_COLOR
 	medal.frame_color = role_color(db, memory_id)
-	medal.custom_minimum_size = Vector2(76, 76)
+	medal.custom_minimum_size = Vector2(96, 96) if ArtDB.card(memory_id) else Vector2(76, 76)
 	medal.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	medal.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(medal)
@@ -370,7 +421,18 @@ static func hero_summary(db: DefsDB, run: RunState) -> PanelContainer:
 	var col := VBoxContainer.new()
 	panel.add_child(col)
 	var school := db.school(run.school_id)
-	col.add_child(label("%s · %s" % [TranslationServer.translate("PREP_HERO"), TranslationServer.translate(school.name_key)], 22, ACCENT))
+	var head := label("%s · %s" % [TranslationServer.translate("PREP_HERO"), TranslationServer.translate(school.name_key)], 22, ACCENT)
+	var archivist := ArtDB.portrait(&"archivist")
+	if archivist:
+		# Портрет Архивариуса рядом с заголовком (SPEC_SPRINT9 4).
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		row.add_child(portrait_disc(archivist, 56, ACCENT))
+		head.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(head)
+		col.add_child(row)
+	else:
+		col.add_child(head)
 	if not Settings.detailed:
 		col.add_child(_hero_chips(db, run, school))
 		return panel
@@ -504,11 +566,47 @@ static func objective_chip(objective: StringName, rounds: int, progress: String 
 	return chip(OBJECTIVE_ICONS.get(objective, UnitGlyphs.ICON_KILL), text, OBJECTIVE_COLOR, name, body, size)
 
 
-## Командир чипом: имя цветом командира, описание — в подсказке.
+## Командир чипом: имя цветом командира, описание — в подсказке; с рисованным портретом, если он есть.
 static func commander_chip(db: DefsDB, id: StringName, size: int = 18) -> HBoxContainer:
 	var def := db.commander(id)
 	var t := func(key: String) -> String: return TranslationServer.translate(key)
-	return chip(UnitGlyphs.ICON_ORDER, t.call(def.name_key), def.color, t.call("COMMANDER_TITLE") + ": " + t.call(def.name_key), t.call(def.desc_key), size)
+	var c := chip(UnitGlyphs.ICON_ORDER, t.call(def.name_key), def.color, t.call("COMMANDER_TITLE") + ": " + t.call(def.name_key), t.call(def.desc_key), size)
+	var art := ArtDB.portrait(id)
+	if art:
+		var glyph := c.get_child(0)
+		c.remove_child(glyph)
+		glyph.queue_free()
+		c.add_child(portrait_disc(art, size * 2.2, def.color))
+		c.move_child(c.get_child(c.get_child_count() - 1), 0)
+	return c
+
+
+## Круглый рисованный портрет в рамке цвета color (SPEC_SPRINT9 4).
+static func portrait_disc(tex: Texture2D, diameter: float, color: Color = ACCENT) -> Control:
+	var d := PortraitDisc.new()
+	d.texture = tex
+	d.ring = color
+	d.custom_minimum_size = Vector2(diameter, diameter)
+	d.mouse_filter = Control.MOUSE_FILTER_PASS
+	return d
+
+
+class PortraitDisc:
+	extends Control
+	var texture: Texture2D
+	var ring := Color.WHITE
+
+	func _draw() -> void:
+		var c := size * 0.5
+		var r := minf(size.x, size.y) * 0.5 - 1.5
+		var pts := PackedVector2Array()
+		var uvs := PackedVector2Array()
+		for i in 40:
+			var dir := Vector2.from_angle(TAU * i / 40.0)
+			pts.append(c + dir * r)
+			uvs.append(dir * 0.5 + Vector2(0.5, 0.5))
+		draw_polygon(pts, PackedColorArray([Color.WHITE]), uvs, texture)
+		draw_arc(c, r, 0, TAU, 40, ring, 2.5)
 
 
 static func difficulty_chip(difficulty: StringName, size: int = 18) -> HBoxContainer:

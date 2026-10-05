@@ -13,3 +13,5 @@ extends Resource
 ## Кого призывает действие «Призыв» (боссы).
 @export var summon_unit: StringName
 @export var summon_count: int = 0
+## Командир босса (EncounterDef.boss_commander): не выпадает обычным встречам.
+@export var boss_only := false

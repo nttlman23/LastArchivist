@@ -27,6 +27,10 @@ const TYPE_ICONS := {
 	MapState.NodeType.RELIQUARY: UnitGlyphs.ICON_CHALICE,
 }
 const ROCK := Color(0.24, 0.22, 0.27)
+## Второй акт (SPEC_SPRINT7 4): затопленные залы — сине-зелёная скала, вода у подножия, туман.
+const ROCK_FLOODED := Color(0.13, 0.22, 0.24)
+const WATERLINE := Color(0.35, 0.7, 0.72)
+const FOG := Color(0.45, 0.62, 0.62)
 const BRIDGE := Color(0.55, 0.58, 0.66, 0.55)
 const BRIDGE_DONE := Color(0.95, 0.8, 0.4, 0.9)
 const FLIGHT := Color(0.75, 0.55, 1.0)
@@ -83,8 +87,13 @@ func _behind(painter: Callable) -> Node2D:
 
 
 func _draw_rift_glow(ci: Node2D) -> void:
+	var glow := Color(0.25, 0.75, 0.8, 0.05) if _flooded() else Color(0.6, 0.3, 0.9, 0.05)
 	for i in 8:
-		ci.draw_circle(Vector2.ZERO, RIFT_R * (2.6 - i * 0.22), Color(0.6, 0.3, 0.9, 0.05))
+		ci.draw_circle(Vector2.ZERO, RIFT_R * (2.6 - i * 0.22), glow)
+
+
+func _flooded() -> bool:
+	return run != null and run.act >= 2
 
 
 func node_pos(id: int) -> Vector2:
@@ -205,7 +214,13 @@ func _draw_island(n: MapState.MapNode, dim: bool) -> void:
 	var alpha := 0.4 if dim else 1.0
 	var col: Color = TYPE_COLORS[n.type]
 	# Скала снизу и плоская вершина острова.
-	draw_colored_polygon(PackedVector2Array([c + Vector2(-r, 2), c + Vector2(r, 2), c + Vector2(r * 0.35, r * 1.05), c + Vector2(0, r * 1.35), c + Vector2(-r * 0.4, r * 0.95)]), Color(ROCK, alpha))
+	var rock := ROCK_FLOODED if _flooded() else ROCK
+	draw_colored_polygon(PackedVector2Array([c + Vector2(-r, 2), c + Vector2(r, 2), c + Vector2(r * 0.35, r * 1.05), c + Vector2(0, r * 1.35), c + Vector2(-r * 0.4, r * 0.95)]), Color(rock, alpha))
+	if _flooded():
+		# Затопленный зал: вода стоит у середины скалы, по ней — круги.
+		var wl := c + Vector2(0, r * 0.7)
+		draw_polyline(_ellipse_arc(wl, r * 1.15, 0.0, PI), Color(WATERLINE, 0.55 * alpha), 2.0)
+		draw_polyline(_ellipse_arc(wl + Vector2(0, 5), r * 1.45, PI * 0.15, PI * 0.85), Color(WATERLINE, 0.3 * alpha), 1.5)
 	var top := PackedVector2Array()
 	for i in 20:
 		var a := TAU * i / 20.0
@@ -241,10 +256,13 @@ static func _ellipse_arc(c: Vector2, r: float, from: float, to: float) -> Packed
 	return pts
 
 
-## Облака слоя layer (дальний — больше и бледнее); рисуются один раз.
+## Облака слоя layer (дальний — больше и бледнее); рисуются один раз. Во втором акте — туман.
 func _draw_clouds(ci: Node2D, layer: int, alpha: float) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = run.run_seed + layer * 977
+	if _flooded():
+		_draw_fog(ci, rng, layer, alpha)
+		return
 	for i in (9 if layer == 0 else 7):
 		var c := Vector2(rng.randf_range(-720, 720), rng.randf_range(-LAYER_SPACING * 7.8, LAYER_SPACING * 1.0))
 		var w := rng.randf_range(120, 260) if layer == 0 else rng.randf_range(80, 170)
@@ -257,6 +275,20 @@ func _draw_clouds(ci: Node2D, layer: int, alpha: float) -> void:
 				var a := TAU * k / 18.0
 				pts.append(bc + Vector2(cos(a) * bw * 0.6, sin(a) * bw * 0.2))
 			ci.draw_colored_polygon(pts, Color(0.62, 0.66, 0.8, alpha))
+
+
+## Туман второго акта: длинные пологие полосы над водой.
+func _draw_fog(ci: Node2D, rng: RandomNumberGenerator, layer: int, alpha: float) -> void:
+	for i in (14 if layer == 0 else 10):
+		var c := Vector2(rng.randf_range(-760, 760), rng.randf_range(-LAYER_SPACING * 7.8, LAYER_SPACING * 1.0))
+		var w := rng.randf_range(260, 520) if layer == 0 else rng.randf_range(180, 360)
+		for band in 2:
+			var pts := PackedVector2Array()
+			var bc := c + Vector2(band * w * 0.3, band * 10.0)
+			for k in 24:
+				var a := TAU * k / 24.0
+				pts.append(bc + Vector2(cos(a) * w * 0.6, sin(a) * w * 0.07))
+			ci.draw_colored_polygon(pts, Color(FOG, alpha * (0.9 if band == 0 else 0.6)))
 
 
 func _visited_edges() -> Array[Vector2i]:

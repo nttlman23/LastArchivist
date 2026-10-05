@@ -43,8 +43,14 @@ static func draw_portrait(ci: CanvasItem, rect: Rect2, p_def: StringName, color:
 	ci.draw_rect(rect, body)
 	var r := minf(rect.size.x, rect.size.y) * 0.42
 	var center := rect.position + rect.size * Vector2(0.5, 0.44 if p_count >= 0 else 0.5)
-	var tex := IconAtlas.get_glyph(p_def, Color(body, 1.0))
-	if tex:
+	var art := ArtDB.unit(p_def)
+	var tex := IconAtlas.get_glyph(p_def, Color(body, 1.0)) if art == null else null
+	if art:
+		# Рисованный портрет: верхняя часть фигуры (кадр из манифеста), на тёмном фоне цвета существа.
+		ci.draw_rect(rect, Color(color.darkened(0.6), alpha))
+		var inner := rect.grow(-2.0)
+		ci.draw_texture_rect_region(art, inner, ArtDB.portrait_region(p_def), Color(1.15, 1.15, 1.15, alpha) if lit else Color(1, 1, 1, alpha))
+	elif tex:
 		ci.draw_texture_rect(tex, IconAtlas.glyph_rect(center, r), false, Color(1, 1, 1, alpha))
 	else:
 		UnitGlyphs.draw_unit(ci, p_def, center, r, body, Color(UnitGlyphs.INK, alpha))

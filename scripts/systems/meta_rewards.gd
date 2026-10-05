@@ -134,4 +134,7 @@ static func chronicle_entry(run: RunState, outcome: String, points: int, db: Def
 		"codex": codex,
 		"points": points,
 		"lost": run.cards_lost,
+		# Реликвии и дары привала (SPEC_SPRINT7 11) — значками в строке летописи.
+		"relics": Array(run.relics).map(func(x: StringName) -> String: return String(x)),
+		"gifts": Array(run.gifts).map(func(x: StringName) -> String: return String(x)),
 	}

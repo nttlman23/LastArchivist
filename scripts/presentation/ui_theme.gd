@@ -34,7 +34,79 @@ static func build(font_size: int) -> Theme:
 	panel.set_content_margin_all(12)
 	t.set_stylebox("panel", "PanelContainer", panel)
 	t.set_stylebox("panel", "TooltipPanel", ornate(UiKit.PANEL_COLOR, border, 1))
+	_apply_art(t)
+	_apply_fonts(t)
 	return t
+
+
+## Шрифты (SPEC_SPRINT9 4): текст — PT Sans, заголовки — Cormorant Garamond (UiKit.label крупным кеглем).
+const TEXT_FONT := "res://fonts/PT_Sans-Web-Regular.ttf"
+const HEADING_FONT := "res://fonts/CormorantGaramond.ttf"
+static var heading_font: Font
+
+
+static func _apply_fonts(t: Theme) -> void:
+	var text := _font(TEXT_FONT)
+	if text:
+		t.default_font = text
+	var heading := _font(HEADING_FONT)
+	if heading:
+		var v := FontVariation.new()
+		v.base_font = heading
+		v.variation_opentype = {TextServerManager.get_primary_interface().name_to_tag("wght"): 650}
+		heading_font = v
+
+
+## Шрифт: импортированный, иначе прямо из файла (проект не открывали в редакторе).
+static func _font(path: String) -> Font:
+	if ResourceLoader.exists(path):
+		return load(path)
+	if FileAccess.file_exists(path):
+		var f := FontFile.new()
+		if f.load_dynamic_font(path) == OK:
+			return f
+	return null
+
+
+## Рисованные кнопки и панели (SPEC_SPRINT9 4): кожа переплёта — кнопки, пергамент — панели и подсказки.
+## Пергамент затемнён: интерфейс тёмный, светлый текст должен читаться.
+const PANEL_TINT := Color(0.34, 0.31, 0.28)
+
+
+static func _apply_art(t: Theme) -> void:
+	var btn := ArtDB.ui(&"button")
+	if btn:
+		var states := {"normal": Color(1, 1, 1), "hover": Color(1.25, 1.18, 1.05), "pressed": Color(0.8, 0.78, 0.74),
+				"hover_pressed": Color(0.8, 0.78, 0.74), "disabled": Color(0.55, 0.55, 0.55, 0.8)}
+		for state: String in states:
+			var sb := art_box(btn, ArtDB.ui_patch(&"button"), states[state])
+			sb.content_margin_left = 26
+			sb.content_margin_right = 26
+			sb.content_margin_top = 8
+			sb.content_margin_bottom = 8
+			if state.contains("pressed"):
+				sb.content_margin_top += 2
+			t.set_stylebox(state, "Button", sb)
+	if btn:
+		# Над рисованными фонами текст без подложки — с тёмной обводкой.
+		t.set_color("font_outline_color", "Label", Color(0, 0, 0, 0.8))
+		t.set_constant("outline_size", "Label", 5)
+	var panel := ArtDB.ui(&"panel")
+	if panel:
+		var sb := art_box(panel, ArtDB.ui_patch(&"panel"), PANEL_TINT)
+		sb.set_content_margin_all(16)
+		t.set_stylebox("panel", "PanelContainer", sb)
+		var tip := art_box(panel, ArtDB.ui_patch(&"panel"), PANEL_TINT)
+		tip.set_content_margin_all(14)
+		t.set_stylebox("panel", "TooltipPanel", tip)
+
+
+static func art_box(tex: Texture2D, patch: int, tint: Color) -> StyleBoxTexture:
+	var sb := StyleBoxTexture.new()
+	sb.texture = tex
+	sb.set_texture_margin_all(maxi(patch, 8))
+	sb.modulate_color = tint
+	return sb
 
 
 static func _button_box(bg: Color, border: Color) -> StyleBoxFlat:

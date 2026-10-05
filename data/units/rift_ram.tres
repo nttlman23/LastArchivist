@@ -18,3 +18,4 @@ shots = 0
 is_flying = false
 ability_id = &"ram"
 color = Color(0.5, 0.34, 0.58, 1)
+size_class = &"large"
