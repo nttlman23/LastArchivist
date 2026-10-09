@@ -70,10 +70,45 @@ func _run() -> void:
 	await _shot("battle_boss", 2.0)
 	Game.goto(Game.SCENE_REWARD)
 	await _shot("reward")
+	# Экраны этапа B (SPEC_SPRINT9 18): школы, Зал Архива, лавка, привал, второй акт, реликварий, итог.
+	Game.goto(Game.SCENE_SCHOOL)
+	await _shot("school")
+	Game.goto(Game.SCENE_META)
+	await _shot("hall")
+	_enter(MapState.NodeType.SHOP)
+	Game.goto(Game.SCENE_SHOP)
+	await _shot("shop")
+	Game.run.at_camp = true
+	Game.goto(Game.SCENE_CAMP)
+	await _shot("camp")
+	Game.run.at_camp = false
+	MapActions.begin_act(Game.defs, Game.run, 2, Game.profile)
+	Game.goto(Game.SCENE_MAP)
+	await _shot("map_act2")
+	_enter(MapState.NodeType.RELIQUARY)
+	Game.goto(Game.SCENE_RELIQUARY)
+	await _shot("reliquary")
+	_enter(MapState.NodeType.BATTLE)
+	Game.selected = [0, 1, 2, 3]
+	Game.goto(Game.SCENE_BATTLE)
+	await _shot("battle_act2", 2.0)
+	Game.run_won = true
+	Game.goto(Game.SCENE_RUN_END)
+	await _shot("run_end")
 	SafeFile.remove(Game.profile_path)
 	SafeFile.remove(SaveService.current_path)
 	print("SHOTS: %s" % ProjectSettings.globalize_path(out_dir))
 	get_tree().quit()
+
+
+## Встать на первый остров типа type (без пути по мостам — только чтобы открыть его экран).
+func _enter(type: MapState.NodeType) -> void:
+	Game.run.pending_battle = &""
+	for n in Game.run.map.nodes:
+		if n.type == type:
+			Game.run.map.current = n.id
+			Game.run.pending_node = n.id
+			return
 
 
 func _shot(name: String, wait: float = 1.2) -> void:

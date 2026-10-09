@@ -1,5 +1,5 @@
 extends GutTest
-## Спринт 9, этап A: конвейер арта (ArtImport) и доступ к нему в игре (ArtDB).
+## Спринт 9: конвейер арта (ArtImport) и доступ к нему в игре (ArtDB); этап B — новые виды и полнота набора.
 ## Исходники создаются тестом во временной папке user:// — бинарные фикстуры не нужны.
 
 const RAW := "user://test_art/raw"
@@ -24,12 +24,13 @@ func after_all() -> void:
 
 
 func _clean() -> void:
-	for dir in [RAW, OUT.path_join("units"), OUT.path_join("ui"), OUT.path_join("cards"), OUT]:
+	var subdirs := ["units", "ui", "cards", "schools", "islands", "relics", "achievements", "icons"].map(func(s: String) -> String: return OUT.path_join(s))
+	for dir in [RAW] + subdirs + [OUT]:
 		var d := DirAccess.open(dir)
 		if d:
 			for f in d.get_files():
 				d.remove(f)
-	for dir in [RAW, OUT.path_join("units"), OUT.path_join("ui"), OUT.path_join("cards"), OUT, "user://test_art"]:
+	for dir in [RAW] + subdirs + [OUT, "user://test_art"]:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(dir))
 
 
@@ -156,6 +157,17 @@ func test_project_manifest_ids_exist() -> void:
 				assert_true(db.memories.has(id), "нет карты %s" % id)
 			"portrait":
 				assert_true(id == &"archivist" or db.commanders.has(id), "нет командира %s" % id)
+			"school":
+				assert_true(db.schools.has(id), "нет школы %s" % id)
+			"relic":
+				assert_true(db.relics.has(id), "нет реликвии %s" % id)
+			"ach":
+				assert_true(db.achievements.has(id), "нет достижения %s" % id)
+			"icon":
+				assert_true(UnitGlyphs.ALL_ICONS.has(id), "нет значка %s" % id)
+			"island":
+				var parts := String(id).rsplit("_act", true, 1)
+				assert_true(MapView.ISLAND_ART.values().has(StringName(parts[0])) and parts[1] in ["1", "2"], "нет острова %s" % id)
 	assert_eq(ArtImport.missing_slice(m), [] as Array[String], "вертикальный срез собран целиком")
 
 
@@ -167,5 +179,78 @@ func test_project_art_loads() -> void:
 	assert_gt(ArtDB.portrait_region(&"salt_guard").size.x, 0.0)
 	assert_gt(ArtDB.ui_patch(&"button"), 0)
 	assert_gt(ArtDB.ui_window(&"card_frame").size.x, 0.0)
+	ArtDB.enabled = false
+	ArtDB.reset()
+
+
+# --- Этап B (SPEC_SPRINT9 18) -----------------------------------------------------------
+
+func test_parse_stage_b_names() -> void:
+	assert_eq(ArtImport.parse_name("school_tide_order.png")["kind"], "school")
+	assert_eq(ArtImport.parse_name("island_battle_act1.png"), {"kind": "island", "id": "battle_act1", "version": 0})
+	assert_eq(ArtImport.parse_name("relic_rift_shard_v2.png"), {"kind": "relic", "id": "rift_shard", "version": 2})
+	assert_eq(ArtImport.parse_name("ach_first_chapter.png")["kind"], "ach")
+	assert_eq(ArtImport.parse_name("icon_melee.png")["id"], "melee")
+	assert_eq(ArtImport.parse_name("portrait_abyss_lord_cmd-draft.png"), {}, "черновик пропускается")
+	assert_eq(ArtImport.parse_name("relic_warden_shell_draft.png"), {})
+
+
+func test_stage_b_kinds_processed() -> void:
+	var clear := Color(0, 0, 0, 0)
+	_make("icon_melee.png", 600, 600, clear, Rect2i(250, 50, 100, 500), Color.WHITE)
+	_make("island_battle_act1.png", 1024, 1024, clear, Rect2i(100, 200, 800, 600), Color(0.6, 0.5, 0.4))
+	_make("relic_rift_shard.png", 1024, 1024, Color(0.8, 0.8, 0.8), Rect2i(300, 200, 300, 600), Color(0.5, 0.3, 0.9))
+	_make("ach_lightning.png", 1024, 1024, clear, Rect2i(40, 40, 940, 940), Color(0.5, 0.4, 0.2))
+	_make("school_tide_order.png", 1024, 1024, Color(0.1, 0.2, 0.4), Rect2i(300, 200, 400, 800), Color(0.3, 0.6, 0.9))
+	var report := _run()
+	assert_eq(report["errors"], {})
+	assert_eq(_item("icon/melee")["size"], [128.0, 128.0], "значок — квадрат 128, без искажений")
+	assert_eq(maxf(_item("island/battle_act1")["size"][0], _item("island/battle_act1")["size"][1]), float(ArtImport.ISLAND_SIDE))
+	var relic: Array = _item("relic/rift_shard")["size"]
+	assert_eq(maxf(relic[0], relic[1]), float(ArtImport.RELIC_SIDE), "фон снят, реликвия обрезана и уменьшена")
+	assert_lt(relic[0], relic[1], "обрезка по объекту: реликвия выше, чем шире")
+	assert_eq(_item("school/tide_order")["size"], [384.0, 384.0], "портрет школы — квадрат с обрезкой по центру")
+	var icon := Image.load_from_file(ProjectSettings.globalize_path(OUT.path_join("icons/melee.png")))
+	assert_eq(icon.get_pixel(0, 0).a, 0.0, "поля значка прозрачные")
+
+
+func test_project_stage_b_complete() -> void:
+	var items: Dictionary = ArtImport.read_manifest()["items"]
+	var expect: Array[String] = []
+	for id in db.units:
+		expect.append("unit/%s" % id)
+	for id in db.memories:
+		expect.append("card/%s" % id)
+	for id in db.commanders:
+		expect.append("portrait/%s" % id)
+	for id in db.schools:
+		expect.append("school/%s" % id)
+	for id in db.relics:
+		expect.append("relic/%s" % id)
+	for id in db.achievements:
+		expect.append("ach/%s" % id)
+	for id in UnitGlyphs.ALL_ICONS:
+		expect.append("icon/%s" % id)
+	for act in [1, 2]:
+		for type: StringName in MapView.ISLAND_ART.values():
+			if not (type == &"reliquary" and act == 1):
+				expect.append("island/%s_act%d" % [type, act])
+	for id in ["battle_act2", "map_act2", "camp", "haven", "shop", "event", "reliquary", "hall", "run_end", "school"]:
+		expect.append("bg/%s" % id)
+	var missing := expect.filter(func(k: String) -> bool: return not items.has(k))
+	assert_eq(missing, [], "весь арт игры импортирован")
+	assert_eq(expect.size(), 133, "проверяется весь игровой арт, кроме Архивариуса, фонов и интерфейса среза")
+
+
+func test_project_stage_b_art_loads() -> void:
+	ArtDB.reset()
+	ArtDB.enabled = true
+	assert_not_null(ArtDB.school(&"tide_order"))
+	assert_not_null(ArtDB.island(&"boss", 2))
+	assert_null(ArtDB.island(&"reliquary", 1), "реликвариев в первом акте нет")
+	assert_not_null(ArtDB.relic(&"synod_seal"))
+	assert_not_null(ArtDB.achievement(&"daily_three"))
+	assert_not_null(ArtDB.icon(&"melee"))
+	assert_not_null(ArtDB.unit(&"abyss_lord"))
 	ArtDB.enabled = false
 	ArtDB.reset()

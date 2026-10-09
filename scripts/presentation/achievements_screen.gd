@@ -46,7 +46,7 @@ func _ready() -> void:
 	box.add_child(back)
 
 
-## Значок достижения: круг со значком, название, дата или «не получено».
+## Значок достижения: медальон (или круг со значком), название, дата или «не получено».
 func _badge(a: AchievementDef) -> PanelContainer:
 	var earned := Game.profile.has_achievement(a.id)
 	var color := a.color if earned else UiKit.MUTED.darkened(0.35)
@@ -60,22 +60,18 @@ func _badge(a: AchievementDef) -> PanelContainer:
 	col.add_theme_constant_override("separation", 6)
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(col)
-	var disc := Disc.new()
-	disc.color = color
-	disc.earned = earned
-	disc.custom_minimum_size = Vector2(76, 76)
-	disc.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	disc.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var icon := UiKit.icon_rect(a.icon if earned else UnitGlyphs.ICON_LOCK, 42, color.lightened(0.15) if earned else color)
-	# Значок по центру круга: якоря на весь круг с полями (размер круга на момент сборки ещё 0).
-	icon.custom_minimum_size = Vector2.ZERO
-	icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	for side in ["left", "top"]:
-		icon.set("offset_" + side, 17)
-	for side in ["right", "bottom"]:
-		icon.set("offset_" + side, -17)
-	disc.add_child(icon)
-	col.add_child(disc)
+	var medal := ArtDB.achievement(a.id)
+	if medal:
+		# Рисованный медальон (SPEC_SPRINT9 18): неполученный — тёмный, с замком.
+		var art := UiKit.art_rect(medal, Vector2(84, 84), false, Color.WHITE if earned else Color(0.32, 0.32, 0.36))
+		art.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		if not earned:
+			var lock := UiKit.icon_rect(UnitGlyphs.ICON_LOCK, 26, UiKit.MUTED)
+			lock.position = Vector2(58, 58)
+			art.add_child(lock)
+		col.add_child(art)
+	else:
+		col.add_child(_disc(a, earned, color))
 	var name := UiKit.label(tr(a.name_key), 19, color.lightened(0.25) if earned else UiKit.MUTED)
 	name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -91,6 +87,26 @@ func _badge(a: AchievementDef) -> PanelContainer:
 		body += "\n" + tr("ACH_EARNED_ON") % Game.profile.achievements[a.id]
 	Tip.attach(panel, tr(a.name_key), body, a.icon, a.color)
 	return panel
+
+
+## Процедурный круг со значком — когда рисованного медальона нет.
+func _disc(a: AchievementDef, earned: bool, color: Color) -> Control:
+	var disc := Disc.new()
+	disc.color = color
+	disc.earned = earned
+	disc.custom_minimum_size = Vector2(76, 76)
+	disc.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	disc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var icon := UiKit.icon_rect(a.icon if earned else UnitGlyphs.ICON_LOCK, 42, color.lightened(0.15) if earned else color)
+	# Значок по центру круга: якоря на весь круг с полями (размер круга на момент сборки ещё 0).
+	icon.custom_minimum_size = Vector2.ZERO
+	icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	for side in ["left", "top"]:
+		icon.set("offset_" + side, 17)
+	for side in ["right", "bottom"]:
+		icon.set("offset_" + side, -17)
+	disc.add_child(icon)
+	return disc
 
 
 ## Круглая подложка значка: полученное — заливка и кольцо цвета достижения, остальное — тусклое кольцо.

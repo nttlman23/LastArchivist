@@ -32,8 +32,8 @@ func _ready() -> void:
 	db = Game.defs
 	run = Game.run
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# Первый акт — рисованное небо (SPEC_SPRINT9 4); второй — Затопленные хранилища: фон глубже и зеленее.
-	var bg := UiKit.add_background(self, false, &"map_act1" if run.act == 1 else &"")
+	# Рисованное небо первого акта и море Затопленных хранилищ (SPEC_SPRINT9 4, 18); без арта — процедурный фон, во втором акте глубже и зеленее.
+	var bg := UiKit.add_background(self, false, &"map_act1" if run.act == 1 else &"map_act2")
 	if bg is ColorRect:
 		bg.color = Color(0.03, 0.07, 0.08) if run.act >= 2 else Color(0.06, 0.08, 0.13)
 	view = MapView.new()
@@ -331,7 +331,7 @@ func _toggle_codex() -> void:
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	col.add_child(scroll)
 	var grid := GridContainer.new()
-	grid.columns = 3
+	grid.columns = 6
 	grid.add_theme_constant_override("h_separation", 12)
 	grid.add_theme_constant_override("v_separation", 12)
 	scroll.add_child(grid)

@@ -19,7 +19,7 @@ var _content: VBoxContainer
 
 func _ready() -> void:
 	db = Game.defs
-	UiKit.add_background(self)
+	UiKit.add_background(self, false, &"hall")
 	_content = UiKit.centered_column(self, 14)
 	_rebuild()
 

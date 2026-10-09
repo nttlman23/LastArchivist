@@ -1,5 +1,225 @@
 {
 	"items": {
+		"ach/archive_intact": {
+			"file": "res://art/achievements/archive_intact.png",
+			"id": "archive_intact",
+			"kind": "ach",
+			"md5": "65153cc37fa2b151880cf64386579591",
+			"size": [
+				256,
+				255
+			],
+			"src": "ach_archive_intact.png"
+		},
+		"ach/archive_keeper": {
+			"file": "res://art/achievements/archive_keeper.png",
+			"id": "archive_keeper",
+			"kind": "ach",
+			"md5": "e8994bb0d19a4c90824cbfca27aa1480",
+			"size": [
+				256,
+				255
+			],
+			"src": "ach_archive_keeper.png"
+		},
+		"ach/clean_slate": {
+			"file": "res://art/achievements/clean_slate.png",
+			"id": "clean_slate",
+			"kind": "ach",
+			"md5": "70fa39838a40b286c4856943b8631dbf",
+			"size": [
+				256,
+				254
+			],
+			"src": "ach_clean_slate.png"
+		},
+		"ach/collector": {
+			"file": "res://art/achievements/collector.png",
+			"id": "collector",
+			"kind": "ach",
+			"md5": "59a5266743c76ee420848110e407b1e7",
+			"size": [
+				256,
+				255
+			],
+			"src": "ach_collector.png"
+		},
+		"ach/daily_three": {
+			"file": "res://art/achievements/daily_three.png",
+			"id": "daily_three",
+			"kind": "ach",
+			"md5": "abdb71ffaed44645e18dc46b5695e565",
+			"size": [
+				256,
+				255
+			],
+			"src": "ach_daily_three.png"
+		},
+		"ach/drowned_victory": {
+			"file": "res://art/achievements/drowned_victory.png",
+			"id": "drowned_victory",
+			"kind": "ach",
+			"md5": "11eb0d4f7b2ab172a9392dd44402ee07",
+			"size": [
+				256,
+				255
+			],
+			"src": "ach_drowned_victory.png"
+		},
+		"ach/every_school": {
+			"file": "res://art/achievements/every_school.png",
+			"id": "every_school",
+			"kind": "ach",
+			"md5": "c20252fc765bcd44950488618cbe5952",
+			"size": [
+				256,
+				255
+			],
+			"src": "ach_every_school.png"
+		},
+		"ach/first_chapter": {
+			"file": "res://art/achievements/first_chapter.png",
+			"id": "first_chapter",
+			"kind": "ach",
+			"md5": "0a6db9c9edec43e0469008489dc4527f",
+			"size": [
+				256,
+				255
+			],
+			"src": "ach_first_chapter.png"
+		},
+		"ach/first_step": {
+			"file": "res://art/achievements/first_step.png",
+			"id": "first_step",
+			"kind": "ach",
+			"md5": "9b45deb3cb4e24ea8892b399843a10c3",
+			"size": [
+				256,
+				254
+			],
+			"src": "ach_first_step.png"
+		},
+		"ach/four_wars": {
+			"file": "res://art/achievements/four_wars.png",
+			"id": "four_wars",
+			"kind": "ach",
+			"md5": "2af3ee8fc09375dbec447762f0cd602d",
+			"size": [
+				256,
+				255
+			],
+			"src": "ach_four_wars.png"
+		},
+		"ach/full_chronicle": {
+			"file": "res://art/achievements/full_chronicle.png",
+			"id": "full_chronicle",
+			"kind": "ach",
+			"md5": "e343fa629d9ce89d66cf4d58ffe1763f",
+			"size": [
+				256,
+				255
+			],
+			"src": "ach_full_chronicle.png"
+		},
+		"ach/hard_hand": {
+			"file": "res://art/achievements/hard_hand.png",
+			"id": "hard_hand",
+			"kind": "ach",
+			"md5": "505c729c2a533360a8f53f7af1169ac4",
+			"size": [
+				256,
+				254
+			],
+			"src": "ach_hard_hand.png"
+		},
+		"ach/lightning": {
+			"file": "res://art/achievements/lightning.png",
+			"id": "lightning",
+			"kind": "ach",
+			"md5": "ba0a9782c67806f702a5f92a589c3136",
+			"size": [
+				256,
+				255
+			],
+			"src": "ach_lightning.png"
+		},
+		"ach/memory_alchemist": {
+			"file": "res://art/achievements/memory_alchemist.png",
+			"id": "memory_alchemist",
+			"kind": "ach",
+			"md5": "1f71b585ded4ac6e15284ec128fd12ed",
+			"size": [
+				256,
+				255
+			],
+			"src": "ach_memory_alchemist.png"
+		},
+		"ach/miser": {
+			"file": "res://art/achievements/miser.png",
+			"id": "miser",
+			"kind": "ach",
+			"md5": "b489ea386636ded725ed682f9883359e",
+			"size": [
+				256,
+				254
+			],
+			"src": "ach_miser.png"
+		},
+		"ach/no_losses": {
+			"file": "res://art/achievements/no_losses.png",
+			"id": "no_losses",
+			"kind": "ach",
+			"md5": "69a56c3255c8b8ca48379c21491e9390",
+			"size": [
+				256,
+				255
+			],
+			"src": "ach_no_losses.png"
+		},
+		"ach/nothing_forgotten": {
+			"file": "res://art/achievements/nothing_forgotten.png",
+			"id": "nothing_forgotten",
+			"kind": "ach",
+			"md5": "204d2f27e9facc21affef3155941f4cf",
+			"size": [
+				256,
+				254
+			],
+			"src": "ach_nothing_forgotten.png"
+		},
+		"ach/on_the_edge": {
+			"file": "res://art/achievements/on_the_edge.png",
+			"id": "on_the_edge",
+			"kind": "ach",
+			"md5": "87056dac4b23aed95ead6e73f8e37215",
+			"size": [
+				256,
+				255
+			],
+			"src": "ach_on_the_edge.png"
+		},
+		"ach/regular_customer": {
+			"file": "res://art/achievements/regular_customer.png",
+			"id": "regular_customer",
+			"kind": "ach",
+			"md5": "09fa8469f57ab3ee8d226f74950453f2",
+			"size": [
+				256,
+				254
+			],
+			"src": "ach_regular_customer.png"
+		},
+		"ach/tested": {
+			"file": "res://art/achievements/tested.png",
+			"id": "tested",
+			"kind": "ach",
+			"md5": "f2684ceab44b0966bfcc0a213c05eed6",
+			"size": [
+				256,
+				255
+			],
+			"src": "ach_tested.png"
+		},
 		"bg/battle_act1": {
 			"file": "res://art/backgrounds/battle_act1.png",
 			"id": "battle_act1",
@@ -10,6 +230,61 @@
 				1080.0
 			],
 			"src": "bg_battle_act1.png"
+		},
+		"bg/battle_act2": {
+			"file": "res://art/backgrounds/battle_act2.png",
+			"id": "battle_act2",
+			"kind": "bg",
+			"md5": "dc1802c9745103f03fb2f15fb5e41cb9",
+			"size": [
+				1920,
+				1080
+			],
+			"src": "bg_battle_act2.png"
+		},
+		"bg/camp": {
+			"file": "res://art/backgrounds/camp.png",
+			"id": "camp",
+			"kind": "bg",
+			"md5": "d03c8999c0ed55423c19be35e1d7c4e0",
+			"size": [
+				1920,
+				1080
+			],
+			"src": "bg_camp.png"
+		},
+		"bg/event": {
+			"file": "res://art/backgrounds/event.png",
+			"id": "event",
+			"kind": "bg",
+			"md5": "7c3be0da08b5f31709c88784de25b653",
+			"size": [
+				1920,
+				1080
+			],
+			"src": "bg_event.png"
+		},
+		"bg/hall": {
+			"file": "res://art/backgrounds/hall.png",
+			"id": "hall",
+			"kind": "bg",
+			"md5": "e09907f90d4a8d705b1f53bd87896ddd",
+			"size": [
+				1920,
+				1080
+			],
+			"src": "bg_hall.png"
+		},
+		"bg/haven": {
+			"file": "res://art/backgrounds/haven.png",
+			"id": "haven",
+			"kind": "bg",
+			"md5": "7f2f25519f54f46dfbac8a103bc04cc0",
+			"size": [
+				1920,
+				1080
+			],
+			"src": "bg_haven.png"
 		},
 		"bg/map_act1": {
 			"file": "res://art/backgrounds/map_act1.png",
@@ -22,6 +297,17 @@
 			],
 			"src": "bg_map_act1.png"
 		},
+		"bg/map_act2": {
+			"file": "res://art/backgrounds/map_act2.png",
+			"id": "map_act2",
+			"kind": "bg",
+			"md5": "e87de9c13948238890ab63f2be6326ac",
+			"size": [
+				1920,
+				1080
+			],
+			"src": "bg_map_act2.png"
+		},
 		"bg/menu": {
 			"file": "res://art/backgrounds/menu.png",
 			"id": "menu",
@@ -32,6 +318,61 @@
 				1080.0
 			],
 			"src": "bg_menu.png"
+		},
+		"bg/reliquary": {
+			"file": "res://art/backgrounds/reliquary.png",
+			"id": "reliquary",
+			"kind": "bg",
+			"md5": "098c69f1dbbdb33419ce9288c7633f17",
+			"size": [
+				1920,
+				1080
+			],
+			"src": "bg_reliquary.png"
+		},
+		"bg/run_end": {
+			"file": "res://art/backgrounds/run_end.png",
+			"id": "run_end",
+			"kind": "bg",
+			"md5": "23a25a07c1aee57a8b2a1843dc518628",
+			"size": [
+				1920,
+				1080
+			],
+			"src": "bg_run_end.png"
+		},
+		"bg/school": {
+			"file": "res://art/backgrounds/school.png",
+			"id": "school",
+			"kind": "bg",
+			"md5": "a35344fc3175db1189fc2e6275380d81",
+			"size": [
+				1920,
+				1080
+			],
+			"src": "bg_school.png"
+		},
+		"bg/shop": {
+			"file": "res://art/backgrounds/shop.png",
+			"id": "shop",
+			"kind": "bg",
+			"md5": "bd20476cef90cdcf08daf02396161fb8",
+			"size": [
+				1920,
+				1080
+			],
+			"src": "bg_shop.png"
+		},
+		"card/abyss_wardens": {
+			"file": "res://art/cards/abyss_wardens.png",
+			"id": "abyss_wardens",
+			"kind": "card",
+			"md5": "bbf00ec0a948920ac0973e09e464c107",
+			"size": [
+				512,
+				384
+			],
+			"src": "card_abyss_wardens.png"
 		},
 		"card/ash_chroniclers": {
 			"file": "res://art/cards/ash_chroniclers.png",
@@ -44,6 +385,105 @@
 			],
 			"src": "card_ash_chroniclers.png"
 		},
+		"card/ash_keepers": {
+			"file": "res://art/cards/ash_keepers.png",
+			"id": "ash_keepers",
+			"kind": "card",
+			"md5": "cc70a165b7b9f944e6bed6cd4d2fc2c5",
+			"size": [
+				512,
+				384
+			],
+			"src": "card_ash_keepers.png"
+		},
+		"card/brass_tinkers": {
+			"file": "res://art/cards/brass_tinkers.png",
+			"id": "brass_tinkers",
+			"kind": "card",
+			"md5": "a69dca882dbecf943be2a677ecdcc565",
+			"size": [
+				512,
+				384
+			],
+			"src": "card_brass_tinkers.png"
+		},
+		"card/clock_turrets": {
+			"file": "res://art/cards/clock_turrets.png",
+			"id": "clock_turrets",
+			"kind": "card",
+			"md5": "07810be7dd8fc714d13ab87fb35abed7",
+			"size": [
+				512,
+				384
+			],
+			"src": "card_clock_turrets.png"
+		},
+		"card/deep_eels": {
+			"file": "res://art/cards/deep_eels.png",
+			"id": "deep_eels",
+			"kind": "card",
+			"md5": "44bb3634595428266e3b79227f7fe158",
+			"size": [
+				512,
+				384
+			],
+			"src": "card_deep_eels.png"
+		},
+		"card/deep_jellies": {
+			"file": "res://art/cards/deep_jellies.png",
+			"id": "deep_jellies",
+			"kind": "card",
+			"md5": "b1fa9ee4b223f41a96c304ed6e82bd60",
+			"size": [
+				512,
+				384
+			],
+			"src": "card_deep_jellies.png"
+		},
+		"card/drowned_crown": {
+			"file": "res://art/cards/drowned_crown.png",
+			"id": "drowned_crown",
+			"kind": "card",
+			"md5": "4d13d8268cbf9a62a948b44efb9e4ff3",
+			"size": [
+				512,
+				384
+			],
+			"src": "card_drowned_crown.png"
+		},
+		"card/drowned_scribes": {
+			"file": "res://art/cards/drowned_scribes.png",
+			"id": "drowned_scribes",
+			"kind": "card",
+			"md5": "b81bb496fd45c5a6fd6d54f6a3774909",
+			"size": [
+				512,
+				384
+			],
+			"src": "card_drowned_scribes.png"
+		},
+		"card/face_thieves": {
+			"file": "res://art/cards/face_thieves.png",
+			"id": "face_thieves",
+			"kind": "card",
+			"md5": "be94f85f0973dd867ac64574442dbde3",
+			"size": [
+				512,
+				384
+			],
+			"src": "card_face_thieves.png"
+		},
+		"card/faceless_choir": {
+			"file": "res://art/cards/faceless_choir.png",
+			"id": "faceless_choir",
+			"kind": "card",
+			"md5": "d5a1443351e8d2360ed317b3f4292b2d",
+			"size": [
+				512,
+				384
+			],
+			"src": "card_faceless_choir.png"
+		},
 		"card/ghoul_pack": {
 			"file": "res://art/cards/ghoul_pack.png",
 			"id": "ghoul_pack",
@@ -55,6 +495,17 @@
 			],
 			"src": "card_ghoul_pack.png"
 		},
+		"card/ink_krakens": {
+			"file": "res://art/cards/ink_krakens.png",
+			"id": "ink_krakens",
+			"kind": "card",
+			"md5": "0a000ab43c9e3df438c3b25fdc9eff25",
+			"size": [
+				512,
+				384
+			],
+			"src": "card_ink_krakens.png"
+		},
 		"card/last_king": {
 			"file": "res://art/cards/last_king.png",
 			"id": "last_king",
@@ -65,6 +516,17 @@
 				384.0
 			],
 			"src": "card_last_king.png"
+		},
+		"card/mirror_doubles": {
+			"file": "res://art/cards/mirror_doubles.png",
+			"id": "mirror_doubles",
+			"kind": "card",
+			"md5": "4352cd1b5f3984d8a77282b876d63135",
+			"size": [
+				512,
+				384
+			],
+			"src": "card_mirror_doubles.png"
 		},
 		"card/rust_sentinels": {
 			"file": "res://art/cards/rust_sentinels.png",
@@ -99,6 +561,17 @@
 			],
 			"src": "card_shard_archers.png"
 		},
+		"card/sirens": {
+			"file": "res://art/cards/sirens.png",
+			"id": "sirens",
+			"kind": "card",
+			"md5": "da13c59625201a76198f5d3690a8a8c7",
+			"size": [
+				512,
+				384
+			],
+			"src": "card_sirens.png"
+		},
 		"card/storm_wyrm": {
 			"file": "res://art/cards/storm_wyrm.png",
 			"id": "storm_wyrm",
@@ -109,6 +582,457 @@
 				384.0
 			],
 			"src": "card_storm_wyrm.png"
+		},
+		"card/tide_wardens": {
+			"file": "res://art/cards/tide_wardens.png",
+			"id": "tide_wardens",
+			"kind": "card",
+			"md5": "d7c12cee7102fc12919e52f9b32bb654",
+			"size": [
+				512,
+				384
+			],
+			"src": "card_tide_wardens.png"
+		},
+		"icon/ability": {
+			"file": "res://art/icons/ability.png",
+			"id": "ability",
+			"kind": "icon",
+			"md5": "f674b5d9ed3ccc375d46a112ef913fe4",
+			"size": [
+				128,
+				128
+			],
+			"src": "icon_ability.png"
+		},
+		"icon/aether": {
+			"file": "res://art/icons/aether.png",
+			"id": "aether",
+			"kind": "icon",
+			"md5": "f303e0dc4b3e63ca76cce2e5e7517fc4",
+			"size": [
+				128,
+				128
+			],
+			"src": "icon_aether.png"
+		},
+		"icon/armor": {
+			"file": "res://art/icons/armor.png",
+			"id": "armor",
+			"kind": "icon",
+			"md5": "25bb3257433e39dbce3e8a52ef3e5029",
+			"size": [
+				128,
+				128
+			],
+			"src": "icon_armor.png"
+		},
+		"icon/chalice": {
+			"file": "res://art/icons/chalice.png",
+			"id": "chalice",
+			"kind": "icon",
+			"md5": "375b99ee8e2fe516eb95036b26a8c3b8",
+			"size": [
+				128,
+				128
+			],
+			"src": "icon_chalice.png"
+		},
+		"icon/defend": {
+			"file": "res://art/icons/defend.png",
+			"id": "defend",
+			"kind": "icon",
+			"md5": "7dac75ba6182e08f6553743ee31039a8",
+			"size": [
+				128,
+				128
+			],
+			"src": "icon_defend.png"
+		},
+		"icon/flying": {
+			"file": "res://art/icons/flying.png",
+			"id": "flying",
+			"kind": "icon",
+			"md5": "1053cce869f0ffaa28c1f62cb9f5e144",
+			"size": [
+				128,
+				128
+			],
+			"src": "icon_flying.png"
+		},
+		"icon/heal": {
+			"file": "res://art/icons/heal.png",
+			"id": "heal",
+			"kind": "icon",
+			"md5": "c09aa7bae00d442e6ac51bd070483221",
+			"size": [
+				128,
+				128
+			],
+			"src": "icon_heal.png"
+		},
+		"icon/hp": {
+			"file": "res://art/icons/hp.png",
+			"id": "hp",
+			"kind": "icon",
+			"md5": "202a7ffa78551e535b135ad90f0b5aa8",
+			"size": [
+				128,
+				128
+			],
+			"src": "icon_hp.png"
+		},
+		"icon/ink": {
+			"file": "res://art/icons/ink.png",
+			"id": "ink",
+			"kind": "icon",
+			"md5": "a8e9f3647553de24ecd92a93bea4a7d4",
+			"size": [
+				128,
+				128
+			],
+			"src": "icon_ink.png"
+		},
+		"icon/kill": {
+			"file": "res://art/icons/kill.png",
+			"id": "kill",
+			"kind": "icon",
+			"md5": "f85ba22416f0d3e8868f4d8a65af2ae1",
+			"size": [
+				128,
+				128
+			],
+			"src": "icon_kill.png"
+		},
+		"icon/lock": {
+			"file": "res://art/icons/lock.png",
+			"id": "lock",
+			"kind": "icon",
+			"md5": "0d4cca4860aa052b160f5140b1b67a25",
+			"size": [
+				128,
+				128
+			],
+			"src": "icon_lock.png"
+		},
+		"icon/mark": {
+			"file": "res://art/icons/mark.png",
+			"id": "mark",
+			"kind": "icon",
+			"md5": "98b0fbe129ad949d4472eb4e90d2b877",
+			"size": [
+				128,
+				128
+			],
+			"src": "icon_mark.png"
+		},
+		"icon/mask": {
+			"file": "res://art/icons/mask.png",
+			"id": "mask",
+			"kind": "icon",
+			"md5": "3e290122378e6ed2f7efe1a3f0f8ab9d",
+			"size": [
+				128,
+				128
+			],
+			"src": "icon_mask.png"
+		},
+		"icon/melee": {
+			"file": "res://art/icons/melee.png",
+			"id": "melee",
+			"kind": "icon",
+			"md5": "a4b2f90b676a9d1b9e282197619a9889",
+			"size": [
+				128,
+				128
+			],
+			"src": "icon_melee.png"
+		},
+		"icon/move": {
+			"file": "res://art/icons/move.png",
+			"id": "move",
+			"kind": "icon",
+			"md5": "d698aebecdfad93adddf572fffc83249",
+			"size": [
+				128,
+				128
+			],
+			"src": "icon_move.png"
+		},
+		"icon/order": {
+			"file": "res://art/icons/order.png",
+			"id": "order",
+			"kind": "icon",
+			"md5": "a44ce634bb9dc14390e7a2c380b17aca",
+			"size": [
+				128,
+				128
+			],
+			"src": "icon_order.png"
+		},
+		"icon/parchment": {
+			"file": "res://art/icons/parchment.png",
+			"id": "parchment",
+			"kind": "icon",
+			"md5": "4325fbd68f9f845af75cb81229d69c37",
+			"size": [
+				128,
+				128
+			],
+			"src": "icon_parchment.png"
+		},
+		"icon/points": {
+			"file": "res://art/icons/points.png",
+			"id": "points",
+			"kind": "icon",
+			"md5": "bdbd9a47a937da15977c3b66ccebe41f",
+			"size": [
+				128,
+				128
+			],
+			"src": "icon_points.png"
+		},
+		"icon/ranged": {
+			"file": "res://art/icons/ranged.png",
+			"id": "ranged",
+			"kind": "icon",
+			"md5": "22f2566ebebc67301e7fa664e8fb8087",
+			"size": [
+				128,
+				128
+			],
+			"src": "icon_ranged.png"
+		},
+		"icon/retaliation": {
+			"file": "res://art/icons/retaliation.png",
+			"id": "retaliation",
+			"kind": "icon",
+			"md5": "d18fbf30422db5ef3c25adebd184f273",
+			"size": [
+				128,
+				128
+			],
+			"src": "icon_retaliation.png"
+		},
+		"icon/retaliation_used": {
+			"file": "res://art/icons/retaliation_used.png",
+			"id": "retaliation_used",
+			"kind": "icon",
+			"md5": "db4da59f90466bdce6dfcacba0843d8e",
+			"size": [
+				128,
+				128
+			],
+			"src": "icon_retaliation_used.png"
+		},
+		"icon/speed": {
+			"file": "res://art/icons/speed.png",
+			"id": "speed",
+			"kind": "icon",
+			"md5": "5d7510d188ba704386e54c624e058e9f",
+			"size": [
+				128,
+				128
+			],
+			"src": "icon_speed.png"
+		},
+		"icon/spell": {
+			"file": "res://art/icons/spell.png",
+			"id": "spell",
+			"kind": "icon",
+			"md5": "4cccc9354291186aea576cae31df5e7f",
+			"size": [
+				128,
+				128
+			],
+			"src": "icon_spell.png"
+		},
+		"icon/threat": {
+			"file": "res://art/icons/threat.png",
+			"id": "threat",
+			"kind": "icon",
+			"md5": "91553516f07c32e26af86ef51a7a0f5f",
+			"size": [
+				128,
+				128
+			],
+			"src": "icon_threat.png"
+		},
+		"icon/wait": {
+			"file": "res://art/icons/wait.png",
+			"id": "wait",
+			"kind": "icon",
+			"md5": "7be97934024ae929c9c6fafc1c7d4c2d",
+			"size": [
+				128,
+				128
+			],
+			"src": "icon_wait.png"
+		},
+		"icon/water": {
+			"file": "res://art/icons/water.png",
+			"id": "water",
+			"kind": "icon",
+			"md5": "d3cd0af18f57d2c68ac9c0c86d90e7f8",
+			"size": [
+				128,
+				128
+			],
+			"src": "icon_water.png"
+		},
+		"island/battle_act1": {
+			"file": "res://art/islands/battle_act1.png",
+			"id": "battle_act1",
+			"kind": "island",
+			"md5": "88f0cbdb82eea12178d36099eddd09fa",
+			"size": [
+				315,
+				320
+			],
+			"src": "island_battle_act1.png"
+		},
+		"island/battle_act2": {
+			"file": "res://art/islands/battle_act2.png",
+			"id": "battle_act2",
+			"kind": "island",
+			"md5": "110ca66764929f2aa658c5c9060a7042",
+			"size": [
+				300,
+				320
+			],
+			"src": "island_battle_act2.png"
+		},
+		"island/boss_act1": {
+			"file": "res://art/islands/boss_act1.png",
+			"id": "boss_act1",
+			"kind": "island",
+			"md5": "39ca981fa3fc71e08fab547d35b4f16c",
+			"size": [
+				314,
+				320
+			],
+			"src": "island_boss_act1.png"
+		},
+		"island/boss_act2": {
+			"file": "res://art/islands/boss_act2.png",
+			"id": "boss_act2",
+			"kind": "island",
+			"md5": "c269d4cdd7890a595c73ed09be8f81a3",
+			"size": [
+				283,
+				320
+			],
+			"src": "island_boss_act2.png"
+		},
+		"island/elite_act1": {
+			"file": "res://art/islands/elite_act1.png",
+			"id": "elite_act1",
+			"kind": "island",
+			"md5": "31d4e27efca69d603189d6f2699bc3b7",
+			"size": [
+				276,
+				320
+			],
+			"src": "island_elite_act1.png"
+		},
+		"island/elite_act2": {
+			"file": "res://art/islands/elite_act2.png",
+			"id": "elite_act2",
+			"kind": "island",
+			"md5": "dfc6f6206ba6c7ff430f3b4acb8ed546",
+			"size": [
+				235,
+				320
+			],
+			"src": "island_elite_act2.png"
+		},
+		"island/event_act1": {
+			"file": "res://art/islands/event_act1.png",
+			"id": "event_act1",
+			"kind": "island",
+			"md5": "86e0ca6cb9e67dc711d6bfe4bd3b11ce",
+			"size": [
+				295,
+				320
+			],
+			"src": "island_event_act1.png"
+		},
+		"island/event_act2": {
+			"file": "res://art/islands/event_act2.png",
+			"id": "event_act2",
+			"kind": "island",
+			"md5": "08e2532e97805999b3260e6add4ae83b",
+			"size": [
+				283,
+				320
+			],
+			"src": "island_event_act2.png"
+		},
+		"island/haven_act1": {
+			"file": "res://art/islands/haven_act1.png",
+			"id": "haven_act1",
+			"kind": "island",
+			"md5": "6f210d9ba3ad15eb3836ff919655fe66",
+			"size": [
+				295,
+				320
+			],
+			"src": "island_haven_act1.png"
+		},
+		"island/haven_act2": {
+			"file": "res://art/islands/haven_act2.png",
+			"id": "haven_act2",
+			"kind": "island",
+			"md5": "30fb6fc0a9800e26d18eea0524ee8d50",
+			"size": [
+				290,
+				320
+			],
+			"src": "island_haven_act2.png"
+		},
+		"island/reliquary_act2": {
+			"file": "res://art/islands/reliquary_act2.png",
+			"id": "reliquary_act2",
+			"kind": "island",
+			"md5": "3e3294207f950ac9a40f476059c16c35",
+			"size": [
+				285,
+				320
+			],
+			"src": "island_reliquary_act2.png"
+		},
+		"island/shop_act1": {
+			"file": "res://art/islands/shop_act1.png",
+			"id": "shop_act1",
+			"kind": "island",
+			"md5": "f663a85287d5a80887b7a4ece61d76d3",
+			"size": [
+				290,
+				320
+			],
+			"src": "island_shop_act1.png"
+		},
+		"island/shop_act2": {
+			"file": "res://art/islands/shop_act2.png",
+			"id": "shop_act2",
+			"kind": "island",
+			"md5": "12e0db4f19e7e6e7d21db5fa118278c2",
+			"size": [
+				309,
+				320
+			],
+			"src": "island_shop_act2.png"
+		},
+		"portrait/abyss_lord_cmd": {
+			"file": "res://art/portraits/abyss_lord_cmd.png",
+			"id": "abyss_lord_cmd",
+			"kind": "portrait",
+			"md5": "ac44d55e78b8afe704971d73391cc5d4",
+			"size": [
+				256,
+				256
+			],
+			"src": "portrait_abyss_lord_cmd.png"
 		},
 		"portrait/archivist": {
 			"file": "res://art/portraits/archivist.png",
@@ -154,15 +1078,191 @@
 			],
 			"src": "portrait_salt_keeper.png"
 		},
+		"relic/abyss_lantern": {
+			"file": "res://art/relics/abyss_lantern.png",
+			"id": "abyss_lantern",
+			"kind": "relic",
+			"md5": "5f459f4490c56d3063c29b70fe55c918",
+			"size": [
+				211,
+				256
+			],
+			"src": "relic_abyss_lantern.png"
+		},
+		"relic/chronicler_quill": {
+			"file": "res://art/relics/chronicler_quill.png",
+			"id": "chronicler_quill",
+			"kind": "relic",
+			"md5": "09e0a69799c1aa3c0e126f50e3a86da9",
+			"size": [
+				249,
+				256
+			],
+			"src": "relic_chronicler_quill.png"
+		},
+		"relic/drowned_hourglass": {
+			"file": "res://art/relics/drowned_hourglass.png",
+			"id": "drowned_hourglass",
+			"kind": "relic",
+			"md5": "acf8fc5a1f9f0bbd4d070739e0703fec",
+			"size": [
+				221,
+				256
+			],
+			"src": "relic_drowned_hourglass.png"
+		},
+		"relic/false_bottom_chest": {
+			"file": "res://art/relics/false_bottom_chest.png",
+			"id": "false_bottom_chest",
+			"kind": "relic",
+			"md5": "5784b3513f214f6ae837a018e181db6e",
+			"size": [
+				256,
+				231
+			],
+			"src": "relic_false_bottom_chest.png"
+		},
+		"relic/kraken_inkwell": {
+			"file": "res://art/relics/kraken_inkwell.png",
+			"id": "kraken_inkwell",
+			"kind": "relic",
+			"md5": "78a4c7175ee2957f880d1951c0f7bf3c",
+			"size": [
+				253,
+				256
+			],
+			"src": "relic_kraken_inkwell.png"
+		},
+		"relic/memory_pearl": {
+			"file": "res://art/relics/memory_pearl.png",
+			"id": "memory_pearl",
+			"kind": "relic",
+			"md5": "9a2ea4c4cb4a70de4946e0484f0d5685",
+			"size": [
+				233,
+				256
+			],
+			"src": "relic_memory_pearl.png"
+		},
+		"relic/rift_shard": {
+			"file": "res://art/relics/rift_shard.png",
+			"id": "rift_shard",
+			"kind": "relic",
+			"md5": "7ecc6fc5f40882e1bcdf0d14e2978e48",
+			"size": [
+				184,
+				256
+			],
+			"src": "relic_rift_shard.png"
+		},
+		"relic/salt_crown": {
+			"file": "res://art/relics/salt_crown.png",
+			"id": "salt_crown",
+			"kind": "relic",
+			"md5": "805b522b7f658a89c232f95d083b7239",
+			"size": [
+				249,
+				256
+			],
+			"src": "relic_salt_crown.png"
+		},
+		"relic/siren_scale": {
+			"file": "res://art/relics/siren_scale.png",
+			"id": "siren_scale",
+			"kind": "relic",
+			"md5": "1c217fb92f24730c155c0ce33a086140",
+			"size": [
+				223,
+				256
+			],
+			"src": "relic_siren_scale.png"
+		},
+		"relic/synod_seal": {
+			"file": "res://art/relics/synod_seal.png",
+			"id": "synod_seal",
+			"kind": "relic",
+			"md5": "9af2f2f51ed1fa7a389d88e9cc7647c5",
+			"size": [
+				256,
+				229
+			],
+			"src": "relic_synod_seal.png"
+		},
+		"relic/tide_compass": {
+			"file": "res://art/relics/tide_compass.png",
+			"id": "tide_compass",
+			"kind": "relic",
+			"md5": "b601bba5ad6c36d3e98a3819f06476bc",
+			"size": [
+				207,
+				256
+			],
+			"src": "relic_tide_compass.png"
+		},
+		"relic/warden_shell": {
+			"file": "res://art/relics/warden_shell.png",
+			"id": "warden_shell",
+			"kind": "relic",
+			"md5": "2a5d19ba43ad6f0f12c186b2f709f047",
+			"size": [
+				215,
+				256
+			],
+			"src": "relic_warden_shell.png"
+		},
+		"school/ash_archive": {
+			"file": "res://art/schools/ash_archive.png",
+			"id": "ash_archive",
+			"kind": "school",
+			"md5": "e75a9b5f70bf79a0f711a281994ee1d8",
+			"size": [
+				384,
+				384
+			],
+			"src": "school_ash_archive.png"
+		},
+		"school/garden_of_faces": {
+			"file": "res://art/schools/garden_of_faces.png",
+			"id": "garden_of_faces",
+			"kind": "school",
+			"md5": "819ded5bff87c02f11fcc28e148c9bd0",
+			"size": [
+				384,
+				384
+			],
+			"src": "school_garden_of_faces.png"
+		},
+		"school/machine_synod": {
+			"file": "res://art/schools/machine_synod.png",
+			"id": "machine_synod",
+			"kind": "school",
+			"md5": "a0590990e5343e50c681d5d01ce98dab",
+			"size": [
+				384,
+				384
+			],
+			"src": "school_machine_synod.png"
+		},
+		"school/tide_order": {
+			"file": "res://art/schools/tide_order.png",
+			"id": "tide_order",
+			"kind": "school",
+			"md5": "79f5c2a79f2eaa46edea256c15e24a47",
+			"size": [
+				384,
+				384
+			],
+			"src": "school_tide_order.png"
+		},
 		"ui/button": {
 			"file": "res://art/ui/button.png",
 			"id": "button",
 			"kind": "ui",
 			"md5": "8866e86cb0f0b1712436ce09aca7e47b",
-			"patch": 14,
+			"patch": 14.0,
 			"size": [
-				196,
-				64
+				196.0,
+				64.0
 			],
 			"src": "ui_button.png"
 		},
@@ -172,8 +1272,8 @@
 			"kind": "ui",
 			"md5": "da670deb2bb4303b496808f2479ded2d",
 			"size": [
-				438,
-				640
+				438.0,
+				640.0
 			],
 			"src": "ui_card_frame.png",
 			"window": [
@@ -188,12 +1288,54 @@
 			"id": "panel",
 			"kind": "ui",
 			"md5": "236b0c9b0c935956b3960bfa34aaa952",
-			"patch": 38,
+			"patch": 38.0,
 			"size": [
-				640,
-				419
+				640.0,
+				419.0
 			],
 			"src": "ui_panel.png"
+		},
+		"unit/abyss_lord": {
+			"anchor": [
+				0.514,
+				0.982
+			],
+			"file": "res://art/units/abyss_lord.png",
+			"id": "abyss_lord",
+			"kind": "unit",
+			"md5": "8f5e86a31540f30bc7c39ac5a5bc5e73",
+			"portrait": [
+				0.284,
+				0.0,
+				0.549,
+				0.55
+			],
+			"size": [
+				449,
+				448
+			],
+			"src": "unit_abyss_lord.png"
+		},
+		"unit/abyss_warden": {
+			"anchor": [
+				0.32,
+				0.979
+			],
+			"file": "res://art/units/abyss_warden.png",
+			"id": "abyss_warden",
+			"kind": "unit",
+			"md5": "d8fc43ec9f324312bca25d54755836f2",
+			"portrait": [
+				0.065,
+				0.0,
+				0.537,
+				0.55
+			],
+			"size": [
+				393,
+				384
+			],
+			"src": "unit_abyss_warden.png"
 		},
 		"unit/archive_relic": {
 			"anchor": [
@@ -258,6 +1400,27 @@
 			],
 			"src": "unit_ash_priest.png"
 		},
+		"unit/brass_tinker": {
+			"anchor": [
+				0.464,
+				0.979
+			],
+			"file": "res://art/units/brass_tinker.png",
+			"id": "brass_tinker",
+			"kind": "unit",
+			"md5": "4f6dfecdf9bd87a9e97629937f6bd12c",
+			"portrait": [
+				0.328,
+				0.0,
+				0.582,
+				0.55
+			],
+			"size": [
+				363,
+				384
+			],
+			"src": "unit_brass_tinker.png"
+		},
 		"unit/chronicler": {
 			"anchor": [
 				0.503,
@@ -278,6 +1441,174 @@
 				384.0
 			],
 			"src": "unit_chronicler.png"
+		},
+		"unit/clock_turret": {
+			"anchor": [
+				0.422,
+				0.979
+			],
+			"file": "res://art/units/clock_turret.png",
+			"id": "clock_turret",
+			"kind": "unit",
+			"md5": "ca42d29801e95b373645d07eb5387ded",
+			"portrait": [
+				0.218,
+				0.0,
+				0.544,
+				0.55
+			],
+			"size": [
+				388,
+				384
+			],
+			"src": "unit_clock_turret.png"
+		},
+		"unit/deep_eel": {
+			"anchor": [
+				0.511,
+				0.979
+			],
+			"file": "res://art/units/deep_eel.png",
+			"id": "deep_eel",
+			"kind": "unit",
+			"md5": "2c67c8378f88de155a6f436953f013e4",
+			"portrait": [
+				0.243,
+				0.0,
+				0.593,
+				0.55
+			],
+			"size": [
+				356,
+				384
+			],
+			"src": "unit_deep_eel.png"
+		},
+		"unit/deep_jelly": {
+			"anchor": [
+				0.463,
+				0.979
+			],
+			"file": "res://art/units/deep_jelly.png",
+			"id": "deep_jelly",
+			"kind": "unit",
+			"md5": "96fe842b35d109dc99abdaab3a92dff7",
+			"portrait": [
+				0.339,
+				0.0,
+				0.562,
+				0.55
+			],
+			"size": [
+				376,
+				384
+			],
+			"src": "unit_deep_jelly.png"
+		},
+		"unit/drowned_scribe": {
+			"anchor": [
+				0.453,
+				0.979
+			],
+			"file": "res://art/units/drowned_scribe.png",
+			"id": "drowned_scribe",
+			"kind": "unit",
+			"md5": "16fbb1503318aefd1261755838baba40",
+			"portrait": [
+				0.199,
+				0.0,
+				0.563,
+				0.55
+			],
+			"size": [
+				375,
+				384
+			],
+			"src": "unit_drowned_scribe.png"
+		},
+		"unit/face_thief": {
+			"anchor": [
+				0.689,
+				0.979
+			],
+			"file": "res://art/units/face_thief.png",
+			"id": "face_thief",
+			"kind": "unit",
+			"md5": "dc30934fa6259cd1266be67dd60268c1",
+			"portrait": [
+				0.219,
+				0.0,
+				0.481,
+				0.55
+			],
+			"size": [
+				439,
+				384
+			],
+			"src": "unit_face_thief.png"
+		},
+		"unit/faceless_choir": {
+			"anchor": [
+				0.429,
+				0.979
+			],
+			"file": "res://art/units/faceless_choir.png",
+			"id": "faceless_choir",
+			"kind": "unit",
+			"md5": "56f2a99c0b09ff89567b02c0e14dac1a",
+			"portrait": [
+				0.137,
+				0.0,
+				0.723,
+				0.55
+			],
+			"size": [
+				292,
+				384
+			],
+			"src": "unit_faceless_choir.png"
+		},
+		"unit/ink_kraken": {
+			"anchor": [
+				0.5,
+				0.982
+			],
+			"file": "res://art/units/ink_kraken.png",
+			"id": "ink_kraken",
+			"kind": "unit",
+			"md5": "baae0e9e2f2b2940b8e6aac1c8dbeb4c",
+			"portrait": [
+				0.197,
+				0.0,
+				0.549,
+				0.55
+			],
+			"size": [
+				449,
+				448
+			],
+			"src": "unit_ink_kraken.png"
+		},
+		"unit/mirror_double": {
+			"anchor": [
+				0.505,
+				0.979
+			],
+			"file": "res://art/units/mirror_double.png",
+			"id": "mirror_double",
+			"kind": "unit",
+			"md5": "9e6b6438d30dbcd97e9c4a7d911cbbfb",
+			"portrait": [
+				0.141,
+				0.0,
+				0.523,
+				0.55
+			],
+			"size": [
+				404,
+				384
+			],
+			"src": "unit_mirror_double.png"
 		},
 		"unit/rift_ram": {
 			"anchor": [
@@ -384,6 +1715,27 @@
 			],
 			"src": "unit_shard_archer.png"
 		},
+		"unit/siren": {
+			"anchor": [
+				0.285,
+				0.92
+			],
+			"file": "res://art/units/siren.png",
+			"id": "siren",
+			"kind": "unit",
+			"md5": "c0eed070a37297899d713793bea6c7c0",
+			"portrait": [
+				0.181,
+				0.0,
+				0.547,
+				0.55
+			],
+			"size": [
+				386,
+				384
+			],
+			"src": "unit_siren.png"
+		},
 		"unit/storm_wyrm_echo": {
 			"anchor": [
 				0.543,
@@ -404,6 +1756,27 @@
 				448.0
 			],
 			"src": "unit_storm_wyrm_echo.png"
+		},
+		"unit/tide_warden": {
+			"anchor": [
+				0.481,
+				0.979
+			],
+			"file": "res://art/units/tide_warden.png",
+			"id": "tide_warden",
+			"kind": "unit",
+			"md5": "b0d4e9be56e11aded527fb2e992c80a7",
+			"portrait": [
+				0.292,
+				0.0,
+				0.579,
+				0.55
+			],
+			"size": [
+				365,
+				384
+			],
+			"src": "unit_tide_warden.png"
 		}
 	},
 	"version": 1.0

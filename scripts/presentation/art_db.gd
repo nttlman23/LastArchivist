@@ -4,7 +4,8 @@ extends RefCounted
 ## Нет картинки — null, и вызывающий код рисует прежний глиф. Без рендера (headless) арт не грузится.
 
 const MANIFEST := "res://art/manifest.json"
-const DIRS := {&"unit": "units", &"card": "cards", &"portrait": "portraits", &"bg": "backgrounds", &"ui": "ui"}
+const DIRS := {&"unit": "units", &"card": "cards", &"portrait": "portraits", &"bg": "backgrounds", &"ui": "ui",
+		&"school": "schools", &"island": "islands", &"relic": "relics", &"ach": "achievements", &"icon": "icons"}
 
 ## Включён ли арт; по умолчанию — если есть рендер. Тесты включают явно.
 static var enabled: bool = DisplayServer.get_name() != "headless"
@@ -57,6 +58,30 @@ static func ui(id: StringName) -> Texture2D:
 	return texture(&"ui", id)
 
 
+# --- Этап B (SPEC_SPRINT9 18) ---------------------------------------------------------
+
+static func school(id: StringName) -> Texture2D:
+	return texture(&"school", id)
+
+
+## Остров карты: тип (battle, elite, shop, haven, event, reliquary, boss) и акт.
+static func island(type: StringName, act: int) -> Texture2D:
+	return texture(&"island", StringName("%s_act%d" % [type, act]))
+
+
+static func relic(id: StringName) -> Texture2D:
+	return texture(&"relic", id)
+
+
+static func achievement(id: StringName) -> Texture2D:
+	return texture(&"ach", id)
+
+
+## Рисованный значок интерфейса (монохромный, тонируется modulate).
+static func icon(id: StringName) -> Texture2D:
+	return texture(&"icon", id)
+
+
 static func entry(kind: StringName, id: StringName) -> Dictionary:
 	if not _manifest_loaded:
 		_manifest_loaded = true
@@ -99,5 +124,6 @@ static func ui_window(id: StringName) -> Rect2:
 ## Сброс кэша (после импорта, в тестах).
 static func reset() -> void:
 	_cache.clear()
+	MemoryCard.reset()
 	_manifest.clear()
 	_manifest_loaded = false

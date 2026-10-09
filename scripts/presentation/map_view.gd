@@ -26,6 +26,15 @@ const TYPE_ICONS := {
 	MapState.NodeType.HAVEN: UnitGlyphs.ICON_HEAL,
 	MapState.NodeType.RELIQUARY: UnitGlyphs.ICON_CHALICE,
 }
+## Рисованные острова (SPEC_SPRINT9 18): вид по типу острова, ширина — ART_SCALE радиусов.
+const ISLAND_ART := {
+	MapState.NodeType.BATTLE: &"battle", MapState.NodeType.ELITE: &"elite", MapState.NodeType.EVENT: &"event",
+	MapState.NodeType.SHOP: &"shop", MapState.NodeType.HAVEN: &"haven", MapState.NodeType.RIFT: &"boss",
+	MapState.NodeType.RELIQUARY: &"reliquary",
+}
+const ART_SCALE := 2.6
+## Кольца выбора и пульсации вокруг рисованного острова — по его ширине, а не по радиусу вершины.
+const ART_RING := 1.3
 const ROCK := Color(0.24, 0.22, 0.27)
 ## Второй акт (SPEC_SPRINT7 4): затопленные залы — сине-зелёная скала, вода у подножия, туман.
 const ROCK_FLOODED := Color(0.13, 0.22, 0.24)
@@ -103,8 +112,7 @@ func node_pos(id: int) -> Vector2:
 ## Узел под точкой в локальных координатах или -1.
 func node_at(local: Vector2) -> int:
 	for id in _pos:
-		var r := RIFT_R if run.map.node(id).type == MapState.NodeType.RIFT else ISLAND_R
-		if local.distance_to(_pos[id]) <= r + 8.0:
+		if local.distance_to(_pos[id]) <= ring_r(run.map.node(id)) + 8.0:
 			return id
 	return -1
 
@@ -137,8 +145,7 @@ func _process(delta: float) -> void:
 
 
 func _draw_pulse_ring(ring: Node2D, id: int) -> void:
-	var r := RIFT_R if run.map.node(id).type == MapState.NodeType.RIFT else ISLAND_R
-	ring.draw_arc(Vector2.ZERO, r + 10, 0, TAU, 40, UiKit.ACCENT, 4.0)
+	ring.draw_arc(Vector2.ZERO, ring_r(run.map.node(id)) + 10, 0, TAU, 40, UiKit.ACCENT, 4.0)
 
 
 func _draw() -> void:
@@ -172,19 +179,23 @@ func _draw() -> void:
 
 	var flights := MapActions.flight_targets(run)
 	var reachable := MapActions.reachable(run)
-	for n in map.nodes:
+	# Сверху вниз по экрану: ближние (нижние) острова перекрывают дальние.
+	var order: Array = map.nodes.duplicate()
+	order.sort_custom(func(a: MapState.MapNode, b: MapState.MapNode) -> bool: return _pos[a.id].y < _pos[b.id].y)
+	for n: MapState.MapNode in order:
 		var dim := map.visited.has(n.id) or (not reachable.has(n.id) and not flights.has(n.id) and n.layer <= map.current_layer())
 		_draw_island(n, dim)
+		var rr := ring_r(n)
 		if flights.has(n.id):
-			_dashed_ring(_pos[n.id], ISLAND_R + 10, FLIGHT)
+			_dashed_ring(_pos[n.id], rr + 10, FLIGHT)
 		if n.id == map.current:
-			draw_arc(_pos[n.id], ISLAND_R + 14, 0, TAU, 40, UiKit.ACCENT, 3.0)
+			draw_arc(_pos[n.id], rr + 14, 0, TAU, 40, UiKit.ACCENT, 3.0)
 		if n.id == selected:
-			draw_arc(_pos[n.id], ISLAND_R + 18, 0, TAU, 40, Color.WHITE, 3.0)
+			draw_arc(_pos[n.id], rr + 18, 0, TAU, 40, Color.WHITE, 3.0)
 		elif n.id == hovered:
-			draw_arc(_pos[n.id], ISLAND_R + 18, 0, TAU, 40, Color(1, 1, 1, 0.4), 2.0)
+			draw_arc(_pos[n.id], rr + 18, 0, TAU, 40, Color(1, 1, 1, 0.4), 2.0)
 		elif hover_path.has(n.id):
-			draw_arc(_pos[n.id], ISLAND_R + 14, 0, TAU, 40, Color(1, 1, 1, 0.6), 2.0)
+			draw_arc(_pos[n.id], rr + 14, 0, TAU, 40, Color(1, 1, 1, 0.6), 2.0)
 	_draw_path_rewards()
 
 
@@ -192,7 +203,8 @@ func _draw() -> void:
 func _draw_path_rewards() -> void:
 	if hover_path.is_empty() or hovered < 0 or hover_rewards.values().all(func(v: int) -> bool: return v == 0):
 		return
-	var p := _pos[hovered] + Vector2(ISLAND_R + 24, -ISLAND_R * 0.4)
+	var rr := ring_r(run.map.node(hovered))
+	var p := _pos[hovered] + Vector2(rr + 24, -rr * 0.4)
 	var w := 0.0
 	for k in RunState.RESOURCE_IDS:
 		if hover_rewards.get(k, 0) > 0:
@@ -208,10 +220,30 @@ func _draw_path_rewards() -> void:
 		p.x += 52.0
 
 
+## Рисованный остров типа и акта острова n или null (тогда — процедурный).
+func island_art(n: MapState.MapNode) -> Texture2D:
+	return ArtDB.island(ISLAND_ART[n.type], run.act)
+
+
+## Радиус, от которого считаются кольца выбора, пульсации и попадание курсора.
+func ring_r(n: MapState.MapNode) -> float:
+	var r := RIFT_R if n.type == MapState.NodeType.RIFT else ISLAND_R
+	return r * ART_RING if island_art(n) else r
+
+
 func _draw_island(n: MapState.MapNode, dim: bool) -> void:
 	var c := _pos[n.id]
 	var r := RIFT_R if n.type == MapState.NodeType.RIFT else ISLAND_R
 	var alpha := 0.4 if dim else 1.0
+	var tex := island_art(n)
+	if tex:
+		# Картинка по центру острова; пройденные и недоступные — темнее и прозрачнее.
+		var w := r * ART_SCALE
+		var size := Vector2(w, w * tex.get_height() / tex.get_width())
+		var tint := Color(0.55, 0.55, 0.6, 0.7) if dim else Color.WHITE
+		draw_texture_rect(tex, Rect2(c - size * Vector2(0.5, 0.45), size), false, tint)
+		_draw_marks(n, c, r * ART_RING * 0.8, dim)
+		return
 	var col: Color = TYPE_COLORS[n.type]
 	# Скала снизу и плоская вершина острова.
 	var rock := ROCK_FLOODED if _flooded() else ROCK
@@ -238,6 +270,11 @@ func _draw_island(n: MapState.MapNode, dim: bool) -> void:
 		draw_string(_font, icon_c + Vector2(-15, 8), "?", HORIZONTAL_ALIGNMENT_CENTER, 30, 24, Color(1, 1, 1, alpha))
 	else:
 		UnitGlyphs.draw_icon(self, TYPE_ICONS[n.type], icon_c, 15, Color(UiKit.BG_COLOR, alpha), Color(1, 1, 1, alpha))
+	_draw_marks(n, c, r, dim)
+
+
+## Отметки поверх острова: пройден, разведан, риск боя.
+func _draw_marks(n: MapState.MapNode, c: Vector2, r: float, dim: bool) -> void:
 	if run.map.visited.has(n.id):
 		draw_polyline(PackedVector2Array([c + Vector2(-9, 2), c + Vector2(-2, 9), c + Vector2(11, -6)]), Color(UiKit.ACCENT, 0.9), 4.0)
 	if n.scouted and not run.map.visited.has(n.id):

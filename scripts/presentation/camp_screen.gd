@@ -14,7 +14,7 @@ func _ready() -> void:
 		return
 	db = Game.defs
 	run = Game.run
-	UiKit.add_background(self)
+	UiKit.add_background(self, false, &"camp")
 	var box := UiKit.centered_column(self, 22)
 	var title := UiKit.label(tr("CAMP_TITLE"), 48, UiKit.ACCENT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -45,7 +45,7 @@ func _tile(option: Dictionary) -> Control:
 			col.add_child(card)
 		_:
 			var b := Button.new()
-			b.custom_minimum_size = Vector2(TILE.x, 168)
+			b.custom_minimum_size = Vector2(TILE.x, MemoryCard.HEIGHT)
 			b.focus_mode = Control.FOCUS_NONE
 			b.icon = IconAtlas.get_icon(UnitGlyphs.ICON_HEAL if kind == CampOps.REPAIR else UnitGlyphs.ICON_POINTS)
 			b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER

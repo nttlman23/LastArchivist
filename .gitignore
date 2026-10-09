@@ -8,3 +8,4 @@ export_credentials.cfg
 
 # Builds
 build/
+art/raw/*.json

@@ -53,7 +53,8 @@ func _build(a: AchievementDef) -> PanelContainer:
 	row.add_theme_constant_override("separation", 14)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(row)
-	row.add_child(UiKit.icon_rect(a.icon, 44, a.color))
+	var medal := ArtDB.achievement(a.id)
+	row.add_child(UiKit.art_rect(medal, Vector2(64, 64)) if medal else UiKit.icon_rect(a.icon, 44, a.color))
 	var col := VBoxContainer.new()
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(col)

@@ -16,7 +16,7 @@ func _ready() -> void:
 	run = Game.run
 	event = db.event(run.pending().content)
 	Hints.show_hint(&"event")
-	UiKit.add_background(self)
+	UiKit.add_background(self, false, &"event")
 	_content = UiKit.centered_column(self, 18)
 	_show_options()
 
@@ -102,7 +102,7 @@ func _pick_card(option_index: int) -> void:
 	_header()
 	_content.add_child(UiKit.label(tr("EVENT_PICK_CARD"), 26, UiKit.ACCENT))
 	var grid := GridContainer.new()
-	grid.columns = 4
+	grid.columns = 6
 	grid.add_theme_constant_override("h_separation", 12)
 	grid.add_theme_constant_override("v_separation", 12)
 	_content.add_child(grid)

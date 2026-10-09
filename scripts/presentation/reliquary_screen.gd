@@ -13,7 +13,7 @@ func _ready() -> void:
 	db = Game.defs
 	run = Game.run
 	offer = RelicOps.offer(db, run, run.pending_node)
-	UiKit.add_background(self)
+	UiKit.add_background(self, false, &"reliquary")
 	var box := UiKit.centered_column(self, 22)
 	var title := UiKit.label(tr("RELIQUARY_TITLE"), 44, UiKit.ACCENT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -33,11 +33,12 @@ func _ready() -> void:
 	Hints.show_hint(&"reliquary")
 
 
-## Плитка реликвии: значок, имя, бонус и цена (текст описания).
+## Плитка реликвии: картинка или значок, имя, бонус и цена (текст описания).
 func _tile(id: StringName) -> Button:
 	var def := db.relic(id)
 	var b := Button.new()
-	b.custom_minimum_size = Vector2(380, 230)
+	var art := ArtDB.relic(id)
+	b.custom_minimum_size = Vector2(380, 360 if art else 230)
 	b.focus_mode = Control.FOCUS_NONE
 	b.add_theme_stylebox_override("normal", UiKit.panel_style(UiKit.PANEL_COLOR, def.color.darkened(0.3), 2, true))
 	b.add_theme_stylebox_override("hover", UiKit.panel_style(UiKit.PANEL_COLOR.lightened(0.08), def.color, 2, true))
@@ -50,14 +51,8 @@ func _tile(id: StringName) -> Button:
 	col.add_theme_constant_override("separation", 10)
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	b.add_child(col)
-	var icon := TextureRect.new()
-	icon.texture = IconAtlas.get_icon(def.icon)
-	icon.custom_minimum_size = Vector2(44, 44)
-	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icon.modulate = def.color
-	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	col.add_child(icon)
+	# Рисованная реликвия (SPEC_SPRINT9 18), без неё — значок цвета реликвии.
+	col.add_child(UiKit.art_rect(art, Vector2(0, 150)) if art else UiKit.icon_rect(def.icon, 44, def.color))
 	var name := UiKit.label(tr(def.name_key), 26, def.color.lightened(0.2))
 	name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(name)

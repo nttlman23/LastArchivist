@@ -15,6 +15,12 @@ const KINDS := {
 	"portrait": "portraits",
 	"bg": "backgrounds",
 	"ui": "ui",
+	# Этап B (SPEC_SPRINT9 18).
+	"school": "schools",
+	"island": "islands",
+	"relic": "relics",
+	"ach": "achievements",
+	"icon": "icons",
 }
 const UNIT_HEIGHT := 384
 const UNIT_HEIGHT_LARGE := 448
@@ -22,6 +28,12 @@ const CARD_SIZE := Vector2i(512, 384)
 const PORTRAIT_SIZE := 256
 const BG_SIZE := Vector2i(1920, 1080)
 const UI_MAX_SIDE := 640
+const SCHOOL_SIZE := 384
+## Острова, реликвии и медальоны достижений — по большей стороне; значки — квадрат.
+const ISLAND_SIDE := 320
+const RELIC_SIDE := 256
+const ACH_SIDE := 256
+const ICON_SIZE := 128
 const MARGIN := 8
 ## Допуск цвета фона (сумма |dR|+|dG|+|dB| в 0..255).
 const BG_TOLERANCE := 28 * 3
@@ -39,8 +51,11 @@ const UI_PATCH := {"panel": 0.09, "button": 0.22}
 
 
 ## Разбор имени: "unit_salt_guard_v3.png" → {kind: "unit", id: "salt_guard", version: 3}; {} — не арт.
+## Черновики («…-draft», «…_draft») пропускаются: в работу идёт чистовик.
 static func parse_name(file: String) -> Dictionary:
 	var base := file.get_basename().to_lower()
+	if base.contains("draft"):
+		return {}
 	var cut := base.find("_")
 	if cut <= 0:
 		return {}
@@ -314,6 +329,23 @@ static func process(info: Dictionary, units_info: Dictionary = {}, out_dir: Stri
 			img = cover(img, Vector2i(PORTRAIT_SIZE, PORTRAIT_SIZE))
 		"bg":
 			img = cover(img, BG_SIZE)
+		"school":
+			img = cover(img, Vector2i(SCHOOL_SIZE, SCHOOL_SIZE))
+		"island", "relic", "ach", "icon":
+			if transparent_share(img) < 0.05:
+				remove_background(img)
+			if 1.0 - transparent_share(img) < 0.05:
+				warnings.append("фон съел объект")
+			img = trim(img)
+			match kind:
+				"island":
+					scale_to_fit(img, ISLAND_SIDE)
+				"relic":
+					scale_to_fit(img, RELIC_SIDE)
+				"ach":
+					scale_to_fit(img, ACH_SIDE)
+				"icon":
+					img = square(img, ICON_SIZE)
 		"ui":
 			if transparent_share(img) < 0.05:
 				remove_background(img, KEY_ALL_UI.has(id))
@@ -340,6 +372,15 @@ static func process(info: Dictionary, units_info: Dictionary = {}, out_dir: Stri
 	entry["file"] = out_path
 	entry["warnings"] = warnings
 	return entry
+
+
+## Вписать в прозрачный квадрат side × side по центру (значки — одного размера и без искажений).
+static func square(img: Image, side: int) -> Image:
+	var k := float(side) / maxi(img.get_width(), img.get_height())
+	img.resize(maxi(1, roundi(img.get_width() * k)), maxi(1, roundi(img.get_height() * k)), Image.INTERPOLATE_LANCZOS)
+	var out := Image.create(side, side, false, Image.FORMAT_RGBA8)
+	out.blit_rect(img, Rect2i(Vector2i.ZERO, img.get_size()), Vector2i((side - img.get_width()) / 2, (side - img.get_height()) / 2))
+	return out
 
 
 ## Окно внутри рамки: прямоугольник прозрачных пикселей, не касающихся края (доли размера).

@@ -138,7 +138,7 @@ func _show_discard() -> void:
 	_clear()
 	_content.add_child(UiKit.label(tr("REWARD_DISCARD") % CodexState.MAX_CARDS, 32, UiKit.ACCENT))
 	var grid := GridContainer.new()
-	grid.columns = 4
+	grid.columns = 6
 	grid.add_theme_constant_override("h_separation", 12)
 	grid.add_theme_constant_override("v_separation", 12)
 	_content.add_child(grid)

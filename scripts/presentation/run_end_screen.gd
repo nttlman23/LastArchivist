@@ -2,7 +2,7 @@ extends Control
 
 
 func _ready() -> void:
-	UiKit.add_background(self)
+	UiKit.add_background(self, false, &"run_end")
 	var box := UiKit.centered_column(self, 24)
 	var won := Game.run_won
 	var title := UiKit.label(tr("RUN_WON_TITLE") if won else tr("RUN_LOST_TITLE"), 60, UiKit.ACCENT if won else UiKit.DANGER)

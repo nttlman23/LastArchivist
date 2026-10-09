@@ -1,10 +1,13 @@
 extends Node
 ## Значки UnitGlyphs, запечённые в текстуры, — для кнопок, чипов и строк со значками.
+## Если есть рисованный значок (SPEC_SPRINT9 18.3, art/icons) — берётся он: монохромный, тонируется так же.
 ## Рисуются белыми (цвет задаётся modulate). Текстура выдаётся сразу (пустая) и дорисовывается
 ## на месте после запекания, поэтому элементы, созданные в первом кадре, тоже получают значок.
 ## Без рендера (headless) остаются пустыми.
 
 const SIZE := 48
+## Рисованные значки уменьшаются заранее (Lanczos): на экране они 16–44 px, а импорт — без mip-уровней.
+const PAINTED_SIZE := 64
 ## Силуэты существ для портретов и медальонов (SPEC_SPRINT6 11): запекаются по (вид, цвет тела).
 ## Силуэт — сотни мелких треугольников; при программной отрисовке 19 портретов очереди
 ## стоили ~8 мс на кадр. Текстура — сама текстура вьюпорта (без чтения из видеопамяти).
@@ -80,7 +83,25 @@ func _bake() -> void:
 			img.convert(Image.FORMAT_RGBA8)
 			_textures[id].update(img)
 		viewports[id].queue_free()
+	_apply_painted()
 	ready_baked = true
+
+
+## Рисованные значки поверх запечённых (нет картинки — остаётся процедурный).
+func _apply_painted() -> void:
+	for id in UnitGlyphs.ALL_ICONS:
+		var tex := ArtDB.icon(id)
+		if tex == null:
+			continue
+		var img := tex.get_image()
+		if img == null or img.is_empty():
+			continue
+		img = img.duplicate()
+		if img.is_compressed():
+			img.decompress()
+		img.convert(Image.FORMAT_RGBA8)
+		img.resize(PAINTED_SIZE, PAINTED_SIZE, Image.INTERPOLATE_LANCZOS)
+		_textures[id].set_image(img)
 
 
 func _paint(painter: Node2D, id: StringName) -> void:

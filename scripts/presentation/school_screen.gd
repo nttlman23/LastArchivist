@@ -12,7 +12,7 @@ var _trial_row: HBoxContainer
 
 func _ready() -> void:
 	db = Game.defs
-	UiKit.add_background(self)
+	UiKit.add_background(self, false, &"school")
 	var box := UiKit.centered_column(self, 20)
 	box.add_child(UiKit.label(tr("SCHOOL_TITLE"), 44, UiKit.ACCENT))
 	box.add_child(_difficulty_row())
@@ -110,7 +110,8 @@ func _set_trial(i: int) -> void:
 func _school_card(school: SchoolDef) -> Button:
 	var open := MetaRewards.is_school_open(Game.profile, school)
 	var b := Button.new()
-	b.custom_minimum_size = Vector2(330, 300)
+	var art := ArtDB.school(school.id)
+	b.custom_minimum_size = Vector2(330, 520 if art else 300)
 	b.add_theme_stylebox_override("normal", UiKit.panel_style(UiKit.PANEL_COLOR, school.color.darkened(0.2), 3, true))
 	b.add_theme_stylebox_override("hover", UiKit.panel_style(UiKit.PANEL_COLOR.lightened(0.08), school.color, 3, true))
 	b.add_theme_stylebox_override("disabled", UiKit.panel_style(UiKit.PANEL_COLOR.darkened(0.2), Color(0.3, 0.3, 0.35), 2, true))
@@ -124,6 +125,9 @@ func _school_card(school: SchoolDef) -> Button:
 	col.add_theme_constant_override("separation", 10)
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	b.add_child(col)
+	if art:
+		# Портрет школы (SPEC_SPRINT9 18); у закрытой — приглушён.
+		col.add_child(UiKit.art_rect(art, Vector2(298, 220), true, Color.WHITE if open else Color(0.35, 0.35, 0.4)))
 	col.add_child(UiKit.label(tr(school.name_key), 28, school.color.lightened(0.3) if open else UiKit.MUTED))
 	var desc := UiKit.label(tr(school.desc_key + "_SHORT"), 18, Color.WHITE if open else UiKit.MUTED)
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

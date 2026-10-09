@@ -16,7 +16,7 @@ func _ready() -> void:
 	run = Game.run
 	visit = ShopOps.open(db, run, run.pending_node)
 	Hints.show_hint(&"shop")
-	UiKit.add_background(self)
+	UiKit.add_background(self, false, &"shop")
 	var scroll := ScrollContainer.new()
 	scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED

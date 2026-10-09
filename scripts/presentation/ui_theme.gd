@@ -42,6 +42,7 @@ static func build(font_size: int) -> Theme:
 ## Шрифты (SPEC_SPRINT9 4): текст — PT Sans, заголовки — Cormorant Garamond (UiKit.label крупным кеглем).
 const TEXT_FONT := "res://fonts/PT_Sans-Web-Regular.ttf"
 const HEADING_FONT := "res://fonts/CormorantGaramond.ttf"
+const BOLD_FONT := "res://fonts/PT_Sans-Web-Bold.ttf"
 static var heading_font: Font
 
 
@@ -55,6 +56,11 @@ static func _apply_fonts(t: Theme) -> void:
 		v.base_font = heading
 		v.variation_opentype = {TextServerManager.get_primary_interface().name_to_tag("wght"): 650}
 		heading_font = v
+
+
+## Жирный PT Sans — мелкие заголовки на светлом фоне (вертикальные карты): Cormorant мелким кеглем расплывается.
+static func bold_font() -> Font:
+	return _font(BOLD_FONT)
 
 
 ## Шрифт: импортированный, иначе прямо из файла (проект не открывали в редакторе).

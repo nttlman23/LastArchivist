@@ -27,7 +27,9 @@ static var _baked: Dictionary = {}
 
 
 ## Яркость рисованных фонов: под картой и интерфейсом фон приглушён, чтобы читался текст.
-const ART_BG_BRIGHTNESS := {&"menu": 0.9, &"map_act1": 0.62}
+## Экраны с панелями (этап B) — темнее карты: текст лежит прямо на фоне.
+const ART_BG_BRIGHTNESS := {&"menu": 0.9, &"map_act1": 0.62, &"map_act2": 0.62, &"camp": 0.55, &"event": 0.5, &"haven": 0.55,
+		&"hall": 0.45, &"reliquary": 0.5, &"run_end": 0.4, &"school": 0.5, &"shop": 0.5}
 
 
 ## Рисованный фон на весь экран с затемнением (SPEC_SPRINT9 4).
@@ -297,110 +299,9 @@ const HERO_CARD_COLOR := Color(0.95, 0.75, 0.3)
 
 
 ## Карта-воспоминание в виде кнопки. durability < 0 — показывать максимальную.
+## Карта Кодекса — вертикальная карта в рамке (SPEC_SPRINT9 18.2, MemoryCard).
 static func card_button(db: DefsDB, memory_id: StringName, durability: int = -1, level: int = 1) -> Button:
-	var mem := db.memory(memory_id)
-	var dur := mem.max_durability if durability < 0 else durability
-
-	var detailed := Settings.detailed
-	var b := Button.new()
-	b.custom_minimum_size = Vector2(400, 235 if detailed else 168)
-	# Рамка цвета роли (ближний бой, стрелок, поддержка, летун, Архивариус).
-	var frame := role_color(db, memory_id)
-	var normal := panel_style(PANEL_COLOR, frame.darkened(0.35), 2, true)
-	var hover := panel_style(PANEL_COLOR.lightened(0.08), frame, 2, true)
-	var pressed := panel_style(PANEL_COLOR.lightened(0.05), ACCENT, 3, true)
-	b.add_theme_stylebox_override("normal", normal)
-	b.add_theme_stylebox_override("hover", hover)
-	b.add_theme_stylebox_override("pressed", pressed)
-	b.add_theme_stylebox_override("hover_pressed", pressed)
-	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-	var margin := MarginContainer.new()
-	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	for side in ["left", "right", "top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 12)
-	b.add_child(margin)
-
-	var row := HBoxContainer.new()
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_theme_constant_override("separation", 12)
-	margin.add_child(row)
-
-	# Медальон с силуэтом существа (у геройской карты — герб Архивариуса).
-	var medal := Medallion.new()
-	medal.def_id = mem.unit_id if mem.is_unit() else &""
-	medal.memory_id = memory_id
-	medal.body_color = db.unit(mem.unit_id).color if mem.is_unit() else HERO_CARD_COLOR
-	medal.frame_color = role_color(db, memory_id)
-	medal.custom_minimum_size = Vector2(96, 96) if ArtDB.card(memory_id) else Vector2(76, 76)
-	medal.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	medal.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(medal)
-
-	var col := VBoxContainer.new()
-	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(col)
-	var title := TranslationServer.translate(mem.name_key)
-	if level > 1:
-		title += "  " + TranslationServer.translate("CARD_LEVEL") % level
-	var title_label := label(title, 21, ACCENT)
-	title_label.clip_text = true
-	col.add_child(title_label)
-	var dur_color := DANGER if dur <= 1 else MUTED
-	if mem.is_unit() and not detailed:
-		# Коротко: численность, прочность точками, способность чипом, характеристики значками.
-		var def := db.unit(mem.unit_id)
-		var count := floori(mem.count * (1.0 + 0.5 * (level - 1)))
-		col.add_child(label("%d × %s" % [count, TranslationServer.translate(def.name_key)], 19))
-		var line := HBoxContainer.new()
-		line.add_theme_constant_override("separation", 14)
-		line.mouse_filter = Control.MOUSE_FILTER_PASS
-		line.add_child(pips(dur, mem.max_durability))
-		if durability >= 0 and dur <= 1:
-			line.add_child(chip(UnitGlyphs.ICON_KILL, "", DANGER, TranslationServer.translate("CARD_WORN"), TranslationServer.translate("CARD_WORN_TIP"), 16))
-		if def.ability_id != &"":
-			var ab := db.ability(def.ability_id)
-			line.add_child(chip(UnitGlyphs.ICON_ABILITY, TranslationServer.translate(ab.name_key), ACCENT,
-					TranslationServer.translate(ab.name_key), TranslationServer.translate(ab.desc_key), 16))
-		if def.is_ranged:
-			line.add_child(chip(UnitGlyphs.ICON_RANGED, str(def.shots), STAT_COLOR, TranslationServer.translate("CHIP_RANGED"),
-					TranslationServer.translate("ABILITY_RANGED") % def.shots, 16))
-		if def.is_flying:
-			line.add_child(chip(UnitGlyphs.ICON_FLYING, "", STAT_COLOR, TranslationServer.translate("CHIP_FLYING"), TranslationServer.translate("ABILITY_FLYING"), 16))
-		col.add_child(line)
-		col.add_child(def_stat_row(def))
-	elif not mem.is_unit() and not detailed:
-		var line := HBoxContainer.new()
-		line.add_theme_constant_override("separation", 14)
-		line.add_child(label(TranslationServer.translate("CARD_HERO"), 0, HERO_CARD_COLOR))
-		line.add_child(pips(dur, mem.max_durability))
-		if durability >= 0 and dur <= 1:
-			line.add_child(chip(UnitGlyphs.ICON_KILL, "", DANGER, TranslationServer.translate("CARD_WORN"), TranslationServer.translate("CARD_WORN_TIP"), 16))
-		col.add_child(line)
-		var desc := label(TranslationServer.translate("MEM_LAST_KING_SHORT") if mem.id == &"last_king" else "", 16, MUTED)
-		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		col.add_child(desc)
-	elif mem.is_unit():
-		var def := db.unit(mem.unit_id)
-		var count := floori(mem.count * (1.0 + 0.5 * (level - 1)))
-		col.add_child(label("%d × %s" % [count, TranslationServer.translate(def.name_key)]))
-		col.add_child(label(TranslationServer.translate("CARD_DURABILITY") % [dur, mem.max_durability], 0, dur_color))
-		var stats := label(unit_stats(def), 16, MUTED)
-		stats.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		col.add_child(stats)
-		if def.ability_id != &"":
-			var ab := label(TranslationServer.translate("CARD_ABILITY") % TranslationServer.translate(db.ability(def.ability_id).name_key), 16, ACCENT)
-			col.add_child(ab)
-	else:
-		col.add_child(label(TranslationServer.translate("CARD_HERO"), 0, HERO_CARD_COLOR))
-		col.add_child(label(TranslationServer.translate("CARD_DURABILITY") % [dur, mem.max_durability], 0, dur_color))
-		var desc := label(TranslationServer.translate(mem.desc_key), 16, MUTED)
-		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		col.add_child(desc)
-	Tip.attach(b, TranslationServer.translate(mem.name_key), _card_tooltip(db, mem), UnitGlyphs.ICON_ABILITY if mem.is_unit() else UnitGlyphs.ICON_ORDER)
-	b.pressed.connect(Audio.play.bind(&"card"))
-	return b
+	return MemoryCard.build(db, memory_id, durability, level)
 
 
 ## Подсказка карты: способность существа или описание геройской карты.
@@ -499,6 +400,19 @@ const RESOURCE_COLORS := {
 	RunState.AETHER: Color(0.8, 0.6, 1.0),
 }
 const STAT_COLOR := Color(0.85, 0.87, 0.92)
+
+
+## Картинка из ArtDB в рамке size: covered — заполнить с обрезкой, иначе вписать. Клики проходят насквозь.
+static func art_rect(tex: Texture2D, size: Vector2, covered: bool = false, tint: Color = Color.WHITE) -> TextureRect:
+	var r := TextureRect.new()
+	r.texture = tex
+	r.custom_minimum_size = size
+	r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	r.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED if covered else TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	r.modulate = tint
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	r.clip_contents = covered
+	return r
 
 
 static func icon_rect(icon: StringName, size: float, color: Color = Color.WHITE) -> TextureRect:
@@ -661,15 +575,17 @@ static func flow(separation: int = 10) -> HFlowContainer:
 
 
 ## Строка характеристик значками: ОЗ, атака, защита, урон, скорость, инициатива.
-static func stat_row(hp: int, attack: int, defense: int, dmg_min: int, dmg_max: int, speed: int, initiative: int, size: int = 17) -> HFlowContainer:
+## color и hp_color — для светлого фона (вертикальная карта на пергаменте, SPEC_SPRINT9 18.2).
+static func stat_row(hp: int, attack: int, defense: int, dmg_min: int, dmg_max: int, speed: int, initiative: int, size: int = 17,
+		color: Color = STAT_COLOR, hp_color: Color = Color(1, 0.55, 0.55)) -> HFlowContainer:
 	var row := flow(10)
 	var t := func(key: String) -> String: return TranslationServer.translate(key)
-	row.add_child(chip(UnitGlyphs.ICON_HP, str(hp), Color(1, 0.55, 0.55), t.call("STAT_HP"), t.call("STAT_HP_TIP"), size))
-	row.add_child(chip(UnitGlyphs.ICON_MELEE, str(attack), STAT_COLOR, t.call("STAT_ATTACK"), t.call("STAT_ATTACK_TIP"), size))
-	row.add_child(chip(UnitGlyphs.ICON_DEFEND, str(defense), STAT_COLOR, t.call("STAT_DEFENSE"), t.call("STAT_DEFENSE_TIP"), size))
-	row.add_child(chip(UnitGlyphs.ICON_RETALIATION, "%d–%d" % [dmg_min, dmg_max], STAT_COLOR, t.call("STAT_DAMAGE"), t.call("STAT_DAMAGE_TIP"), size))
-	row.add_child(chip(UnitGlyphs.ICON_SPEED, str(speed), STAT_COLOR, t.call("STAT_SPEED"), t.call("STAT_SPEED_TIP"), size))
-	row.add_child(chip(UnitGlyphs.ICON_WAIT, str(initiative), STAT_COLOR, t.call("STAT_INITIATIVE"), t.call("STAT_INITIATIVE_TIP"), size))
+	row.add_child(chip(UnitGlyphs.ICON_HP, str(hp), hp_color, t.call("STAT_HP"), t.call("STAT_HP_TIP"), size))
+	row.add_child(chip(UnitGlyphs.ICON_MELEE, str(attack), color, t.call("STAT_ATTACK"), t.call("STAT_ATTACK_TIP"), size))
+	row.add_child(chip(UnitGlyphs.ICON_DEFEND, str(defense), color, t.call("STAT_DEFENSE"), t.call("STAT_DEFENSE_TIP"), size))
+	row.add_child(chip(UnitGlyphs.ICON_RETALIATION, "%d–%d" % [dmg_min, dmg_max], color, t.call("STAT_DAMAGE"), t.call("STAT_DAMAGE_TIP"), size))
+	row.add_child(chip(UnitGlyphs.ICON_SPEED, str(speed), color, t.call("STAT_SPEED"), t.call("STAT_SPEED_TIP"), size))
+	row.add_child(chip(UnitGlyphs.ICON_WAIT, str(initiative), color, t.call("STAT_INITIATIVE"), t.call("STAT_INITIATIVE_TIP"), size))
 	return row
 
 

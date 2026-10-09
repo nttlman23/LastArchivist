@@ -63,8 +63,8 @@ func _ready() -> void:
 	# Фон боя — цвет очистки кадра (Game), отдельный прямоугольник на весь экран не нужен.
 	if Settings.effects_full:
 		add_child(UiKit.ambient_ash(self))
-	# Рисованный пол первого акта (SPEC_SPRINT9 4); во втором акте — прежние плиты.
-	var floor_tex := ArtDB.background(&"battle_act1") if state.biome != &"flooded" else null
+	# Рисованный пол: первый акт (SPEC_SPRINT9 4), Затопленные хранилища (этап B, раздел 18).
+	var floor_tex := ArtDB.background(&"battle_act2" if state.biome == &"flooded" else &"battle_act1")
 	if floor_tex:
 		add_child(UiKit.art_background(floor_tex, 0.6))
 		move_child(get_child(get_child_count() - 1), 0)
