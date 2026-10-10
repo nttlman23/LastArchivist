@@ -54,7 +54,8 @@ const BUS_SFX := &"SFX"
 const BUS_AMBIENCE := &"Ambience"
 const VOICES := 10
 const FADE_TIME := 1.2
-const MUSIC_BASE_DB := -6.0
+## Присланная музыка (около −18,5 дБ RMS) на 3 дБ тише прежней процедурной — база выше на столько же.
+const MUSIC_BASE_DB := -3.0
 ## Один и тот же звук не чаще раза в это время (несколько попаданий в одном событии).
 const MIN_REPEAT_MSEC := 40
 const PITCH_JITTER := 0.05
@@ -63,7 +64,8 @@ const HIT_JITTER := 0.09
 ## Переход слоя напряжения и петель окружения.
 const TENSION_FADE := 2.0
 const AMBIENCE_FADE := 2.0
-const AMBIENCE_BASE_DB := -14.0
+## Присланное окружение уже тихое (около −27 дБ RMS) — почти без ослабления.
+const AMBIENCE_BASE_DB := -3.0
 const SILENT_DB := -80.0
 
 var settings_path := "user://settings.cfg"

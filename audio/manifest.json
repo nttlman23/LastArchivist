@@ -1,0 +1,261 @@
+{
+	"items": {
+		"ability": {
+			"channels": 2,
+			"file": "res://audio/sfx/ability.wav",
+			"frames": 35280,
+			"md5": "b7b50f71108a56e54a54eb9514d57c19",
+			"rate": 44100,
+			"seconds": 0.8
+		},
+		"act2": {
+			"channels": 2,
+			"file": "res://audio/music/act2.wav",
+			"frames": 4939200,
+			"md5": "4492f9aae0651dd2438f1aafcc8ac19c",
+			"rate": 44100,
+			"seconds": 112.0
+		},
+		"act2_tension": {
+			"channels": 2,
+			"file": "res://audio/music/act2_tension.wav",
+			"frames": 4939200,
+			"md5": "f7f8e109871bcf3b9df70cba3a3c8593",
+			"rate": 44100,
+			"seconds": 112.0
+		},
+		"archive": {
+			"channels": 2,
+			"file": "res://audio/ambience/archive.wav",
+			"frames": 1146600,
+			"md5": "6100986519ab5c9551f24de671f2963b",
+			"rate": 44100,
+			"seconds": 26.0
+		},
+		"battle": {
+			"channels": 2,
+			"file": "res://audio/music/battle.wav",
+			"frames": 6350400,
+			"md5": "240e1eaa9ef95961769f9d68575f09bb",
+			"rate": 44100,
+			"seconds": 144.0
+		},
+		"battle_tension": {
+			"channels": 2,
+			"file": "res://audio/music/battle_tension.wav",
+			"frames": 6350400,
+			"md5": "66003b128337be56f607a6f4222a555e",
+			"rate": 44100,
+			"seconds": 144.0
+		},
+		"boss": {
+			"channels": 2,
+			"file": "res://audio/music/boss.wav",
+			"frames": 3175200,
+			"md5": "db85b1d7d4c6b762c4949737e0930a56",
+			"rate": 44100,
+			"seconds": 72.0
+		},
+		"boss2": {
+			"channels": 2,
+			"file": "res://audio/music/boss2.wav",
+			"frames": 3175200,
+			"md5": "10ea0b474e340b830548d708c6b9f92e",
+			"rate": 44100,
+			"seconds": 72.0
+		},
+		"card": {
+			"channels": 2,
+			"file": "res://audio/sfx/card.wav",
+			"frames": 13230,
+			"md5": "c18262871d41962928b905eb5b3fe97f",
+			"rate": 44100,
+			"seconds": 0.3
+		},
+		"death": {
+			"channels": 2,
+			"file": "res://audio/sfx/death.wav",
+			"frames": 35280,
+			"md5": "5eed84d6142fdbd886511de9457cc5ab",
+			"rate": 44100,
+			"seconds": 0.8
+		},
+		"defeat": {
+			"channels": 2,
+			"file": "res://audio/sfx/defeat.wav",
+			"frames": 110250,
+			"md5": "e3faa3ddfb1fb53485600c519b3a9705",
+			"rate": 44100,
+			"seconds": 2.5
+		},
+		"erase": {
+			"channels": 2,
+			"file": "res://audio/sfx/erase.wav",
+			"frames": 61740,
+			"md5": "24b9fc1b082b49f2b280c79bb1bf4a8d",
+			"rate": 44100,
+			"seconds": 1.4
+		},
+		"heal": {
+			"channels": 2,
+			"file": "res://audio/sfx/heal.wav",
+			"frames": 44100,
+			"md5": "2b8acac458180f4f3562ba3557564e3d",
+			"rate": 44100,
+			"seconds": 1.0
+		},
+		"hit_claw": {
+			"channels": 2,
+			"file": "res://audio/sfx/hit_claw.wav",
+			"frames": 15435,
+			"md5": "08e1b86955d9e57ee866871c170ec0ce",
+			"rate": 44100,
+			"seconds": 0.35
+		},
+		"hit_heavy": {
+			"channels": 2,
+			"file": "res://audio/sfx/hit_heavy.wav",
+			"frames": 30870,
+			"md5": "b3afe11950babf0b75cadf2d61ae0516",
+			"rate": 44100,
+			"seconds": 0.7
+		},
+		"hit_magic": {
+			"channels": 2,
+			"file": "res://audio/sfx/hit_magic.wav",
+			"frames": 35280,
+			"md5": "85f288a97eac08b54ce941b788b0e9a9",
+			"rate": 44100,
+			"seconds": 0.8
+		},
+		"hit_metal": {
+			"channels": 2,
+			"file": "res://audio/sfx/hit_metal.wav",
+			"frames": 22050,
+			"md5": "8f9af0e06d7c41c09bc44acb2409de9a",
+			"rate": 44100,
+			"seconds": 0.5
+		},
+		"hit_shard": {
+			"channels": 2,
+			"file": "res://audio/sfx/hit_shard.wav",
+			"frames": 19845,
+			"md5": "c3ee44a8a51901e496d29049c1d20260",
+			"rate": 44100,
+			"seconds": 0.45
+		},
+		"impact": {
+			"channels": 2,
+			"file": "res://audio/sfx/impact.wav",
+			"frames": 11025,
+			"md5": "0ad36e2df6d688c83d0e2af38801b401",
+			"rate": 44100,
+			"seconds": 0.25
+		},
+		"melee": {
+			"channels": 2,
+			"file": "res://audio/sfx/melee.wav",
+			"frames": 13230,
+			"md5": "fe37ea5a93332d0729af238bc458e2b3",
+			"rate": 44100,
+			"seconds": 0.3
+		},
+		"menu": {
+			"channels": 2,
+			"file": "res://audio/music/menu.wav",
+			"frames": 3528000,
+			"md5": "d77c43e4891390e3229938429e268efe",
+			"rate": 44100,
+			"seconds": 80.0
+		},
+		"move": {
+			"channels": 2,
+			"file": "res://audio/sfx/move.wav",
+			"frames": 13230,
+			"md5": "00eb358a5600c90ebc9e6d16625cd927",
+			"rate": 44100,
+			"seconds": 0.3
+		},
+		"order": {
+			"channels": 2,
+			"file": "res://audio/sfx/order.wav",
+			"frames": 35280,
+			"md5": "ccfd107cd30aed1ce5d888d5b88698d1",
+			"rate": 44100,
+			"seconds": 0.8
+		},
+		"push": {
+			"channels": 2,
+			"file": "res://audio/sfx/push.wav",
+			"frames": 17640,
+			"md5": "d401d11f733bc8f08495deac19d72b7f",
+			"rate": 44100,
+			"seconds": 0.4
+		},
+		"shoot": {
+			"channels": 2,
+			"file": "res://audio/sfx/shoot.wav",
+			"frames": 17640,
+			"md5": "e640544bab6c1716f36ceb81c39b9dc1",
+			"rate": 44100,
+			"seconds": 0.4
+		},
+		"spell": {
+			"channels": 2,
+			"file": "res://audio/sfx/spell.wav",
+			"frames": 52920,
+			"md5": "4a22998b0b1f4982816f0949b8fa6351",
+			"rate": 44100,
+			"seconds": 1.2
+		},
+		"transform": {
+			"channels": 2,
+			"file": "res://audio/sfx/transform.wav",
+			"frames": 52920,
+			"md5": "72d34949143ff5e421061f8a6a01ad36",
+			"rate": 44100,
+			"seconds": 1.2
+		},
+		"turn": {
+			"channels": 2,
+			"file": "res://audio/sfx/turn.wav",
+			"frames": 7938,
+			"md5": "dc7008b7e1b1ed410512681b61a8bc19",
+			"rate": 44100,
+			"seconds": 0.18
+		},
+		"ui_click": {
+			"channels": 2,
+			"file": "res://audio/sfx/ui_click.wav",
+			"frames": 3528,
+			"md5": "069297c424c5cdcf951ac921a1132785",
+			"rate": 44100,
+			"seconds": 0.08
+		},
+		"victory": {
+			"channels": 2,
+			"file": "res://audio/sfx/victory.wav",
+			"frames": 132300,
+			"md5": "e7cfdca09de13dba7e95be7ff9412a38",
+			"rate": 44100,
+			"seconds": 3.0
+		},
+		"wall": {
+			"channels": 2,
+			"file": "res://audio/sfx/wall.wav",
+			"frames": 35280,
+			"md5": "e47d2816aa1ba27725c110f1bb59dfab",
+			"rate": 44100,
+			"seconds": 0.8
+		},
+		"water": {
+			"channels": 2,
+			"file": "res://audio/ambience/water.wav",
+			"frames": 1146600,
+			"md5": "de5f20901a4331553bf577749569bfa3",
+			"rate": 44100,
+			"seconds": 26.0
+		}
+	},
+	"version": 1
+}

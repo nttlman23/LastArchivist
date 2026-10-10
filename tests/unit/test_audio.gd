@@ -165,3 +165,18 @@ func test_ambience_volume_and_scenes() -> void:
 	Game.run.act = 2
 	assert_eq(Game.scene_ambience(Game.SCENE_BATTLE), &"water")
 	Game.run = real_run
+
+
+func test_external_audio_manifest() -> void:
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://audio/manifest.json"))
+	assert_true(parsed is Dictionary, "манифест присланного звука")
+	var items: Dictionary = parsed.get("items", {})
+	assert_eq(items.size(), 32, "вся музыка и все звуки по промпту")
+	for name: String in items:
+		var e: Dictionary = items[name]
+		assert_true(FileAccess.file_exists(e["file"]), "%s на месте" % name)
+		assert_eq(FileAccess.get_md5(e["file"]), e["md5"], "%s не перезаписан генератором" % name)
+	for id in Audio.MUSIC:
+		assert_true(items.has(String(id)), "музыка %s — присланная" % id)
+	for id in Audio.SFX:
+		assert_true(items.has(String(id)), "звук %s — присланный" % id)
