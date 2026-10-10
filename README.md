@@ -23,7 +23,7 @@
 
 ## Состояние
 
-Проект разрабатывается по спринтам. Спецификация каждого лежит в корне: [SPEC.md](SPEC.md), [SPEC_SPRINT2.md](SPEC_SPRINT2.md) … [SPEC_SPRINT10.md](SPEC_SPRINT10.md).
+Проект разрабатывается по спринтам. Спецификация каждого лежит в [specs/](specs/): [SPEC.md](specs/SPEC.md), [SPEC_SPRINT2.md](specs/SPEC_SPRINT2.md) … [SPEC_SPRINT10.md](specs/SPEC_SPRINT10.md).
 
 | Спринт | Содержание |
 |---|---|
