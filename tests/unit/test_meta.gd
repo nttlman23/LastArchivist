@@ -182,6 +182,22 @@ func test_settings_roundtrip() -> void:
 	Settings.hints = saved[1]
 
 
+func test_windowed_setting_persists() -> void:
+	var saved_path := Settings.settings_path
+	var saved := Settings.windowed
+	Settings.settings_path = SETTINGS_PATH
+	Settings.set_windowed(false)
+	Settings.windowed = true
+	Settings.load_settings()
+	assert_false(Settings.windowed, "во весь экран — из файла настроек")
+	Settings.set_windowed(true)
+	Settings.windowed = false
+	Settings.load_settings()
+	assert_true(Settings.windowed)
+	Settings.settings_path = saved_path
+	Settings.windowed = saved
+
+
 func test_hints_once_and_toggle() -> void:
 	var real_profile := Game.profile
 	var real_path := Game.profile_path

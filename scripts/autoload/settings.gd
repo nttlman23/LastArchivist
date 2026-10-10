@@ -20,10 +20,14 @@ const ANIM_SPEEDS: Array[float] = [1.0, 1.5, 2.0]
 var anim_speed := 1.0
 var screen_shake := true
 var effects_full := true
+## Запуск в окне (иначе — во весь экран); применяется сразу и при каждом запуске.
+var windowed := true
+const WINDOW_SIZE := Vector2i(1600, 900)
 
 
 func _ready() -> void:
 	load_settings()
+	apply_window()
 
 
 func set_detailed(value: bool) -> void:
@@ -80,6 +84,7 @@ func load_settings() -> void:
 			anim_speed = 1.0
 		screen_shake = bool(cfg.get_value(SECTION, "screen_shake", screen_shake))
 		effects_full = bool(cfg.get_value(SECTION, "effects_full", effects_full))
+		windowed = bool(cfg.get_value(SECTION, "windowed", windowed))
 
 
 func save_settings() -> void:
@@ -93,4 +98,27 @@ func save_settings() -> void:
 	cfg.set_value(SECTION, "anim_speed", anim_speed)
 	cfg.set_value(SECTION, "screen_shake", screen_shake)
 	cfg.set_value(SECTION, "effects_full", effects_full)
+	cfg.set_value(SECTION, "windowed", windowed)
 	SafeFile.save_config(cfg, settings_path)
+
+
+func set_windowed(value: bool) -> void:
+	windowed = value
+	save_settings()
+	apply_window()
+	changed.emit()
+
+
+## Окно 1600×900 по центру экрана или полный экран (без рамки). В headless (тесты, сборка) — ничего.
+func apply_window() -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+	if not windowed:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+		return
+	if DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_WINDOWED:
+		return
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+	DisplayServer.window_set_size(WINDOW_SIZE)
+	var screen := DisplayServer.window_get_current_screen()
+	DisplayServer.window_set_position(DisplayServer.screen_get_position(screen) + (DisplayServer.screen_get_size(screen) - WINDOW_SIZE) / 2)
