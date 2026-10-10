@@ -2,6 +2,12 @@ extends Control
 ## Карта экспедиции — хаб забега (SPEC_SPRINT3 3.3): выбор острова, разведка, перелёт, Кодекс.
 
 const SIDE_WIDTH := 420.0
+## Масштаб карты: острова крупнее, карта выше экрана и прокручивается (колесо, перетаскивание, стрелки).
+const ZOOM := 1.7
+const TOP_MARGIN := 90.0
+const BOTTOM_MARGIN := 30.0
+const SCROLL_STEP := 110.0
+const DRAG_THRESHOLD := 8.0
 const ROMAN := ["I", "II", "III"]
 const TYPE_KEYS := {
 	MapState.NodeType.BATTLE: "NODE_BATTLE",
@@ -23,6 +29,11 @@ var _info: VBoxContainer
 var _codex_overlay: PanelContainer
 var _legend: PanelContainer
 var _selected := -1
+var _centered := false
+## Перетаскивание карты левой кнопкой: точка нажатия; после сдвига больше порога клик не выбирает остров.
+var _press_at := Vector2.ZERO
+var _pressed := false
+var _dragging := false
 
 
 func _ready() -> void:
@@ -49,11 +60,39 @@ func _ready() -> void:
 
 
 func _layout() -> void:
-	var map_w := size.x - SIDE_WIDTH
-	view.position = Vector2(map_w * 0.5, size.y - 90.0)
+	view.scale = Vector2.ONE * ZOOM
+	view.position.x = (size.x - SIDE_WIDTH) * 0.5
+	if not _centered:
+		# Первый показ: текущий остров (или начало карты) — чуть ниже середины экрана.
+		_centered = true
+		var y := view.node_pos(run.map.current).y if run.map.current != MapState.START else 0.0
+		view.position.y = size.y * 0.6 - y * ZOOM
+	_scroll_by(0.0)
+
+
+## Прокрутка карты по вертикали в пределах островов: сверху — под шапкой, снизу — у края экрана.
+func _scroll_by(dy: float) -> void:
+	var span := view.vertical_span()
+	var low := size.y - BOTTOM_MARGIN - span.y * ZOOM
+	var high := TOP_MARGIN - span.x * ZOOM
+	view.position.y = clampf(view.position.y + dy, low, maxf(low, high))
 
 
 func _build_hud() -> void:
+	# Тёмная полоса под шапкой: прокрученные вверх острова уходят под неё, а не под текст.
+	var shade := TextureRect.new()
+	var grad := GradientTexture2D.new()
+	grad.gradient = Gradient.new()
+	grad.gradient.set_color(0, Color(UiKit.BG_COLOR, 0.92))
+	grad.gradient.set_color(1, Color(UiKit.BG_COLOR, 0.0))
+	grad.fill_from = Vector2(0, 0)
+	grad.fill_to = Vector2(0, 1)
+	shade.texture = grad
+	shade.stretch_mode = TextureRect.STRETCH_SCALE
+	shade.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	shade.offset_bottom = TOP_MARGIN + 30.0
+	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(shade)
 	var top := HBoxContainer.new()
 	top.position = Vector2(24, 16)
 	top.add_theme_constant_override("separation", 24)
@@ -137,17 +176,41 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _codex_overlay:
 		return
 	if event is InputEventMouseMotion:
-		var id := view.node_at(view.get_local_mouse_position())
-		if id != view.hovered:
-			view.hovered = id
-			view.hover_path = MapActions.path_to(run, id) if id >= 0 and run.pending_node < 0 else ([] as Array[int])
-			view.hover_rewards = MapActions.path_rewards(db, run, view.hover_path)
-			view.queue_redraw()
-	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if _pressed and not _dragging and event.position.distance_to(_press_at) > DRAG_THRESHOLD:
+			_dragging = true
+		if _dragging:
+			_scroll_by(event.relative.y)
+		_update_hover()
+	elif event is InputEventMouseButton and event.pressed and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
+		_scroll_by(SCROLL_STEP * (1.0 if event.button_index == MOUSE_BUTTON_WHEEL_UP else -1.0))
+		_update_hover()
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			_pressed = true
+			_dragging = false
+			_press_at = event.position
+			return
+		_pressed = false
+		if _dragging:
+			_dragging = false
+			return
 		var id := view.node_at(view.get_local_mouse_position())
 		if id >= 0:
 			_select(id)
 			_refresh()
+	elif event.is_action_pressed("ui_up") or event.is_action_pressed("ui_down"):
+		_scroll_by(SCROLL_STEP * (1.0 if event.is_action_pressed("ui_up") else -1.0))
+		_update_hover()
+
+
+## Остров под курсором: путь к нему и награды на пути.
+func _update_hover() -> void:
+	var id := view.node_at(view.get_local_mouse_position())
+	if id != view.hovered:
+		view.hovered = id
+		view.hover_path = MapActions.path_to(run, id) if id >= 0 and run.pending_node < 0 else ([] as Array[int])
+		view.hover_rewards = MapActions.path_rewards(db, run, view.hover_path)
+		view.queue_redraw()
 
 
 func _select(id: int) -> void:

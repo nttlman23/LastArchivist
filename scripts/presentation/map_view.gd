@@ -4,8 +4,8 @@ extends Node2D
 ## Статичная часть рисуется заново только при refresh(); пульсация доступных островов —
 ## через modulate отдельных узлов-колец, без перерисовки (SPEC 6.6).
 
-const LANE_SPACING := 250.0
-const LAYER_SPACING := 112.0
+const LANE_SPACING := 200.0
+const LAYER_SPACING := 124.0
 const ISLAND_R := 36.0
 const RIFT_R := 58.0
 const JITTER := Vector2(26, 14)
@@ -109,6 +109,17 @@ func node_pos(id: int) -> Vector2:
 	return _pos[id]
 
 
+## Верх и низ карты в локальных координатах (x — верх, y — низ) вместе с картинками островов и кольцами.
+func vertical_span() -> Vector2:
+	var span := Vector2(INF, -INF)
+	for id in _pos:
+		var n := run.map.node(id)
+		var r := (RIFT_R if n.type == MapState.NodeType.RIFT else ISLAND_R) * ART_SCALE * 0.5 + 20.0
+		span.x = minf(span.x, _pos[id].y - r)
+		span.y = maxf(span.y, _pos[id].y + r)
+	return span
+
+
 ## Узел под точкой в локальных координатах или -1.
 func node_at(local: Vector2) -> int:
 	for id in _pos:
@@ -205,11 +216,14 @@ func _draw_path_rewards() -> void:
 	if hover_path.is_empty() or hovered < 0 or hover_rewards.values().all(func(v: int) -> bool: return v == 0):
 		return
 	var rr := ring_r(run.map.node(hovered))
-	var p := _pos[hovered] + Vector2(rr + 24, -rr * 0.4)
 	var w := 0.0
 	for k in RunState.RESOURCE_IDS:
 		if hover_rewards.get(k, 0) > 0:
 			w += 52.0
+	var p := _pos[hovered] + Vector2(rr + 24, -rr * 0.4)
+	if run.map.node(hovered).lane >= MapState.LANES - 1:
+		# У правого края — слева от острова, чтобы не уйти под боковую панель.
+		p.x = _pos[hovered].x - rr - 24 - w
 	draw_rect(Rect2(p + Vector2(-8, -16), Vector2(w + 8, 32)), Color(UiKit.BG_COLOR, 0.85))
 	for k in RunState.RESOURCE_IDS:
 		var v: int = hover_rewards.get(k, 0)
