@@ -553,6 +553,297 @@ func _ping(buf: PackedFloat32Array, start: float, freq: float, amp: float, decay
 		_add(buf, s0 + i, sin(phase) * amp * exp(-t / decay) * minf(1.0, i / 20.0))
 
 
+# --- Варианты после плейтеста (SPEC_SPRINT9 21) -----------------------------------------
+# Автору не понравились музыка боя (дёшево звучит, надоедает, не то настроение), звук победы
+# и звук передачи хода. Ниже — варианты на выбор; инструменты ансамблевые: несколько слегка
+# расстроенных голосов на ноту вместо одиночных «голых» тонов.
+
+## Музыка боя A «Мрачная тактика»: ре минор, 70 уд/мин, 44 такта ≈ 2,5 мин.
+## Вступление (тихие струнные и хор) → тема виолончели с арфой → светлая середина с хором → возврат.
+func music_battle_dark() -> PackedFloat32Array:
+	var bar := 60.0 / 70.0 * 4.0
+	var beat := bar / 4.0
+	var dark := [[38, [50, 53, 57]], [34, [50, 53, 58]], [31, [50, 55, 58]], [33, [49, 52, 57]]]   # Dm Bb Gm A
+	var light := [[41, [53, 57, 60]], [36, [52, 55, 60]], [38, [50, 53, 57]], [34, [50, 53, 58]]]  # F C Dm Bb
+	var plan: Array = []
+	for i in 8:
+		plan.append([dark[i % 4], 0])
+	for i in 16:
+		plan.append([dark[i % 4], 1])
+	for i in 12:
+		plan.append([light[i % 4], 2])
+	for i in 8:
+		plan.append([dark[i % 4], 3])
+	var buf := _buffer(bar * plan.size())
+	for b in plan.size():
+		var t := b * bar
+		var chord: Array = plan[b][0]
+		var part: int = plan[b][1]
+		var notes: Array = chord[1]
+		var pad := 0.02 if part == 0 else 0.028
+		_strings(buf, t, bar + 0.6, _hz(int(chord[0]) - 12), pad * 1.4, 0.8, 0.9)
+		for n: int in notes:
+			_strings(buf, t, bar + 0.6, _hz(n), pad, 0.9, 0.9)
+		if part == 0 or part == 3:
+			_choir(buf, t, bar + 0.8, _hz(int(notes[0])), 0.012, &"u")
+		if part == 1 or part == 3:
+			for e in 8:
+				_harp(buf, t + e * beat * 0.5, _hz(int(notes[[0, 1, 2, 1][e % 4]]) + 12), 0.05 if part == 1 else 0.035)
+		elif part == 2:
+			for e in 4:
+				_harp(buf, t + e * beat, _hz(int(notes[e % 3]) + 12), 0.04)
+		if part == 1 or part == 2:
+			_taiko(buf, t, 0.35)
+			_taiko(buf, t + beat * 2, 0.22)
+			if b % 4 == 3:
+				_taiko(buf, t + beat * 3.5, 0.18)
+		elif part == 0 and b % 2 == 0:
+			_taiko(buf, t, 0.2)
+	# Тема виолончели (4 такта): A Bb A G F | G F E — над Dm Bb Gm A.
+	var theme := [[0, 57, 2], [2, 58, 1], [3, 57, 1], [4, 55, 2], [6, 53, 2], [8, 55, 3], [11, 53, 1], [12, 52, 4]]
+	for start_bar in [8, 16, 36]:
+		for m: Array in theme:
+			_cello(buf, start_bar * bar + float(m[0]) * beat, float(m[2]) * beat + 0.15, _hz(int(m[1])), 0.07)
+	# Мелодия хора в светлой середине: F E D D C — над F C Dm Bb.
+	var hymn := [[0, 65, 4], [4, 64, 4], [8, 62, 4], [12, 62, 2], [14, 60, 2]]
+	for start_bar in [24, 28, 32]:
+		for m: Array in hymn:
+			_choir(buf, start_bar * bar + float(m[0]) * beat, float(m[2]) * beat + 0.4, _hz(int(m[1])), 0.03, &"a")
+	_echo(buf, 0.43, 0.3)
+	_echo(buf, 0.71, 0.2)
+	_lowpass(buf, 0.42)
+	return buf
+
+
+## Музыка боя B «Поход»: ля дорийский, 84 уд/мин, 52 такта ≈ 2,5 мин.
+## Остинато лютни и арфы, рамочный барабан, струнные; в середине — тема валторн.
+func music_battle_march() -> PackedFloat32Array:
+	var bar := 60.0 / 84.0 * 4.0
+	var beat := bar / 4.0
+	var prog_a := [[45, [57, 60, 64]], [43, [55, 59, 62]], [38, [54, 57, 62]], [45, [57, 60, 64]]]  # Am G D Am
+	var prog_b := [[41, [53, 57, 60]], [43, [55, 59, 62]], [45, [57, 60, 64]], [40, [56, 59, 64]]]  # F G Am E
+	var plan: Array = []
+	for i in 4:
+		plan.append([prog_a[i % 4], 0])
+	for i in 16:
+		plan.append([prog_a[i % 4], 1])
+	for i in 16:
+		plan.append([prog_b[i % 4], 2])
+	for i in 12:
+		plan.append([prog_a[i % 4], 3])
+	for i in 4:
+		plan.append([prog_a[i % 4], 0])
+	var buf := _buffer(bar * plan.size())
+	for b in plan.size():
+		var t := b * bar
+		var chord: Array = plan[b][0]
+		var part: int = plan[b][1]
+		var notes: Array = chord[1]
+		_strings(buf, t, bar + 0.5, _hz(int(chord[0]) - 12), 0.035, 0.5, 0.7)
+		if part != 0:
+			for n: int in notes:
+				_strings(buf, t, bar + 0.5, _hz(n), 0.022, 0.6, 0.7)
+		# Лютня: восьмые по звукам аккорда; во вступлении и коде — одна.
+		for e in 8:
+			var idx: int = [0, 2, 1, 2, 0, 2, 1, 2][e]
+			_lute(buf, t + e * beat * 0.5, _hz(int(notes[idx])), 0.06 if e % 2 == 0 else 0.045, 0.8)
+		if part == 1 or part == 3:
+			for e in 4:
+				_harp(buf, t + e * beat + beat * 0.5, _hz(int(notes[(e + 1) % 3]) + 12), 0.03)
+		if part != 0:
+			for hit: Array in [[0.0, 0.32], [1.5, 0.18], [2.0, 0.26], [3.0, 0.16], [3.5, 0.12]]:
+				_frame_drum(buf, t + float(hit[0]) * beat, float(hit[1]))
+	# Тема валторн (4 такта): A G A B C B A G# — над F G Am E.
+	var motif := [[0, 69, 2], [2, 67, 1], [3, 69, 1], [4, 71, 2], [6, 72, 2], [8, 71, 2], [10, 69, 2], [12, 68, 4]]
+	for start_bar in [20, 24, 28, 32]:
+		var amp := 0.05 if start_bar % 8 == 4 else 0.04
+		for m: Array in motif:
+			_brass(buf, start_bar * bar + float(m[0]) * beat, float(m[2]) * beat + 0.1, _hz(int(m[1]) - 12), amp)
+	_echo(buf, 0.36, 0.25)
+	_lowpass(buf, 0.45)
+	return buf
+
+
+## Победа 1 «Сдержанный аккорд»: тёплый аккорд струнных, арпеджио арфы, колокол.
+func sfx_victory_chord() -> PackedFloat32Array:
+	var buf := _buffer(3.0)
+	for n in [50, 57, 62, 66]:
+		_strings(buf, 0.0, 2.6, _hz(n), 0.05, 0.12, 1.2)
+	for i in 4:
+		_harp(buf, i * 0.08, _hz([62, 66, 69, 74][i]), 0.08)
+	_bell(buf, 0.15, _hz(86), 0.05)
+	_echo(buf, 0.3, 0.25)
+	return buf
+
+
+## Победа 2 «Фанфары»: дробь литавр, удар, медь и тарелка, аккорд струнных под ними.
+func sfx_victory_fanfare() -> PackedFloat32Array:
+	var buf := _buffer(3.0)
+	for i in 8:
+		_taiko(buf, i * 0.05, 0.1 + 0.03 * i)
+	_taiko(buf, 0.4, 0.6)
+	_brass(buf, 0.0, 0.18, _hz(62), 0.12)
+	_brass(buf, 0.2, 0.18, _hz(62), 0.12)
+	for n in [57, 62, 66, 69]:
+		_brass(buf, 0.4, 1.1, _hz(n), 0.08)
+	_noise(buf, 0.4, 1.4, 0.12, 0.5, 0.8)
+	for n in [50, 57, 62, 66]:
+		_strings(buf, 0.4, 2.0, _hz(n), 0.03, 0.1, 1.0)
+	_echo(buf, 0.25, 0.2)
+	return buf
+
+
+## Победа 3 «Память возвращена»: глиссандо арфы вверх, хор, мерцание колокольчиков.
+func sfx_victory_memory() -> PackedFloat32Array:
+	var buf := _buffer(3.2)
+	var gliss := [62, 64, 66, 69, 71, 74, 76, 78]
+	for i in gliss.size():
+		_harp(buf, i * 0.06, _hz(int(gliss[i])), 0.07)
+	for n in [62, 66, 69]:
+		_choir(buf, 0.45, 2.2, _hz(n), 0.03, &"a")
+	for i in 3:
+		_bell(buf, 0.5 + i * 0.1, _hz([86, 90, 93][i]), 0.025)
+	_echo(buf, 0.37, 0.3)
+	return buf
+
+
+## Ход 1 «Деревянный стук»: короткий отфильтрованный щелчок и глухой корпус.
+func sfx_turn_knock() -> PackedFloat32Array:
+	var buf := _buffer(0.2)
+	var c := _bandpass(900.0, 3.0)
+	var st := [0.0, 0.0, 0.0, 0.0]
+	for i in int(0.03 * RATE):
+		_add(buf, i, _biquad(rng.randf_range(-1.0, 1.0), c, st) * 0.6 * exp(-i / (0.006 * RATE)))
+	_tone(buf, 0.0, 0.08, 180, 0.3, 0.001, 0.07, [1.0, 0.25])
+	return buf
+
+
+## Ход 2 «Страница»: шелест перелистнутого листа.
+func sfx_turn_page() -> PackedFloat32Array:
+	var buf := _buffer(0.18)
+	_noise(buf, 0.0, 0.11, 0.35, 0.0, 0.75, true)
+	_noise(buf, 0.0, 0.012, 0.2, 0.004, 1.0)
+	return buf
+
+
+## Ход 3 «Струна»: короткий приглушённый щипок.
+func sfx_turn_string() -> PackedFloat32Array:
+	var buf := _buffer(0.35)
+	_harp(buf, 0.0, _hz(57), 0.5, 0.3, 0.99)
+	return buf
+
+
+# --- Ансамблевые инструменты (после плейтеста) ---------------------------------------------
+
+## Ансамбль струнных: три слегка расстроенные сглаженные пилы с вибрато в разных фазах;
+## у высоких нот звук ярче.
+func _strings(buf: PackedFloat32Array, start: float, dur: float, freq: float, amp: float, attack: float = 0.6, release: float = 0.8) -> void:
+	var s0 := int(start * RATE)
+	var len := int(dur * RATE)
+	var a := maxi(1, int(attack * RATE))
+	var r := maxi(1, int(minf(release, dur * 0.5) * RATE))
+	var k := clampf(freq / 2500.0, 0.06, 0.3)
+	var p0 := 0.0
+	var p1 := 0.33
+	var p2 := 0.66
+	var l0 := 0.0
+	var l1 := 0.0
+	var l2 := 0.0
+	for i in len:
+		var t := float(i) / RATE
+		var env := minf(1.0, float(i) / a) * minf(1.0, float(len - i) / r)
+		p0 = fmod(p0 + freq * 0.997 * (1.0 + 0.004 * sin(TAU * 5.0 * t)) / RATE, 1.0)
+		p1 = fmod(p1 + freq * (1.0 + 0.004 * sin(TAU * 5.4 * t + 2.1)) / RATE, 1.0)
+		p2 = fmod(p2 + freq * 1.0035 * (1.0 + 0.004 * sin(TAU * 5.8 * t + 4.2)) / RATE, 1.0)
+		l0 += k * ((2.0 * p0 - 1.0) - l0)
+		l1 += k * ((2.0 * p1 - 1.0) - l1)
+		l2 += k * ((2.0 * p2 - 1.0) - l2)
+		_add(buf, s0 + i, (l0 + l1 + l2) * env * amp / 3.0)
+
+
+## Виолончель: две расстроенные пилы, мягкая атака, вибрато вступает чуть позже начала ноты.
+func _cello(buf: PackedFloat32Array, start: float, dur: float, freq: float, amp: float) -> void:
+	var s0 := int(start * RATE)
+	var len := int(dur * RATE)
+	var a := maxi(1, int(0.1 * RATE))
+	var r := maxi(1, int(minf(0.25, dur * 0.4) * RATE))
+	var p0 := 0.0
+	var p1 := 0.5
+	var l0 := 0.0
+	var l1 := 0.0
+	for i in len:
+		var t := float(i) / RATE
+		var vib := 1.0 + 0.006 * sin(TAU * 5.5 * t) * minf(1.0, maxf(0.0, t - 0.15) / 0.3)
+		p0 = fmod(p0 + freq * 0.998 * vib / RATE, 1.0)
+		p1 = fmod(p1 + freq * 1.002 * vib / RATE, 1.0)
+		l0 += 0.1 * ((2.0 * p0 - 1.0) - l0)
+		l1 += 0.1 * ((2.0 * p1 - 1.0) - l1)
+		var env := minf(1.0, float(i) / a) * minf(1.0, float(len - i) / r)
+		_add(buf, s0 + i, (l0 + l1) * env * amp * 0.5)
+
+
+## Медь: две расстроенные пилы, фильтр открывается вместе с атакой (звук «раскрывается»).
+func _brass(buf: PackedFloat32Array, start: float, dur: float, freq: float, amp: float) -> void:
+	var s0 := int(start * RATE)
+	var len := int(dur * RATE)
+	var a := maxi(1, int(0.08 * RATE))
+	var r := maxi(1, int(minf(0.15, dur * 0.4) * RATE))
+	var p0 := 0.0
+	var p1 := 0.4
+	var l0 := 0.0
+	var l1 := 0.0
+	for i in len:
+		var t := float(i) / RATE
+		var env := minf(1.0, float(i) / a) * minf(1.0, float(len - i) / r)
+		var vib := 1.0 + 0.003 * sin(TAU * 4.8 * t)
+		p0 = fmod(p0 + freq * 0.9985 * vib / RATE, 1.0)
+		p1 = fmod(p1 + freq * 1.0015 * vib / RATE, 1.0)
+		var k := 0.04 + 0.16 * env
+		l0 += k * ((2.0 * p0 - 1.0) - l0)
+		l1 += k * ((2.0 * p1 - 1.0) - l1)
+		_add(buf, s0 + i, (l0 + l1) * env * amp * 0.5)
+
+
+## Арфа: Karplus–Strong с мягким (сглаженным) возбуждением и долгим затуханием; damping < 1 глушит струну.
+func _harp(buf: PackedFloat32Array, start: float, freq: float, amp: float, dur: float = 2.0, damping: float = 0.9985) -> void:
+	var period := maxi(2, int(RATE / freq))
+	var ring := PackedFloat32Array()
+	ring.resize(period)
+	var lp := 0.0
+	for i in period:
+		lp += 0.5 * (rng.randf_range(-1.0, 1.0) - lp)
+		ring[i] = lp
+	var s0 := int(start * RATE)
+	var len := int(dur * RATE)
+	for i in len:
+		var j := i % period
+		var v := ring[j]
+		ring[j] = 0.5 * (v + ring[(j + 1) % period]) * damping
+		_add(buf, s0 + i, v * amp * minf(1.0, float(len - i) / 400.0))
+
+
+## Глухой большой барабан: низкий синус с падающей высотой и мягкий шумовой удар.
+func _taiko(buf: PackedFloat32Array, start: float, amp: float) -> void:
+	var s0 := int(start * RATE)
+	var phase := 0.0
+	var lp := 0.0
+	for i in int(0.45 * RATE):
+		phase += TAU * (52.0 + 48.0 * exp(-i / (0.03 * RATE))) / RATE
+		lp += 0.05 * (rng.randf_range(-1.0, 1.0) - lp)
+		_add(buf, s0 + i, (sin(phase) * exp(-i / (0.25 * RATE)) + lp * 2.0 * exp(-i / (0.08 * RATE))) * amp)
+
+
+## Рамочный барабан: выше и суше, с шорохом кожи.
+func _frame_drum(buf: PackedFloat32Array, start: float, amp: float) -> void:
+	var s0 := int(start * RATE)
+	var phase := 0.0
+	var lp := 0.0
+	for i in int(0.25 * RATE):
+		phase += TAU * (150.0 + 60.0 * exp(-i / (0.02 * RATE))) / RATE
+		lp += 0.3 * (rng.randf_range(-1.0, 1.0) - lp)
+		_add(buf, s0 + i, (sin(phase) * exp(-i / (0.12 * RATE)) + lp * 0.5 * exp(-i / (0.03 * RATE))) * amp)
+
+
 # --- Синтез ----------------------------------------------------------------------
 
 func _buffer(seconds: float) -> PackedFloat32Array:

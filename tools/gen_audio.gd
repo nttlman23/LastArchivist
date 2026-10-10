@@ -6,6 +6,8 @@ extends SceneTree
 const OUT_MUSIC := "res://audio/music"
 const OUT_SFX := "res://audio/sfx"
 const OUT_AMBIENCE := "res://audio/ambience"
+## Звуки, заменённые после плейтеста (SPEC_SPRINT9 21).
+const REPLACED: Array[String] = ["victory", "turn"]
 
 
 func _init() -> void:
@@ -25,6 +27,9 @@ func _init() -> void:
 		"victory": s.sfx_victory(), "defeat": s.sfx_defeat(), "erase": s.sfx_erase(),
 	}
 	for id: String in sfx:
+		# Победа и ход заменены после плейтеста (ниже); здесь они только синтезируются — порядок случайных чисел прежний.
+		if id in REPLACED:
+			continue
 		s.save(OUT_SFX.path_join(id + ".wav"), sfx[id], false)
 	# Второй акт (SPEC_SPRINT8 4).
 	s = AudioSynth.new(2026)
@@ -40,5 +45,10 @@ func _init() -> void:
 	s._wrap = false
 	for id: String in ["metal", "claw", "magic", "shard", "heavy"]:
 		s.save(OUT_SFX.path_join("hit_%s.wav" % id), s.call("sfx_hit_" + id), false)
+	# После плейтеста (SPEC_SPRINT9 21): автор выбрал фанфары и деревянный стук.
+	s = AudioSynth.new(5150)
+	s._wrap = false
+	s.save(OUT_SFX.path_join("victory.wav"), s.sfx_victory_fanfare(), false)
+	s.save(OUT_SFX.path_join("turn.wav"), s.sfx_turn_knock(), false)
 	print("Сгенерировано за %.1f с" % ((Time.get_ticks_msec() - t0) / 1000.0))
 	quit()
