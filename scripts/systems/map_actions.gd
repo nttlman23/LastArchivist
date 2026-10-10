@@ -56,14 +56,14 @@ static func begin_act(db: DefsDB, run: RunState, act: int, profile: ProfileState
 			run.card_pool.append(id)
 
 
-## Путь по мостам от текущего острова до непройденного target (без текущего, с target; может идти через
+## Путь по мостам от текущего острова до target (без текущего, с target; может идти через
 ## START и пройденные острова); пусто — не дойти. Выбирается путь с наименьшим числом непройденных островов,
 ## при равенстве — самый короткий.
 static func path_to(run: RunState, target: int) -> Array[int]:
 	var map := run.map
 	var path: Array[int] = []
 	var start := map.current
-	if target == start or target == MapState.START or map.passable(target):
+	if target == start or target == MapState.START:
 		return path
 	# Дейкстра на маленьком графе: шаг на непройденный остров стоит UNVISITED_STEP, на пройденный — 1.
 	const UNVISITED_STEP := 100
@@ -130,6 +130,35 @@ static func flight_targets(run: RunState) -> Array[int]:
 		if not linked.has(n.id) and not run.map.visited.has(n.id) and absi(n.lane - cur.lane) <= flight_lanes(run):
 			result.append(n.id)
 	return result
+
+
+## Пройденные острова, на которые можно перейти (бесплатно, без входа) через пройденные от текущего.
+static func walk_targets(run: RunState) -> Array[int]:
+	var result: Array[int] = []
+	if run.pending_node >= 0:
+		return result
+	var map := run.map
+	var seen: Dictionary[int, bool] = {map.current: true}
+	var frontier: Array[int] = [map.current]
+	var head := 0
+	while head < frontier.size():
+		var cur := frontier[head]
+		head += 1
+		for nxt in map.linked(cur):
+			if not seen.has(nxt) and map.passable(nxt):
+				seen[nxt] = true
+				frontier.append(nxt)
+				if nxt != MapState.START:
+					result.append(nxt)
+	return result
+
+
+## Перейти на пройденный остров: он становится текущим (отсюда — перелёт), заново не проходится.
+static func walk(run: RunState, node_id: int) -> bool:
+	if not walk_targets(run).has(node_id):
+		return false
+	run.map.current = node_id
+	return true
 
 
 static func can_travel(run: RunState, node_id: int) -> bool:

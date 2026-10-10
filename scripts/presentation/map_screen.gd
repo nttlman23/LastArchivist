@@ -242,6 +242,11 @@ func _show_info() -> void:
 				tr("MAP_FLIGHT_TITLE"), tr("MAP_FLIGHT_TIP"), 380)
 		b.disabled = not MapActions.can_travel(run, n.id)
 		_info.add_child(b)
+	elif n.id == run.map.current:
+		_info.add_child(_wrapped(tr("MAP_HERE"), MapView.HERE))
+	elif MapActions.walk_targets(run).has(n.id):
+		_info.add_child(_wrapped(tr("MAP_VISITED_WALK"), UiKit.MUTED))
+		_info.add_child(UiKit.button(tr("MAP_WALK"), _walk.bind(n.id), 380))
 	elif run.map.visited.has(n.id):
 		_info.add_child(_wrapped(tr("MAP_VISITED"), UiKit.MUTED))
 	else:
@@ -257,6 +262,9 @@ func _add_node_card(n: MapState.MapNode) -> void:
 	var title := UiKit.label(tr(TYPE_KEYS[n.type]), 28, MapView.TYPE_COLORS[n.type].lightened(0.3))
 	Tip.attach(title, tr(TYPE_KEYS[n.type]), tr(TYPE_KEYS[n.type] + "_DESC"))
 	_info.add_child(title)
+	if run.map.visited.has(n.id):
+		# Пройденный остров пуст: ни риска, ни наград.
+		return
 	if Settings.detailed:
 		_info.add_child(_wrapped(tr(TYPE_KEYS[n.type] + "_DESC"), Color.WHITE))
 	else:
@@ -367,6 +375,13 @@ func _travel(id: int) -> void:
 	var flight := not MapActions.reachable(run).has(id)
 	if Game.enter_node(id):
 		Audio.play(&"move" if not flight else &"spell")
+
+
+func _walk(id: int) -> void:
+	if MapActions.walk(run, id):
+		Audio.play(&"move")
+		SaveService.save_run(run)
+		_refresh()
 
 
 func _scout(id: int) -> void:

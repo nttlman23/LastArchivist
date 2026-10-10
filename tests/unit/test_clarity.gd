@@ -116,13 +116,17 @@ func test_path_to_follows_bridges() -> void:
 	fail_test("нет пути")
 
 
-func test_path_to_visited_is_empty() -> void:
+func test_path_to_current_or_start_is_empty() -> void:
 	var run := RunState.create(db, 7)
 	var first := run.map.next_of(MapState.START)[0]
 	MapActions.travel(run, first)
 	MapActions.complete(run)
-	assert_true(MapActions.path_to(run, first).is_empty(), "пройденный — некуда идти")
+	assert_true(MapActions.path_to(run, first).is_empty(), "текущий — некуда идти")
 	assert_true(MapActions.path_to(run, MapState.START).is_empty())
+	var second := MapActions.forward(run)[0]
+	MapActions.travel(run, second)
+	MapActions.complete(run)
+	assert_eq(MapActions.path_to(run, first), [first] as Array[int], "к пройденному — по мосту назад")
 
 
 func test_path_back_through_visited() -> void:

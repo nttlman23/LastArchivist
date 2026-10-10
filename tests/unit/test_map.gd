@@ -134,6 +134,35 @@ func test_return_for_skipped_islands() -> void:
 	assert_eq(run.total_layer(), 3)
 
 
+func test_walk_to_visited_island() -> void:
+	var run := RunState.create(db, 5)
+	assert_true(MapActions.walk_targets(run).is_empty(), "в начале пройденных нет")
+	var path: Array[int] = []
+	for step in 3:
+		path.append(MapActions.forward(run)[0])
+		MapActions.travel(run, path[-1])
+		MapActions.complete(run)
+	assert_eq(MapActions.walk_targets(run).size(), 2, "два пройденных позади")
+	assert_false(MapActions.walk_targets(run).has(path[2]), "текущий — не цель")
+	var reach_before := MapActions.reachable(run)
+	var aether: int = run.resources[RunState.AETHER]
+	assert_true(MapActions.walk(run, path[0]))
+	assert_eq(run.map.current, path[0])
+	assert_eq(run.pending_node, -1, "остров заново не проходится")
+	assert_eq(run.resources[RunState.AETHER], aether, "бесплатно")
+	assert_eq(run.map.visited.size(), 3)
+	assert_eq(run.map.reached_layer(), 3)
+	reach_before.sort()
+	var reach_after := MapActions.reachable(run)
+	reach_after.sort()
+	assert_eq(reach_after, reach_before, "доступные острова те же — пройденные связаны")
+	assert_false(MapActions.walk(run, path[0]), "уже здесь")
+	var unvisited := MapActions.reachable(run)[0]
+	assert_false(MapActions.walk(run, unvisited), "на непройденный — только «Лететь»")
+	MapActions.travel(run, unvisited)
+	assert_true(MapActions.walk_targets(run).is_empty(), "посреди острова не ходят")
+
+
 func test_all_islands_can_be_visited() -> void:
 	for s in 12:
 		var run := RunState.create(db, s)
