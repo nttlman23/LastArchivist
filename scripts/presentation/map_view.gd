@@ -171,19 +171,20 @@ func _draw() -> void:
 		var lit := PackedVector2Array()
 		var from := map.current
 		for id in hover_path:
-			if from != MapState.START:
+			# Путь может спуститься к START (к другому острову первого слоя) — у START нет точки на карте.
+			if from != MapState.START and id != MapState.START:
 				lit.append_array(_dashed(_pos[from], _pos[id], 10.0, 8.0))
 			from = id
 		if not lit.is_empty():
 			draw_multiline(lit, Color.WHITE, 3.5)
 
 	var flights := MapActions.flight_targets(run)
-	var reachable := MapActions.reachable(run)
 	# Сверху вниз по экрану: ближние (нижние) острова перекрывают дальние.
 	var order: Array = map.nodes.duplicate()
 	order.sort_custom(func(a: MapState.MapNode, b: MapState.MapNode) -> bool: return _pos[a.id].y < _pos[b.id].y)
 	for n: MapState.MapNode in order:
-		var dim := map.visited.has(n.id) or (not reachable.has(n.id) and not flights.has(n.id) and n.layer <= map.current_layer())
+		# Непройденные острова не теряются (по карте можно вернуться) — темнее только пройденные.
+		var dim := map.visited.has(n.id)
 		_draw_island(n, dim)
 		var rr := ring_r(n)
 		if flights.has(n.id):
@@ -329,12 +330,14 @@ func _draw_fog(ci: Node2D, rng: RandomNumberGenerator, layer: int, alpha: float)
 
 
 func _visited_edges() -> Array[Vector2i]:
+	# Светятся мосты между пройденными островами (и к начатому): по карте ходят в обе стороны.
 	var result: Array[Vector2i] = []
-	var v := run.map.visited
-	for i in range(1, v.size()):
-		result.append(Vector2i(v[i - 1], v[i]))
-	if run.pending_node >= 0 and not v.is_empty() and run.pending_node != v[-1]:
-		result.append(Vector2i(v[-1], run.pending_node))
+	var map := run.map
+	var done := func(id: int) -> bool: return map.visited.has(id) or id == run.pending_node
+	for from in map.edges:
+		for to in map.edges[from]:
+			if done.call(from) and done.call(int(to)):
+				result.append(Vector2i(from, to))
 	return result
 
 

@@ -17,9 +17,10 @@ static func durability_ratio(db: DefsDB, run: RunState) -> float:
 	return sum / run.codex.cards.size()
 
 
-## Следующий остров: гавань при износе, лавка при запасе Пергамента, элита при сильном Кодексе, иначе бой.
+## Следующий остров (на следующем слое): гавань при износе, лавка при запасе Пергамента, элита при сильном Кодексе, иначе бой.
 static func choose_node(db: DefsDB, run: RunState, rng: RandomNumberGenerator) -> int:
-	var options := MapActions.reachable(run)
+	# Только вперёд по мостам — как до свободного передвижения, чтобы симуляции баланса не поменялись.
+	var options := MapActions.forward(run)
 	var score := func(id: int) -> float:
 		var n := run.map.node(id)
 		match n.type:

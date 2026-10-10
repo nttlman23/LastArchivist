@@ -118,11 +118,11 @@ func _refresh() -> void:
 	for child in _resources_box.get_children():
 		child.queue_free()
 	_resources_box.add_child(UiKit.resource_row(run.resources, false, 22))
-	_layer_label.text = (tr("MAP_LAYER_ACT") % [ROMAN[run.act - 1], run.map.current_layer(), MapState.LAYERS])
+	_layer_label.text = (tr("MAP_LAYER_ACT") % [ROMAN[run.act - 1], run.map.reached_layer(), MapState.LAYERS])
 	view.selected = _selected
 	var risks: Dictionary[int, int] = {}
 	for n in run.map.nodes:
-		if n.layer > run.map.current_layer() or n.id == run.pending_node:
+		if not run.map.visited.has(n.id):
 			var r := CardAdvisor.node_risk(db, run, n)
 			if r >= 0:
 				risks[n.id] = r

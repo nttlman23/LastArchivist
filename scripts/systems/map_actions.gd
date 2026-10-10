@@ -7,11 +7,34 @@ const FLIGHT_COST := 2
 const FLIGHT_LANES := 2
 
 
-## Острова, куда можно попасть по мостам.
+## Острова, куда можно попасть по мостам (SPEC_SPRINT3 3.4): мосты двусторонние, по пройденным островам
+## ходить свободно — доступен любой непройденный остров рядом с ними. Разлом насквозь не проходится.
 static func reachable(run: RunState) -> Array[int]:
+	var result: Array[int] = []
 	if run.pending_node >= 0:
-		return []
-	return run.map.next_of(run.map.current)
+		return result
+	var map := run.map
+	var seen: Dictionary[int, bool] = {map.current: true}
+	var frontier: Array[int] = [map.current]
+	var head := 0
+	while head < frontier.size():
+		var cur := frontier[head]
+		head += 1
+		for nxt in map.linked(cur):
+			if seen.has(nxt):
+				continue
+			seen[nxt] = true
+			if map.passable(nxt):
+				frontier.append(nxt)
+			else:
+				result.append(nxt)
+	return result
+
+
+## Острова на следующем слое, связанные с текущим мостом, — путь «только вперёд» (для MapAi).
+static func forward(run: RunState) -> Array[int]:
+	var open := reachable(run)
+	return run.map.next_of(run.map.current).filter(func(id: int) -> bool: return open.has(id))
 
 
 ## Начало акта act: новая карта, пул карт акта (SPEC_SPRINT7 2). Кодекс и ресурсы — как были.
@@ -33,23 +56,37 @@ static func begin_act(db: DefsDB, run: RunState, act: int, profile: ProfileState
 			run.card_pool.append(id)
 
 
-## Путь по мостам от текущего острова до target (без текущего, с target); пусто — не дойти.
+## Путь по мостам от текущего острова до непройденного target (без текущего, с target; может идти через
+## START и пройденные острова); пусто — не дойти. Выбирается путь с наименьшим числом непройденных островов,
+## при равенстве — самый короткий.
 static func path_to(run: RunState, target: int) -> Array[int]:
-	var start := run.map.current
-	var prev: Dictionary[int, int] = {start: start}
-	var frontier: Array[int] = [start]
-	var head := 0
-	while head < frontier.size():
-		var cur := frontier[head]
-		head += 1
-		if cur == target:
-			break
-		for nxt in run.map.next_of(cur):
-			if not prev.has(nxt):
-				prev[nxt] = cur
-				frontier.append(nxt)
+	var map := run.map
 	var path: Array[int] = []
-	if not prev.has(target) or target == start:
+	var start := map.current
+	if target == start or target == MapState.START or map.passable(target):
+		return path
+	# Дейкстра на маленьком графе: шаг на непройденный остров стоит UNVISITED_STEP, на пройденный — 1.
+	const UNVISITED_STEP := 100
+	var dist: Dictionary[int, int] = {start: 0}
+	var prev: Dictionary[int, int] = {}
+	var done: Dictionary[int, bool] = {}
+	while true:
+		var cur := -2
+		for id in dist:
+			if not done.has(id) and (cur == -2 or dist[id] < dist[cur]):
+				cur = id
+		if cur == -2 or cur == target:
+			break
+		done[cur] = true
+		# Сквозь непройденный остров путь идёт (его придётся пройти), сквозь Разлом — нет.
+		if cur != start and cur != MapState.START and map.node(cur).type == MapState.NodeType.RIFT:
+			continue
+		for nxt in map.linked(cur):
+			var d := dist[cur] + (1 if map.passable(nxt) else UNVISITED_STEP)
+			if not dist.has(nxt) or d < dist[nxt]:
+				dist[nxt] = d
+				prev[nxt] = cur
+	if not prev.has(target):
 		return path
 	var cur := target
 	while cur != start:
@@ -58,10 +95,12 @@ static func path_to(run: RunState, target: int) -> Array[int]:
 	return path
 
 
-## Ресурсы за бои на пути (награды за победу).
+## Ресурсы за бои на пути (награды за победу; пройденные острова пусты).
 static func path_rewards(db: DefsDB, run: RunState, path: Array[int]) -> Dictionary[StringName, int]:
 	var total := _res(0, 0, 0)
 	for id in path:
+		if run.map.passable(id):
+			continue
 		var n := run.map.node(id)
 		if n.is_battle() and n.content != &"":
 			var r := battle_rewards(db.encounter(n.content))
@@ -88,7 +127,7 @@ static func flight_targets(run: RunState) -> Array[int]:
 	var cur := run.map.node(run.map.current)
 	var linked := reachable(run)
 	for n in run.map.layer_nodes(cur.layer + 1):
-		if not linked.has(n.id) and absi(n.lane - cur.lane) <= flight_lanes(run):
+		if not linked.has(n.id) and not run.map.visited.has(n.id) and absi(n.lane - cur.lane) <= flight_lanes(run):
 			result.append(n.id)
 	return result
 

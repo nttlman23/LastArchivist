@@ -111,6 +111,47 @@ func test_travel_by_edges_only() -> void:
 	var layer2 := run.map.layer_nodes(2).filter(func(n: MapState.MapNode) -> bool: return not run.map.next_of(first[0]).has(n.id))
 	for n: MapState.MapNode in layer2:
 		assert_false(MapActions.reachable(run).has(n.id))
+	for id in run.map.next_of(first[0]):
+		assert_true(MapActions.reachable(run).has(id))
+	for id in first.slice(1):
+		assert_true(MapActions.reachable(run).has(id), "назад к START и на другой остров первого слоя")
+	assert_false(MapActions.reachable(run).has(first[0]), "пройденный остров не входится снова")
+
+
+func test_return_for_skipped_islands() -> void:
+	var run := RunState.create(db, 5)
+	var skipped := run.map.next_of(MapState.START)[1]
+	for step in 3:
+		MapActions.travel(run, MapActions.forward(run)[0])
+		MapActions.complete(run)
+	assert_eq(run.map.reached_layer(), 3)
+	assert_true(MapActions.reachable(run).has(skipped), "через пройденные острова — к пропущенному")
+	assert_eq(MapActions.forward(run), run.map.next_of(run.map.current), "вперёд — как раньше")
+	assert_true(MapActions.travel(run, skipped))
+	MapActions.complete(run)
+	assert_eq(run.map.current_layer(), 1)
+	assert_eq(run.map.reached_layer(), 3, "глубина забега не убывает")
+	assert_eq(run.total_layer(), 3)
+
+
+func test_all_islands_can_be_visited() -> void:
+	for s in 12:
+		var run := RunState.create(db, s)
+		MapActions.begin_act(db, run, 1 + s % 2)
+		var rift := -1
+		while true:
+			var open := MapActions.reachable(run).filter(func(id: int) -> bool: return run.map.node(id).type != MapState.NodeType.RIFT)
+			if open.is_empty():
+				break
+			assert_true(MapActions.travel(run, open[0]))
+			MapActions.complete(run)
+		for n in run.map.nodes:
+			if n.type == MapState.NodeType.RIFT:
+				rift = n.id
+			else:
+				assert_true(run.map.visited.has(n.id), "сид %d: остров %d пройден" % [s, n.id])
+		assert_true(MapActions.reachable(run).has(rift), "Разлом доступен")
+		assert_eq(run.map.reached_layer(), MapState.LAYERS)
 
 
 func test_flight_costs_aether() -> void:

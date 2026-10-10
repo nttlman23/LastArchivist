@@ -67,8 +67,32 @@ func next_of(id: int) -> Array[int]:
 	return result
 
 
+## Соседи по мостам в обе стороны (SPEC_SPRINT3 3.4): следующий и предыдущий слой; первый слой связан со START.
+func linked(id: int) -> Array[int]:
+	var result := next_of(id)
+	if id != START and node(id).layer == 1:
+		result.append(START)
+	for from in edges:
+		if edges[from].has(id) and not result.has(from):
+			result.append(from)
+	return result
+
+
+## Через остров можно пройти насквозь: он уже пройден (или это START).
+func passable(id: int) -> bool:
+	return id == START or visited.has(id)
+
+
 func current_layer() -> int:
 	return 0 if current == START else node(current).layer
+
+
+## Самый дальний достигнутый слой: по карте можно вернуться назад, а глубина забега не убывает.
+func reached_layer() -> int:
+	var result := current_layer()
+	for id in visited:
+		result = maxi(result, node(id).layer)
+	return result
 
 
 func add_edge(from: int, to: int) -> void:

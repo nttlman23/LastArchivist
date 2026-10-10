@@ -103,7 +103,7 @@ static func create(db: DefsDB, seed_value: int, school_id: StringName = DefsDB.D
 
 ## Слой забега сквозь акты: второй акт продолжает счёт после Разлома (слои 9–16).
 func total_layer() -> int:
-	return (act - 1) * (MapState.LAYERS + 1) + map.current_layer()
+	return (act - 1) * (MapState.LAYERS + 1) + map.reached_layer()
 
 
 ## Уникальные карты пула (для случайных карт событий и лавки).

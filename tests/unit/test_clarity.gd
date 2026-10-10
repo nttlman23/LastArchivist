@@ -104,7 +104,7 @@ func test_path_to_follows_bridges() -> void:
 		assert_eq(path[-1], n.id)
 		assert_true(run.map.next_of(MapState.START).has(path[0]))
 		for i in range(1, path.size()):
-			assert_true(run.map.next_of(path[i - 1]).has(path[i]), "по мостам")
+			assert_true(run.map.linked(path[i - 1]).has(path[i]), "по мостам")
 		var rewards := MapActions.path_rewards(db, run, path)
 		var expected := 0
 		for id in path:
@@ -116,14 +116,29 @@ func test_path_to_follows_bridges() -> void:
 	fail_test("нет пути")
 
 
-func test_path_to_unreachable_is_empty() -> void:
+func test_path_to_visited_is_empty() -> void:
 	var run := RunState.create(db, 7)
 	var first := run.map.next_of(MapState.START)[0]
 	MapActions.travel(run, first)
-	run.pending_node = -1
-	run.map.current = first
-	for n in run.map.layer_nodes(1):
-		assert_true(MapActions.path_to(run, n.id).is_empty(), "назад пути нет")
+	MapActions.complete(run)
+	assert_true(MapActions.path_to(run, first).is_empty(), "пройденный — некуда идти")
+	assert_true(MapActions.path_to(run, MapState.START).is_empty())
+
+
+func test_path_back_through_visited() -> void:
+	var run := RunState.create(db, 7)
+	var layer1 := run.map.next_of(MapState.START)
+	for step in 2:
+		MapActions.travel(run, MapActions.forward(run)[0])
+		MapActions.complete(run)
+	var far := layer1.filter(func(id: int) -> bool: return id != layer1[0] and not run.map.linked(run.map.current).has(id))
+	assert_false(far.is_empty(), "на сиде 7 есть остров первого слоя без моста к текущему")
+	var path := MapActions.path_to(run, far[0])
+	assert_eq(path, [layer1[0], MapState.START, far[0]] as Array[int], "вниз по пройденным, через START")
+	var rewards := MapActions.path_rewards(db, run, path)
+	var n := run.map.node(far[0])
+	var expected := MapActions.battle_rewards(db.encounter(n.content))[RunState.PARCHMENT] if n.is_battle() else 0
+	assert_eq(rewards[RunState.PARCHMENT], expected, "пройденные острова наград не дают")
 
 
 # --- Летопись --------------------------------------------------------------------
