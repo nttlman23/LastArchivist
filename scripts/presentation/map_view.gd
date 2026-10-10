@@ -88,7 +88,6 @@ func setup(p_run: RunState) -> void:
 		_rift_glow = _behind(_draw_rift_glow)
 		_here_glow = _behind(_draw_here_glow)
 		_here = Node2D.new()
-		_here.z_index = 1
 		_here.draw.connect(_draw_here.bind(_here))
 		add_child(_here)
 	for n in run.map.nodes:
@@ -181,7 +180,9 @@ func refresh() -> void:
 		ring.draw.connect(_draw_pulse_ring.bind(ring, id))
 		add_child(ring)
 		_pulses.append(ring)
-	# «Вы здесь» — у текущего острова; до первого острова (START) отметки нет.
+	# «Вы здесь» — у текущего острова; до первого острова (START) отметки нет. Последний ребёнок — поверх колец,
+	# но без z_index: иначе отметка рисуется и поверх окон экрана (Кодекс, легенда).
+	move_child(_here, -1)
 	var here := run.map.current != MapState.START
 	_here.visible = here
 	_here_glow.visible = here
