@@ -21,7 +21,8 @@ func _ready() -> void:
 	box.add_child(points)
 	box.add_child(Control.new())
 
-	box.add_child(UiKit.button(tr("MENU_NEW_RUN"), Game.goto.bind(Game.SCENE_SCHOOL), 360))
+	# Первый забег — через пролог и учебный бой (SPEC_SPRINT10 8).
+	box.add_child(UiKit.button(tr("MENU_NEW_RUN"), Game.begin_new_run, 360))
 	var cont := UiKit.button(tr("MENU_CONTINUE"), Game.continue_run, 360)
 	cont.disabled = SaveService.load_run() == null
 	if SaveService.is_broken():
@@ -38,6 +39,7 @@ func _ready() -> void:
 	box.add_child(UiKit.button(tr("MENU_CHRONICLE"), Game.goto.bind(Game.SCENE_CHRONICLE), 360))
 	box.add_child(UiKit.button(tr("MENU_ACHIEVEMENTS") % [Game.profile.achievements.size(), Game.defs.achievements.size()],
 			Game.goto.bind(Game.SCENE_ACHIEVEMENTS), 360))
+	box.add_child(UiKit.button(tr("MENU_TUTORIAL"), Game.start_tutorial, 360))
 	box.add_child(UiKit.button(tr("MENU_SETTINGS"), Game.goto.bind(Game.SCENE_SETTINGS), 360))
 	box.add_child(UiKit.button(tr("MENU_QUIT"), Game.quit_game, 360))
 

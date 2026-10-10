@@ -35,8 +35,12 @@ func _ready() -> void:
 	col.add_child(ok)
 
 
+## Учебный бой (SPEC_SPRINT10 8) ведёт игрока своими заданиями — обычные подсказки молчат.
+var suppressed := false
+
+
 func should_show(id: StringName) -> bool:
-	return Settings.hints and Game.profile != null and not Game.profile.seen_hints.has(id)
+	return not suppressed and Settings.hints and Game.profile != null and not Game.profile.seen_hints.has(id)
 
 
 ## Показать подсказку id (текст — ключ HINT_<ID>), если она ещё не показывалась.

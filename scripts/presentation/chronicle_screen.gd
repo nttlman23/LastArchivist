@@ -1,6 +1,6 @@
 extends Control
-## Летопись забегов (SPEC_SPRINT5 6): сводка по школам и последние забеги строками.
-## Кодекс забега — в подсказке строки.
+## Летопись (SPEC_SPRINT5 6, SPEC_SPRINT10 4–6): забеги — сводка по школам и строки забегов; страницы памяти по главам;
+## просмотренные сценки — повтор. Кодекс забега — в подсказке строки.
 
 const OUTCOME_ICONS := {
 	ProfileState.OUTCOME_WON: UnitGlyphs.ICON_RETALIATION,
@@ -13,7 +13,12 @@ const OUTCOME_COLORS := {
 	ProfileState.OUTCOME_ABANDONED: Color(0.6, 0.62, 0.68),
 }
 
+## Вкладки (SPEC_SPRINT10 4, 6): забеги, страницы памяти, сценки. Выбранная запоминается до перезапуска.
+enum Tab { RUNS, PAGES, SCENES }
+static var tab := Tab.RUNS
+
 var db: DefsDB
+var _content: VBoxContainer
 
 
 func _ready() -> void:
@@ -27,26 +32,141 @@ func _ready() -> void:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 16)
 	margin.add_child(box)
-	box.add_child(UiKit.label(tr("CHRONICLE_TITLE"), 44, UiKit.ACCENT))
-	box.add_child(_summary())
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 14)
+	box.add_child(head)
+	head.add_child(UiKit.label(tr("CHRONICLE_TITLE"), 44, UiKit.ACCENT))
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(spacer)
+	var group := ButtonGroup.new()
+	for t in [Tab.RUNS, Tab.PAGES, Tab.SCENES]:
+		var b := Button.new()
+		b.text = tr(["CHRONICLE_TAB_RUNS", "CHRONICLE_TAB_PAGES", "CHRONICLE_TAB_SCENES"][t])
+		if t == Tab.PAGES:
+			b.text += " (%d/%d)" % [Game.profile.story_pages.size(), db.pages.size()]
+		b.toggle_mode = true
+		b.button_group = group
+		b.button_pressed = t == tab
+		b.focus_mode = Control.FOCUS_NONE
+		b.custom_minimum_size = Vector2(230, 44)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		b.pressed.connect(_set_tab.bind(t))
+		head.add_child(b)
+	_content = VBoxContainer.new()
+	_content.add_theme_constant_override("separation", 16)
+	_content.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	box.add_child(_content)
+	var back := UiKit.button(tr("SETTINGS_BACK"), Game.to_main_menu, 300)
+	back.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	box.add_child(back)
+	_rebuild()
 
-	box.add_child(UiKit.label(tr("CHRONICLE_RUNS"), 28, UiKit.ACCENT))
+
+func _set_tab(t: Tab) -> void:
+	tab = t
+	Audio.play(&"ui_click")
+	_rebuild()
+
+
+func _rebuild() -> void:
+	for c in _content.get_children():
+		c.queue_free()
+	match tab:
+		Tab.PAGES:
+			_build_pages()
+		Tab.SCENES:
+			_build_scenes()
+		_:
+			_build_runs()
+
+
+func _scroll_list(separation: int = 6) -> VBoxContainer:
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	box.add_child(scroll)
+	_content.add_child(scroll)
 	var list := VBoxContainer.new()
-	list.add_theme_constant_override("separation", 6)
+	list.add_theme_constant_override("separation", separation)
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(list)
+	return list
+
+
+func _build_runs() -> void:
+	_content.add_child(_summary())
+	_content.add_child(UiKit.label(tr("CHRONICLE_RUNS"), 28, UiKit.ACCENT))
+	var list := _scroll_list()
 	if Game.profile.chronicle.is_empty():
 		list.add_child(UiKit.label(tr("CHRONICLE_EMPTY"), 20, UiKit.MUTED))
 	for entry in Game.profile.chronicle:
 		list.add_child(_run_row(entry))
 
-	var back := UiKit.button(tr("SETTINGS_BACK"), Game.to_main_menu, 300)
-	back.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	box.add_child(back)
+
+## Страницы памяти по главам: найденные — с текстом, ненайденные — тусклые, с подсказкой, где искать.
+func _build_pages() -> void:
+	var p := Game.profile
+	var list := _scroll_list(10)
+	for ch in range(1, Story.MAX_CHAPTER + 1):
+		var open := ch <= p.story_chapter
+		var title := UiKit.label(Story.chapter_name(ch), 28, UiKit.ACCENT if open else UiKit.MUTED)
+		list.add_child(title)
+		if not open:
+			list.add_child(UiKit.label(tr("STORY_CHAPTER_LOCKED_%d" % ch), 18, UiKit.MUTED))
+			continue
+		for page in db.pages_sorted():
+			if page.chapter == ch:
+				list.add_child(_page_row(page))
+
+
+func _page_row(page: PageDef) -> PanelContainer:
+	var found := Game.profile.story_pages.has(page.id)
+	var key := "PAGE_%s" % String(page.id).to_upper()
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", UiKit.panel_style(UiKit.PANEL_COLOR if found else UiKit.PANEL_COLOR.darkened(0.25)))
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 6)
+	panel.add_child(col)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	col.add_child(row)
+	row.add_child(UiKit.icon_rect(UnitGlyphs.ICON_PARCHMENT if found else UnitGlyphs.ICON_LOCK, 22, AchievementToast.PAGE_COLOR if found else UiKit.MUTED))
+	row.add_child(UiKit.label(tr(key + "_TITLE") if found else tr("STORY_PAGE_UNKNOWN"), 22, AchievementToast.PAGE_COLOR if found else UiKit.MUTED))
+	if found:
+		var date := UiKit.label(Game.profile.story_pages[page.id], 14, UiKit.MUTED)
+		date.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		date.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		row.add_child(date)
+		var text := UiKit.label(tr(key + "_TEXT"), 18, Color(0.9, 0.88, 0.82))
+		text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		col.add_child(text)
+	else:
+		col.add_child(UiKit.label(_page_hint(page), 16, UiKit.MUTED))
+	return panel
+
+
+## Где искать страницу: по условию; у сюжетного события — его акт.
+func _page_hint(page: PageDef) -> String:
+	if page.condition == Story.STORY_EVENT and db.has_event(page.arg):
+		return tr("STORY_HINT_STORY_EVENT") % tr("STORY_ACT_%d" % db.event(page.arg).act)
+	var text := tr("STORY_HINT_%s" % String(page.condition).to_upper())
+	return text % page.count if "%d" in text else text
+
+
+## Просмотренные сценки — пересмотреть; остальные — тусклые.
+func _build_scenes() -> void:
+	var list := _scroll_list(8)
+	for id in Story.SCENES:
+		var seen := Game.profile.story_seen.has(id)
+		var title := tr("STORY_SCENE_%s_TITLE" % String(id).to_upper()) if seen else tr("STORY_SCENE_UNKNOWN")
+		var b := UiKit.button(title, _replay.bind(id), 520)
+		b.disabled = not seen
+		b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		list.add_child(b)
+
+
+func _replay(id: StringName) -> void:
+	Game.show_story(id, Game.SCENE_CHRONICLE)
 
 
 ## Сводка: по карточке на школу — попытки, победы, лучший слой.

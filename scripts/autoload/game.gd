@@ -18,6 +18,8 @@ const SCENE_CAMP := "res://scenes/camp/camp.tscn"
 const SCENE_RELIQUARY := "res://scenes/reliquary/reliquary.tscn"
 const SCENE_ACHIEVEMENTS := "res://scenes/achievements/achievements.tscn"
 const SCENE_DAILY := "res://scenes/daily/daily.tscn"
+const SCENE_STORY := "res://scenes/story/story.tscn"
+const SCENE_TUTORIAL := "res://scenes/tutorial/tutorial.tscn"
 
 const FONT_SIZE := 22
 
@@ -37,6 +39,13 @@ var profile_path := ProfileState.DEFAULT_PATH
 ## Счёт последнего законченного ежедневного забега и засчитан ли он (SPEC_SPRINT9 7).
 var last_daily_score := 0
 var last_daily_counted := false
+## Сценка истории (SPEC_SPRINT10 4): что показать и куда перейти после неё.
+var story_scene := &""
+var story_next := ""
+## Глава, в которой закончился последний забег, — для текста итога.
+var run_end_chapter := 1
+## Учебный бой запущен из меню (повтор), а не перед первым забегом.
+var tutorial_from_menu := false
 var _toast: AchievementToast
 
 
@@ -118,8 +127,9 @@ func new_run(school_id: StringName = DefsDB.DEFAULT_SCHOOL, difficulty: StringNa
 		MetaRewards.abandon_run(profile, old)
 		save_profile()
 	run = RunState.create(defs, rng.seed, school_id, profile, difficulty, trial)
+	Story.place_event(defs, run, profile)
 	SaveService.save_run(run)
-	goto(SCENE_MAP)
+	show_story(Story.pending_scene(profile, &"start", run), SCENE_MAP)
 
 
 ## Новая попытка ежедневного забега (SPEC_SPRINT9 7). Прерванная попытка поверх — брошена:
@@ -129,8 +139,9 @@ func new_daily() -> void:
 	if old:
 		_abandon_daily(old)
 	run = DailyRun.create(defs, profile, DailyRun.today())
+	Story.place_event(defs, run, profile)
 	SaveService.save_run(run)
-	goto(SCENE_MAP)
+	show_story(Story.pending_scene(profile, &"start", run), SCENE_MAP)
 
 
 func continue_daily() -> bool:
@@ -163,10 +174,80 @@ func _notify(ids: Array[StringName]) -> void:
 		_toast.show_ids(ids)
 
 
+# --- История (SPEC_SPRINT10) -------------------------------------------------------------
+
+## «Новый забег» из меню: в первый раз — пролог и учебный бой, затем выбор школы.
+func begin_new_run() -> void:
+	tutorial_from_menu = false
+	if not profile.prologue_done:
+		show_story(Story.PROLOGUE, SCENE_TUTORIAL)
+	else:
+		goto(SCENE_SCHOOL)
+
+
+## Учебный бой из главного меню — повтор; после него — обратно в меню.
+func start_tutorial() -> void:
+	tutorial_from_menu = true
+	goto(SCENE_TUTORIAL)
+
+
+## Учебный бой пройден или пропущен: первый раз — к выбору школы, из меню — обратно в меню.
+func finish_tutorial() -> void:
+	profile.prologue_done = true
+	save_profile()
+	var to_menu := tutorial_from_menu
+	tutorial_from_menu = false
+	goto(SCENE_MAIN_MENU if to_menu else SCENE_SCHOOL)
+
+
+## Сценка id перед экраном next; без сценки — сразу next.
+func show_story(id: StringName, next: String) -> void:
+	if id == &"":
+		goto(next)
+		return
+	story_scene = id
+	story_next = next
+	goto(SCENE_STORY)
+
+
+## Сценка досмотрена или пропущена: отмечается и ведёт дальше.
+func finish_story() -> void:
+	Story.mark_seen(profile, story_scene)
+	save_profile()
+	var next := story_next if story_next != "" else SCENE_MAIN_MENU
+	story_scene = &""
+	story_next = ""
+	goto(next)
+
+
+## Событие истории: найденные страницы и новая глава — в профиль и плашкой на экран.
+func story_event(event: Story.Event, ctx: Dictionary = {}) -> void:
+	var r := Story.on_event(defs, profile, run, event, ctx)
+	if r["pages"].is_empty() and int(r["chapter"]) == 0:
+		return
+	save_profile()
+	if _toast:
+		for id: StringName in r["pages"]:
+			_toast.show_page(id)
+		if int(r["chapter"]) > 0:
+			_toast.show_chapter(int(r["chapter"]))
+
+
+## Сюжетное событие на карте пройдено (любой вариант).
+func story_event_done(id: StringName) -> void:
+	if not Story.counts(run):
+		return
+	if not profile.story_events.has(id):
+		profile.story_events.append(id)
+	story_event(Story.Event.STORY_EVENT, {"event": id})
+	save_profile()
+
+
 ## Выбор на привале и начало второго акта.
 func leave_camp(option: Dictionary) -> void:
 	CampOps.apply(defs, run, option)
 	MapActions.begin_act(defs, run, 2, profile)
+	Story.place_event(defs, run, profile)
 	SaveService.save_run(run)
 	goto(SCENE_MAP)
 
@@ -250,14 +331,19 @@ func finish_battle(outcome: BattleState.Outcome, spell_charges: Array[int] = [],
 		run.objectives_won.append(objective)
 	last_faded = run.after_battle(defs, selected, erased)
 	achievement_event(Achievements.Event.BATTLE_WON, ctx)
+	story_event(Story.Event.BATTLE_WON, ctx)
+	if not last_faded.is_empty():
+		story_event(Story.Event.CARD_FADED)
 	if encounter.boss:
 		if run.act == 1:
-			# Разлом закрыт — привал перед вторым актом (SPEC_SPRINT7 3).
+			# Разлом закрыт — привал перед вторым актом (SPEC_SPRINT7 3); сценка — о главе, в которой он закрыт.
 			MapActions.complete(run)
 			achievement_event(Achievements.Event.NODE)
+			var scene := Story.pending_scene(profile, &"rift", run)
+			story_event(Story.Event.RIFT_CLOSED)
 			run.at_camp = true
 			SaveService.save_run(run)
-			goto(SCENE_CAMP)
+			show_story(scene, SCENE_CAMP)
 		else:
 			_end_run(true)
 		return
@@ -283,8 +369,11 @@ func reward_guarantees_hero() -> bool:
 
 ## Остров пройден (после награды, события, лавки или гавани): возврат на карту.
 func complete_node() -> void:
+	var haven := run.pending() != null and run.pending().type == MapState.NodeType.HAVEN
 	MapActions.complete(run)
 	achievement_event(Achievements.Event.NODE)
+	if haven:
+		story_event(Story.Event.HAVEN)
 	if not run.codex.has_unit_cards(defs):
 		_end_run(false)
 		return
@@ -361,6 +450,9 @@ func _end_run(won: bool) -> void:
 	var daily := run.daily_date != ""
 	last_daily_counted = daily and DailyRun.counts(profile, run)
 	last_daily_score = DailyRun.score(run, won) if daily else 0
+	# Итог и финальная сценка — о главе, в которой закончился забег (до продвижения истории победой).
+	run_end_chapter = profile.story_chapter
+	var scene := Story.pending_scene(profile, &"win", run) if won else &""
 	last_points = 0
 	if not daily or last_daily_counted:
 		last_points = MetaRewards.finish_run(profile, run, won, defs)
@@ -370,4 +462,9 @@ func _end_run(won: bool) -> void:
 		achievement_event(Achievements.Event.DAILY)
 	save_profile()
 	SaveService.delete_save(SaveService.path_for(run))
-	goto(SCENE_RUN_END)
+	if won:
+		story_event(Story.Event.RUN_WON)
+	if last_daily_counted:
+		story_event(Story.Event.DAILY)
+	save_profile()
+	show_story(scene, SCENE_RUN_END)

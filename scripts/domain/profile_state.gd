@@ -4,7 +4,7 @@ extends RefCounted
 ## Хранится отдельно от сохранения забега.
 
 const DEFAULT_PATH := "user://profile.cfg"
-const VERSION := 3
+const VERSION := 4
 ## Читаются и более старые версии (поля, которых в них нет, пусты).
 const MIN_VERSION := 1
 
@@ -32,6 +32,13 @@ var daily_best := 0
 var daily_count := 0
 ## Профиль прочитан из версии до 3: достижения по накопленной статистике выдаёт Achievements.grant_retro.
 var needs_retro := false
+## История (SPEC_SPRINT10 3): открытая глава, найденные страницы (id → дата), просмотренные сценки и реплики,
+## пройденные сюжетные события, пройден ли пролог с учебным боем, просмотрен ли истинный финал.
+var story_chapter := 1
+var story_pages: Dictionary[StringName, String] = {}
+var story_seen: Array[StringName] = []
+var story_events: Array[StringName] = []
+var prologue_done := false
 
 const CHRONICLE_SIZE := 20
 const DAILY_SIZE := 30
@@ -135,6 +142,14 @@ func save(path: String = DEFAULT_PATH) -> void:
 	cfg.set_value("daily", "last", daily_last)
 	cfg.set_value("daily", "best", daily_best)
 	cfg.set_value("daily", "count", daily_count)
+	var pages := {}
+	for id in story_pages:
+		pages[String(id)] = story_pages[id]
+	cfg.set_value("story", "chapter", story_chapter)
+	cfg.set_value("story", "pages", pages)
+	cfg.set_value("story", "seen", Array(story_seen).map(func(x: StringName) -> String: return String(x)))
+	cfg.set_value("story", "events", Array(story_events).map(func(x: StringName) -> String: return String(x)))
+	cfg.set_value("story", "prologue_done", prologue_done)
 	SafeFile.save_config(cfg, path)
 
 
@@ -178,4 +193,14 @@ static func load_or_new(path: String = DEFAULT_PATH) -> ProfileState:
 	p.daily_best = int(cfg.get_value("daily", "best", 0))
 	p.daily_count = int(cfg.get_value("daily", "count", 0))
 	p.needs_retro = version < 3
+	# История появилась в версии 4: у старого профиля глава — по накопленной статистике, пролог считается пройденным.
+	p.story_chapter = int(cfg.get_value("story", "chapter", 3 if p.wins > 0 else (2 if p.best_layer > MapState.LAYERS else 1)))
+	var pages: Dictionary = cfg.get_value("story", "pages", {})
+	for id in pages:
+		p.story_pages[StringName(id)] = String(pages[id])
+	for id in cfg.get_value("story", "seen", []):
+		p.story_seen.append(StringName(id))
+	for id in cfg.get_value("story", "events", []):
+		p.story_events.append(StringName(id))
+	p.prologue_done = bool(cfg.get_value("story", "prologue_done", version < 4 and p.runs > 0))
 	return p

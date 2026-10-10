@@ -8,7 +8,10 @@ func _ready() -> void:
 	var title := UiKit.label(tr("RUN_WON_TITLE") if won else tr("RUN_LOST_TITLE"), 60, UiKit.ACCENT if won else UiKit.DANGER)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
-	var text := UiKit.label(tr("RUN_WON_TEXT") if won else tr("RUN_LOST_TEXT"), 26, UiKit.MUTED)
+	# Текст итога — по главе истории, в которой закончился забег (SPEC_SPRINT10 4–5).
+	var text := UiKit.label(tr(Story.run_end_key(Game.run_end_chapter, won)), 26, UiKit.MUTED)
+	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	text.custom_minimum_size = Vector2(900, 0)
 	text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(text)
 	if Game.run:

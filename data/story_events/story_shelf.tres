@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/event_def.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/defs/event_option_def.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/defs/event_effect.gd" id="3"]
+
+[sub_resource type="Resource" id="e0_0"]
+script = ExtResource("3")
+kind = 4
+durability = 2
+
+[sub_resource type="Resource" id="o0"]
+script = ExtResource("2")
+label_key = "EVT_STORY_SHELF_A"
+result_key = "EVT_STORY_SHELF_A_RES"
+effects = [SubResource("e0_0")]
+
+[sub_resource type="Resource" id="e1_0"]
+script = ExtResource("3")
+kind = 0
+resource = &"aether"
+amount = 2
+
+[sub_resource type="Resource" id="o1"]
+script = ExtResource("2")
+label_key = "EVT_STORY_SHELF_B"
+result_key = "EVT_STORY_SHELF_B_RES"
+effects = [SubResource("e1_0")]
+
+[resource]
+script = ExtResource("1")
+id = &"story_shelf"
+title_key = "EVT_STORY_SHELF_TITLE"
+text_key = "EVT_STORY_SHELF_TEXT"
+options = [SubResource("o0"), SubResource("o1")]
+act = 1
+story_chapter = 3

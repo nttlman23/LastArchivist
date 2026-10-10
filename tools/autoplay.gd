@@ -84,6 +84,9 @@ func _run() -> void:
 					Game.complete_node()
 				else:
 					scene._take(offer[0])
+			Game.SCENE_STORY:
+				_log.append("  сценка: %s" % Game.story_scene)
+				scene._finish()
 			Game.SCENE_CAMP:
 				# Привал: ремонт, если есть что чинить, иначе дар-пассивка.
 				var options := CampOps.options(Game.run)

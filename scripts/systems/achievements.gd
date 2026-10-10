@@ -143,6 +143,7 @@ static func battle_context(state: BattleState, enc: EncounterDef, act: int) -> D
 	return {
 		"elite": enc.elite, "boss": enc.boss, "act": act, "objective": state.objective, "rounds": state.round_number,
 		"fielded": fielded, "survived": survived, "archive_intact": archive_intact and state.archive_uid >= 0,
+		"commander": state.commander_id != &"",
 	}
 
 

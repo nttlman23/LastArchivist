@@ -116,6 +116,9 @@ func _pick_card(option_index: int) -> void:
 
 func _resolve(option_index: int, card_index: int) -> void:
 	_result = EventResolver.apply(db, run, run.pending_node, event, option_index, card_index)
+	if Story.is_story_event(db, event.id):
+		# Сюжетное событие (SPEC_SPRINT10 7): любой выбор даёт страницу памяти.
+		Game.story_event_done(event.id)
 	Audio.play(&"spell" if _result.success else &"impact")
 	_clear()
 	_header()

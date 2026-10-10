@@ -10,6 +10,8 @@ const SCENES := [
 	"res://scenes/map/map.tscn",
 	"res://scenes/achievements/achievements.tscn",
 	"res://scenes/daily/daily.tscn",
+	"res://scenes/story/story.tscn",
+	"res://scenes/tutorial/tutorial.tscn",
 ]
 
 

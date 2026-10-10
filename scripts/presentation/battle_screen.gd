@@ -55,13 +55,7 @@ func _exit_tree() -> void:
 
 func _ready() -> void:
 	db = Game.defs
-	if Game.run == null:
-		# Запуск сцены напрямую из редактора — тестовый забег, первый бой карты.
-		Game.run = RunState.create(db, 1)
-		Game.selected = [0, 1, 2, 3]
-		MapActions.travel(Game.run, Game.run.map.next_of(MapState.START)[0])
-	var run := Game.run
-	state = BattleSetup.for_run(db, run, Game.selected)
+	state = _make_state()
 
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# Слой «напряжение» начинает с тишины; уровень — с первого хода игрока (_compute_threats).
@@ -92,9 +86,24 @@ func _ready() -> void:
 	_run_turns()
 
 
+## Состояние боя текущего острова забега (без забега — тестовый бой первого острова). Учебный бой подменяет.
+func _make_state() -> BattleState:
+	if Game.run == null:
+		Game.run = RunState.create(db, 1)
+		Game.selected = [0, 1, 2, 3]
+		MapActions.travel(Game.run, Game.run.map.next_of(MapState.START)[0])
+	return BattleSetup.for_run(db, Game.run, Game.selected)
+
+
+## Ход врага (AI); учебный бой подменяет.
+func _enemy_action() -> BattleAction:
+	return AiController.choose_action(state, state.active_uid)
+
+
 ## Плашка цели боя при входе; затем цель видна в панели справа.
 func _show_objective_banner() -> void:
-	if state.objective == ObjectiveRule.ELIMINATE and state.commander_id == &"":
+	var line := _intro_line()
+	if state.objective == ObjectiveRule.ELIMINATE and state.commander_id == &"" and line.is_empty():
 		return
 	if state.objective != ObjectiveRule.ELIMINATE:
 		Hints.show_hint(&"objective")
@@ -111,6 +120,8 @@ func _show_objective_banner() -> void:
 	col.add_child(UiKit.objective_chip(state.objective, state.objective_rounds, "", 30))
 	if state.commander_id != &"":
 		col.add_child(UiKit.commander_chip(db, state.commander_id, 22))
+	if not line.is_empty():
+		col.add_child(_line_label(line))
 	add_child(panel)
 	panel.reset_size()
 	panel.position = Vector2((size.x - 420.0 - panel.size.x) * 0.5, BOARD_TOP + 220.0)
@@ -118,6 +129,31 @@ func _show_objective_banner() -> void:
 	tw.tween_interval(2.2)
 	tw.tween_property(panel, "modulate:a", 0.0, 0.6)
 	tw.tween_callback(panel.queue_free)
+
+
+## Реплика врага перед боем (SPEC_SPRINT10 5): босс, иначе командир; "" — нет реплики.
+func _intro_line() -> String:
+	var boss := state.get_unit(state.boss_uid)
+	var speaker := boss.def_id if boss else state.commander_id
+	if speaker == &"":
+		return ""
+	var key := Story.line_key(Game.profile, speaker, _story_seed())
+	if key == "":
+		return ""
+	var who := UiKit.unit_name(db, speaker) if boss else tr(db.commander(speaker).name_key)
+	return "%s: «%s»" % [who, tr(key)]
+
+
+func _story_seed() -> int:
+	return Game.run.battle_seed() if Game.run and Game.run.pending_node >= 0 else state.rng.seed
+
+
+func _line_label(text: String) -> Label:
+	var l := UiKit.label(text, 20, Color(0.95, 0.88, 0.7))
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.custom_minimum_size = Vector2(520, 0)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	return l
 
 
 ## Полоса ОЗ босса второго акта с отметкой половины — порога второй фазы (SPEC_SPRINT7 6).
@@ -150,6 +186,9 @@ func _show_phase_banner(uid: int) -> void:
 	panel.add_child(col)
 	col.add_child(UiKit.label(tr("BOSS_PHASE_BANNER") % _name(uid), 28, BattleView.RIFT_COLOR))
 	col.add_child(UiKit.label(tr("BOSS_PHASE_BANNER_TEXT"), 18, UiKit.MUTED))
+	var key := Story.line_key(Game.profile, Story.PHASE_SPEAKER, _story_seed())
+	if key != "":
+		col.add_child(_line_label("%s: «%s»" % [_name(uid), tr(key)]))
 	add_child(panel)
 	panel.reset_size()
 	panel.position = Vector2((size.x - 420.0 - panel.size.x) * 0.5, BOARD_TOP + 220.0)
@@ -455,7 +494,7 @@ func _run_turns() -> void:
 	while state.outcome == BattleState.Outcome.NONE and not _is_player_turn():
 		_refresh_hud()
 		await get_tree().create_timer(AI_DELAY).timeout
-		await _execute(AiController.choose_action(state, state.active_uid))
+		await _execute(_enemy_action())
 	if state.outcome != BattleState.Outcome.NONE:
 		_refresh_hud()
 		_show_end()
@@ -924,6 +963,7 @@ func _log_events(events: Array[BattleEvent]) -> void:
 				line = "[color=#%s]%s[/color]" % [BattleView.RIFT_COLOR.to_html(false), tr("LOG_BOSS_PHASE") % _name(e.data["uid"])]
 				Hints.show_hint(&"flooded")
 				_show_phase_banner(int(e.data["uid"]))
+				Game.story_event(Story.Event.BOSS_PHASE2)
 			BattleEvent.SUMMONED:
 				line = tr("LOG_SUMMONED") % _name(e.data["uid"])
 			BattleEvent.COMMANDER_INTENT:

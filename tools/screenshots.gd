@@ -25,6 +25,20 @@ func _run() -> void:
 	Game.run = null
 	Game.goto(Game.SCENE_MAIN_MENU)
 	await _shot("menu")
+	# История и обучение (SPEC_SPRINT10): сценка пролога (все абзацы), учебный бой, страницы памяти.
+	Game.show_story(Story.PROLOGUE, Game.SCENE_MAIN_MENU)
+	await get_tree().create_timer(0.8).timeout
+	for i in 4:
+		get_tree().current_scene._advance()
+	await _shot("story", 1.0)
+	Game.goto(Game.SCENE_TUTORIAL)
+	await _shot("tutorial", 2.0)
+	Game.profile.story_chapter = 2
+	for id in [&"p1_ash", &"p1_elite", &"p1_scribe", &"p2_diary"]:
+		Game.profile.story_pages[id] = "2026-10-11"
+	_open_chronicle_pages()
+	Game.goto(Game.SCENE_CHRONICLE)
+	await _shot("chronicle_pages")
 	# Достижения и ежедневный забег (SPEC_SPRINT9 6–7): часть достижений и история с пропусками дней.
 	for id in [&"first_chapter", &"no_losses", &"miser", &"collector", &"lightning", &"daily_three"]:
 		Achievements.grant(Game.defs, Game.profile, id, "2026-10-0%d" % (Game.profile.achievements.size() + 1))
@@ -115,3 +129,8 @@ func _shot(name: String, wait: float = 1.2) -> void:
 	await get_tree().create_timer(wait).timeout
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png(ProjectSettings.globalize_path(out_dir.path_join(name + ".png")))
+
+
+## Летопись откроется на вкладке страниц памяти.
+func _open_chronicle_pages() -> void:
+	load("res://scripts/presentation/chronicle_screen.gd").tab = 1

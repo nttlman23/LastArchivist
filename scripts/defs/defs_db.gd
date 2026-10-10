@@ -19,6 +19,9 @@ var relics: Dictionary[StringName, RelicDef] = {}
 var hall_nodes: Dictionary[StringName, UpgradeNodeDef] = {}
 ## Достижения (SPEC_SPRINT9 6).
 var achievements: Dictionary[StringName, AchievementDef] = {}
+## Страницы памяти и сюжетные события (SPEC_SPRINT10 6–7); сюжетные события — вне обычных пулов.
+var pages: Dictionary[StringName, PageDef] = {}
+var story_events: Dictionary[StringName, EventDef] = {}
 const DEFAULT_SCHOOL := &"ash_archive"
 ## Приказы, доступные всегда.
 var base_orders: Array[StringName] = [&"order_advance", &"order_close_ranks"]
@@ -52,6 +55,10 @@ static func load_default() -> DefsDB:
 		db.hall_nodes[res.id] = res as UpgradeNodeDef
 	for res in _load_dir("achievements"):
 		db.achievements[res.id] = res as AchievementDef
+	for res in _load_dir("pages"):
+		db.pages[res.id] = res as PageDef
+	for res in _load_dir("story_events"):
+		db.story_events[res.id] = res as EventDef
 	return db
 
 
@@ -157,9 +164,24 @@ func schools_sorted() -> Array[SchoolDef]:
 	return list
 
 
+## Событие карты: обычное или сюжетное.
 func event(id: StringName) -> EventDef:
+	if story_events.has(id):
+		return story_events[id]
 	assert(events.has(id), "Unknown event: %s" % id)
 	return events[id]
+
+
+func has_event(id: StringName) -> bool:
+	return events.has(id) or story_events.has(id)
+
+
+## Страницы в порядке глав.
+func pages_sorted() -> Array[PageDef]:
+	var list: Array[PageDef] = []
+	list.assign(pages.values())
+	list.sort_custom(func(a: PageDef, b: PageDef) -> bool: return a.chapter * 100 + a.order < b.chapter * 100 + b.order)
+	return list
 
 
 ## Шаблоны встреч уровня tier (элитные — отдельно), отсортированные по id.

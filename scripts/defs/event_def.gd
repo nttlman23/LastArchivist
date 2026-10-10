@@ -9,3 +9,5 @@ extends Resource
 @export var options: Array = []
 ## Акт, в котором событие встречается на карте (SPEC_SPRINT7 12).
 @export var act: int = 1
+## Сюжетное событие (SPEC_SPRINT10 7): глава, с которой оно может встретиться (0 — обычное событие).
+@export var story_chapter: int = 0
