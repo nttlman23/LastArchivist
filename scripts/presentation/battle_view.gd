@@ -11,7 +11,8 @@ extends Node2D
 ##             на фишку обходятся дорого); тела — запечённые текстуры, «дыхание» и поворот —
 ##             трансформом при отрисовке; перерисовывается каждый кадр — это дёшево;
 ##   fx      — снаряд и всплывающий урон, только пока они есть;
-##   marker  — маркер ходящего стека, пульсирует через modulate/position без перерисовки;
+##   marker  — гекс ходящего стека, пульсирует через modulate/scale без перерисовки (сама фигура ходящего
+##             подсвечивается пульсом, счётчик — золотой рамкой: это слой units);
 ##   cursor  — иконка действия у курсора, двигается через position.
 
 const HEX_SIZE := 54.0
@@ -155,7 +156,6 @@ var _marker_uid := -1
 var _playing := 0
 var _fx: Layer
 var _marker: Layer
-var _marker_arrow: Layer
 var _cursor: CursorIcon
 
 
@@ -202,7 +202,6 @@ func setup(p_state: BattleState, p_db: DefsDB) -> void:
 		_board = _add_layer(self, _draw_board)
 		_overlay = _add_layer(self, _draw_overlay)
 		_marker = _add_layer(self, _draw_marker_ring)
-		_marker_arrow = _add_layer(_marker, _draw_marker_arrow)
 		_units = _add_layer(self, _draw_units)
 		_fx = _add_layer(self, _draw_fx)
 		_fx_pool = FxPool.new()
@@ -314,7 +313,6 @@ func _update_marker(delta: float = 0.0) -> void:
 	_marker.position = _marker_pos
 	_marker.modulate.a = 0.55 + 0.45 * pulse
 	_marker.scale = Vector2.ONE * (1.0 + 0.05 * pulse)
-	_marker_arrow.position.y = -6.0 * pulse
 
 
 # --- Узлы фишек ----------------------------------------------------------------
@@ -888,14 +886,13 @@ func _draw_rounds(ci: CanvasItem, pos: Vector2, rounds: int, color: Color) -> vo
 	ci.draw_string(_font, pos + Vector2(-11, 6), str(rounds), HORIZONTAL_ALIGNMENT_CENTER, 22, 16, color)
 
 
+## Гекс ходящего стека: золотая заливка и толстая обводка — видны вокруг подставки даже под высокой фигурой.
+## (Стрелка над головой не годится: фигуры выше гекса, и она ложится на соседа сверху.)
 func _draw_marker_ring(ci: CanvasItem) -> void:
-	ci.draw_colored_polygon(HexGrid.corners(Vector2.ZERO, HEX_SIZE - 1.5), Color(ACTIVE_RING, 0.3))
-	ci.draw_arc(Vector2.ZERO, UNIT_RADIUS + 7, 0, TAU, 40, ACTIVE_RING, 5.0)
-
-
-func _draw_marker_arrow(ci: CanvasItem) -> void:
-	var tip := Vector2(0, -UNIT_RADIUS - 18)
-	ci.draw_colored_polygon(PackedVector2Array([tip, tip + Vector2(-12, -16), tip + Vector2(12, -16)]), ACTIVE_RING)
+	ci.draw_colored_polygon(HexGrid.corners(Vector2.ZERO, HEX_SIZE - 1.5), Color(ACTIVE_RING, 0.42))
+	var edge := HexGrid.corners(Vector2.ZERO, HEX_SIZE - 3.5)
+	edge.append(edge[0])
+	ci.draw_polyline(edge, ACTIVE_RING, 5.0)
 
 
 func _draw_fx(ci: CanvasItem) -> void:
@@ -1007,6 +1004,10 @@ func _draw_figure(ci: CanvasItem, u: UnitState, pos: Vector2, alpha: float, tex:
 	var anchor := ArtDB.anchor(u.def_id)
 	ci.draw_set_transform(feet, 0.0, Vector2(_facing.get(u.uid, 1.0), breath))
 	var mod := Color(1, 1, 1, alpha)
+	if show_active and u.uid == state.active_uid:
+		# Ходящий стек мягко светлеет и тускнеет — видно, кто именно ходит.
+		var glow := 1.12 + 0.16 * sin(_time * 4.0)
+		mod = Color(glow, glow, glow * 0.92, alpha)
 	var life: float = _alpha.get(u.uid, 1.0)
 	if life < 1.0 and not u.is_alive():
 		# Гибель: фигура темнеет в чернила, пока тает.
@@ -1168,7 +1169,11 @@ func _draw_unit_badges(ci: CanvasItem, u: UnitState, alpha: float) -> void:
 	ci.draw_colored_polygon(shape, Color(side_color.darkened(0.55), alpha))
 	var outline := shape.duplicate()
 	outline.append(shape[0])
-	ci.draw_polyline(outline, ring, 2.0)
+	if show_active and u.uid == state.active_uid:
+		# Счётчик ходящего — в толстой золотой рамке.
+		ci.draw_polyline(outline, Color(ACTIVE_RING, alpha), 5.0)
+	else:
+		ci.draw_polyline(outline, ring, 2.0)
 	ci.draw_string(_font, top + Vector2(0, 19 * k), str(_count.get(u.uid, u.count)), HORIZONTAL_ALIGNMENT_CENTER, bw, int(19 * k), fg)
 	var hp_ratio := clampf(float(u.top_hp) / u.hp, 0.0, 1.0) if u.is_alive() else 0.0
 	var bar := Rect2(top + Vector2(0, bh + tip + 1), Vector2(bw, 4))
