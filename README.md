@@ -70,6 +70,16 @@
 
 Профиль, сохранение забега и попытки ежедневного забега хранятся в `user://` (на Windows — `%APPDATA%/Godot/app_userdata/Последний Архивариус`).
 
+## Сборка
+
+Нужны шаблоны экспорта Godot 4.7.2 (`Godot_v4.7.2-stable_export_templates.tpz`; в редакторе — «Редактор → Управление шаблонами экспорта»). Релизная сборка для Windows — один файл с данными внутри:
+
+```bash
+godot --headless --export-release "Windows Desktop" build/windows/LastArchivist.exe
+```
+
+Проверка собранной игры без окна: `build/windows/LastArchivist.exe --headless -- --smoke` (должно вывести `SMOKE OK`). Папка `build/` в репозиторий не входит.
+
 ## Тесты и инструменты
 
 Юнит-тесты на [GUT](https://github.com/bitwes/Gut) (`tests/unit`):
