@@ -43,6 +43,9 @@ const FOG := Color(0.45, 0.62, 0.62)
 const BRIDGE := Color(0.55, 0.58, 0.66, 0.55)
 const BRIDGE_DONE := Color(0.95, 0.8, 0.4, 0.9)
 const FLIGHT := Color(0.75, 0.55, 1.0)
+## Текущий остров: голубое кольцо и свечение (золото — у доступных), над ним — медальон Архивариуса.
+const HERE := Color(0.55, 0.9, 1.0)
+const HERE_DISC_R := 24.0
 
 var run: RunState
 var selected := -1
@@ -60,6 +63,10 @@ var _pulses: Array[Node2D] = []
 var _clouds_far: Node2D
 var _clouds_near: Node2D
 var _rift_glow: Node2D
+## «Вы здесь»: свечение под текущим островом и медальон над ним (покачивается через position, без перерисовки).
+var _here_glow: Node2D
+var _here: Node2D
+var _here_y := 0.0
 const PARALLAX_FAR := 0.012
 const PARALLAX_NEAR := 0.035
 
@@ -79,6 +86,11 @@ func setup(p_run: RunState) -> void:
 		_clouds_far = _behind(_draw_clouds.bind(0, 0.045))
 		_clouds_near = _behind(_draw_clouds.bind(1, 0.07))
 		_rift_glow = _behind(_draw_rift_glow)
+		_here_glow = _behind(_draw_here_glow)
+		_here = Node2D.new()
+		_here.z_index = 1
+		_here.draw.connect(_draw_here.bind(_here))
+		add_child(_here)
 	for n in run.map.nodes:
 		if n.type == MapState.NodeType.RIFT:
 			_rift_glow.position = _pos[n.id]
@@ -93,6 +105,36 @@ func _behind(painter: Callable) -> Node2D:
 	add_child(n)
 	n.queue_redraw()
 	return n
+
+
+## Мягкое голубое свечение под текущим островом.
+func _draw_here_glow(ci: Node2D) -> void:
+	for i in 7:
+		var r := ISLAND_R * (2.3 - i * 0.22)
+		var pts := PackedVector2Array()
+		for k in 28:
+			var a := TAU * k / 28.0
+			pts.append(Vector2(cos(a) * r * 1.25, sin(a) * r * 0.75 + 6.0))
+		ci.draw_colored_polygon(pts, Color(HERE, 0.07))
+
+
+## Медальон с портретом Архивариуса на штырьке, острием к острову; без арта — кружок с глифом героя.
+func _draw_here(ci: Node2D) -> void:
+	var r := HERE_DISC_R
+	ci.draw_colored_polygon(PackedVector2Array([Vector2(-9, r - 3), Vector2(9, r - 3), Vector2(0, r + 16)]), HERE)
+	ci.draw_circle(Vector2.ZERO, r + 4, Color(UiKit.BG_COLOR, 0.9))
+	var tex := ArtDB.portrait(&"archivist")
+	if tex:
+		var pts := PackedVector2Array()
+		var uvs := PackedVector2Array()
+		for i in 40:
+			var dir := Vector2.from_angle(TAU * i / 40.0)
+			pts.append(dir * r)
+			uvs.append(dir * 0.5 + Vector2(0.5, 0.5))
+		ci.draw_polygon(pts, PackedColorArray([Color.WHITE]), uvs, tex)
+	else:
+		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_SPELL, Vector2.ZERO, 14, UiKit.BG_COLOR, HERE)
+	ci.draw_arc(Vector2.ZERO, r + 2, 0, TAU, 40, HERE, 3.0)
 
 
 func _draw_rift_glow(ci: Node2D) -> void:
@@ -139,6 +181,17 @@ func refresh() -> void:
 		ring.draw.connect(_draw_pulse_ring.bind(ring, id))
 		add_child(ring)
 		_pulses.append(ring)
+	# «Вы здесь» — у текущего острова; до первого острова (START) отметки нет.
+	var here := run.map.current != MapState.START
+	_here.visible = here
+	_here_glow.visible = here
+	if here:
+		var n := run.map.node(run.map.current)
+		_here_glow.position = _pos[n.id]
+		# Острие штырька — в центре острова: Архивариус стоит на нём.
+		_here_y = _pos[n.id].y - HERE_DISC_R - 18.0
+		_here.position = Vector2(_pos[n.id].x, _here_y)
+		_here.queue_redraw()
 	queue_redraw()
 
 
@@ -147,6 +200,9 @@ func _process(delta: float) -> void:
 	var a := 0.45 + 0.55 * (0.5 + 0.5 * sin(_time * 3.5))
 	for p in _pulses:
 		p.modulate.a = a
+	if _here and _here.visible:
+		_here.position.y = _here_y + sin(_time * 2.4) * 5.0
+		_here_glow.modulate.a = 0.75 + 0.25 * sin(_time * 2.4)
 	if _clouds_far:
 		var m := get_viewport().get_mouse_position() - get_viewport_rect().size * 0.5
 		_clouds_far.position = -m * PARALLAX_FAR
@@ -194,14 +250,14 @@ func _draw() -> void:
 	var order: Array = map.nodes.duplicate()
 	order.sort_custom(func(a: MapState.MapNode, b: MapState.MapNode) -> bool: return _pos[a.id].y < _pos[b.id].y)
 	for n: MapState.MapNode in order:
-		# Непройденные острова не теряются (по карте можно вернуться) — темнее только пройденные.
-		var dim := map.visited.has(n.id)
+		# Непройденные острова не теряются (по карте можно вернуться) — темнее только пройденные, кроме текущего.
+		var dim := map.visited.has(n.id) and n.id != map.current
 		_draw_island(n, dim)
 		var rr := ring_r(n)
 		if flights.has(n.id):
 			_dashed_ring(_pos[n.id], rr + 10, FLIGHT)
 		if n.id == map.current:
-			draw_arc(_pos[n.id], rr + 14, 0, TAU, 40, UiKit.ACCENT, 3.0)
+			draw_arc(_pos[n.id], rr + 14, 0, TAU, 40, HERE, 4.0)
 		if n.id == selected:
 			draw_arc(_pos[n.id], rr + 18, 0, TAU, 40, Color.WHITE, 3.0)
 		elif n.id == hovered:

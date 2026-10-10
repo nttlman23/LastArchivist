@@ -346,6 +346,13 @@ func _toggle_legend() -> void:
 	for r in [CardAdvisor.Risk.LOW, CardAdvisor.Risk.EVEN, CardAdvisor.Risk.HIGH]:
 		col.add_child(UiKit.chip(UnitGlyphs.ICON_KILL, "%s: %s" % [tr("RISK_TITLE"), tr(CardAdvisor.RISK_KEYS[r])], CardAdvisor.RISK_COLORS[r], "", "", 18))
 	col.add_child(UiKit.chip(UnitGlyphs.ICON_MARK, tr("MAP_LEGEND_SCOUTED"), MapView.FLIGHT, "", "", 18))
+	var here := HBoxContainer.new()
+	here.add_theme_constant_override("separation", 10)
+	var archivist := ArtDB.portrait(&"archivist")
+	if archivist:
+		here.add_child(UiKit.portrait_disc(archivist, 26, MapView.HERE))
+	here.add_child(UiKit.label(tr("MAP_LEGEND_HERE"), 18, MapView.HERE))
+	col.add_child(here)
 	col.add_child(UiKit.label(tr("MAP_LEGEND_PATH"), 16, UiKit.MUTED))
 
 
