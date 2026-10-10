@@ -5,7 +5,7 @@ extends RefCounted
 
 const MANIFEST := "res://art/manifest.json"
 const DIRS := {&"unit": "units", &"card": "cards", &"portrait": "portraits", &"bg": "backgrounds", &"ui": "ui",
-		&"school": "schools", &"island": "islands", &"relic": "relics", &"ach": "achievements", &"icon": "icons"}
+		&"school": "schools", &"island": "islands", &"relic": "relics", &"ach": "achievements", &"icon": "icons", &"scene": "scenes"}
 
 ## Включён ли арт; по умолчанию — если есть рендер. Тесты включают явно.
 static var enabled: bool = DisplayServer.get_name() != "headless"
@@ -75,6 +75,11 @@ static func relic(id: StringName) -> Texture2D:
 
 static func achievement(id: StringName) -> Texture2D:
 	return texture(&"ach", id)
+
+
+## Иллюстрация сценки или обложка главы (scene_chapter_N) — SPEC_SPRINT10 12.
+static func scene(id: StringName) -> Texture2D:
+	return texture(&"scene", id)
 
 
 ## Рисованный значок интерфейса (монохромный, тонируется modulate).

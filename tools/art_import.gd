@@ -1,6 +1,6 @@
 extends SceneTree
 ## Импорт арта (SPEC_SPRINT9 2): art/raw/*.png → art/<папка>/<id>.png и art/manifest.json.
-## Запуск: godot --headless -s res://tools/art_import.gd [-- --force] [-- --only=unit|card|portrait|bg|ui|school|island|relic|ach|icon]
+## Запуск: godot --headless -s res://tools/art_import.gd [-- --force] [-- --only=unit|card|portrait|bg|ui|school|island|relic|ach|icon|scene]
 ## Потом откройте проект в редакторе (или godot --headless --import), чтобы Godot импортировал новые PNG.
 
 

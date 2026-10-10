@@ -31,6 +31,11 @@ func _run() -> void:
 	for i in 4:
 		get_tree().current_scene._advance()
 	await _shot("story", 1.0)
+	Game.show_story(Story.TRUE_FINALE, Game.SCENE_MAIN_MENU)
+	await get_tree().create_timer(0.8).timeout
+	for i in 5:
+		get_tree().current_scene._advance()
+	await _shot("story_finale", 1.0)
 	Game.goto(Game.SCENE_TUTORIAL)
 	await _shot("tutorial", 2.0)
 	Game.profile.story_chapter = 2

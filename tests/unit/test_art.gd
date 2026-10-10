@@ -165,6 +165,8 @@ func test_project_manifest_ids_exist() -> void:
 				assert_true(db.achievements.has(id), "нет достижения %s" % id)
 			"icon":
 				assert_true(UnitGlyphs.ALL_ICONS.has(id), "нет значка %s" % id)
+			"scene":
+				assert_true(Story.SCENES.has(id) or id == &"chapter_1", "нет сценки %s" % id)
 			"island":
 				var parts := String(id).rsplit("_act", true, 1)
 				assert_true(MapView.ISLAND_ART.values().has(StringName(parts[0])) and parts[1] in ["1", "2"], "нет острова %s" % id)
@@ -191,6 +193,7 @@ func test_parse_stage_b_names() -> void:
 	assert_eq(ArtImport.parse_name("relic_rift_shard_v2.png"), {"kind": "relic", "id": "rift_shard", "version": 2})
 	assert_eq(ArtImport.parse_name("ach_first_chapter.png")["kind"], "ach")
 	assert_eq(ArtImport.parse_name("icon_melee.png")["id"], "melee")
+	assert_eq(ArtImport.parse_name("scene_true_finale.png"), {"kind": "scene", "id": "true_finale", "version": 0})
 	assert_eq(ArtImport.parse_name("portrait_abyss_lord_cmd-draft.png"), {}, "черновик пропускается")
 	assert_eq(ArtImport.parse_name("relic_warden_shell_draft.png"), {})
 
@@ -254,3 +257,11 @@ func test_project_stage_b_art_loads() -> void:
 	assert_not_null(ArtDB.unit(&"abyss_lord"))
 	ArtDB.enabled = false
 	ArtDB.reset()
+
+
+func test_project_story_art_complete() -> void:
+	var items: Dictionary = ArtImport.read_manifest()["items"]
+	var expect: Array[String] = ["scene/chapter_1"]
+	for id in Story.SCENES:
+		expect.append("scene/%s" % id)
+	assert_eq(expect.filter(func(k: String) -> bool: return not items.has(k)), [], "иллюстрации всех сценок и обложки глав (SPEC_SPRINT10 12)")

@@ -109,6 +109,12 @@ func _build_pages() -> void:
 	var list := _scroll_list(10)
 	for ch in range(1, Story.MAX_CHAPTER + 1):
 		var open := ch <= p.story_chapter
+		var cover := ArtDB.scene(StringName("chapter_%d" % ch))
+		if cover:
+			# Обложка главы (SPEC_SPRINT10 12) — полосой над названием; у закрытой главы — затемнена.
+			var banner := UiKit.art_rect(cover, Vector2(0, 150), true, Color.WHITE if open else Color(0.3, 0.3, 0.34))
+			banner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			list.add_child(banner)
 		var title := UiKit.label(Story.chapter_name(ch), 28, UiKit.ACCENT if open else UiKit.MUTED)
 		list.add_child(title)
 		if not open:

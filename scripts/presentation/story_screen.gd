@@ -15,7 +15,7 @@ var _done := false
 func _ready() -> void:
 	scene_id = Game.story_scene if Game.story_scene != &"" else Story.PROLOGUE
 	_paragraphs = Story.paragraphs(scene_id)
-	var art := ArtDB.texture(&"scene", scene_id)
+	var art := ArtDB.scene(scene_id)
 	if art:
 		add_child(UiKit.art_background(art, 0.55))
 	else:
@@ -32,7 +32,18 @@ func _ready() -> void:
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_theme_constant_override("separation", 22)
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
-	margin.add_child(col)
+	if art:
+		# Тёмная полупрозрачная подложка: на светлых местах иллюстрации (пустая страница) текст не теряется.
+		var plate := PanelContainer.new()
+		var sb := UiKit.panel_style(Color(0.03, 0.03, 0.05, 0.62))
+		sb.set_content_margin_all(28)
+		plate.add_theme_stylebox_override("panel", sb)
+		plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		plate.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		margin.add_child(plate)
+		plate.add_child(col)
+	else:
+		margin.add_child(col)
 	var title := UiKit.label(tr("STORY_SCENE_%s_TITLE" % String(scene_id).to_upper()), 48, UiKit.ACCENT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(title)

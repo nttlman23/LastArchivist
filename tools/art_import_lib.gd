@@ -21,6 +21,8 @@ const KINDS := {
 	"relic": "relics",
 	"ach": "achievements",
 	"icon": "icons",
+	# Спринт 10 (SPEC_SPRINT10 12): иллюстрации сценок и обложки глав.
+	"scene": "scenes",
 }
 const UNIT_HEIGHT := 384
 const UNIT_HEIGHT_LARGE := 448
@@ -327,7 +329,7 @@ static func process(info: Dictionary, units_info: Dictionary = {}, out_dir: Stri
 			img = cover(img, CARD_SIZE)
 		"portrait":
 			img = cover(img, Vector2i(PORTRAIT_SIZE, PORTRAIT_SIZE))
-		"bg":
+		"bg", "scene":
 			img = cover(img, BG_SIZE)
 		"school":
 			img = cover(img, Vector2i(SCHOOL_SIZE, SCHOOL_SIZE))
