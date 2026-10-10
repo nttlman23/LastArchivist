@@ -313,6 +313,14 @@ func scene_music(scene: String) -> StringName:
 	return &"menu"
 
 
+## Окружение экрана (SPEC_SPRINT9 12): в забеге — пыль архива, во втором акте — капель; вне забега — тишина.
+func scene_ambience(scene: String) -> StringName:
+	if run == null or scene in [SCENE_MAIN_MENU, SCENE_SCHOOL, SCENE_META, SCENE_SETTINGS, SCENE_CHRONICLE,
+			SCENE_ACHIEVEMENTS, SCENE_DAILY, SCENE_RUN_END]:
+		return &""
+	return &"water" if run.act >= 2 and not run.at_camp else &"archive"
+
+
 ## Музыка боя по его состоянию: босс второго акта во второй фазе — плотный вариант.
 func battle_music(state: BattleState) -> StringName:
 	if state.biome == &"flooded" and run != null and run.pending_node >= 0 and run.is_boss_battle(defs):
@@ -322,6 +330,7 @@ func battle_music(state: BattleState) -> StringName:
 
 func goto(scene: String) -> void:
 	Audio.play_music(scene_music(scene))
+	Audio.play_ambience(scene_ambience(scene))
 	# Переход: затемнение, смена сцены, проявление (SPEC_SPRINT6 5).
 	if _fade_tween and _fade_tween.is_valid():
 		_fade_tween.kill()

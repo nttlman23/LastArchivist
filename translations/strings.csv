@@ -926,3 +926,4 @@ EVT_FORGOTTEN_SHELF_B,"Прочесть старую книгу (случайн�
 EVT_FORGOTTEN_SHELF_B_RES,Архивариус выучил забытый приём.
 EVT_FORGOTTEN_SHELF_C,"Взять чистые листы (+1 Пергамент, +1 Чернила)"
 EVT_FORGOTTEN_SHELF_C_RES,Пара листов и чернильница — тоже находка.
+MENU_AMBIENCE,Окружение

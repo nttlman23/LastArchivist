@@ -48,6 +48,11 @@ var _info_key := ""
 var _end_panel: PanelContainer
 
 
+## Вне боя слой «напряжение» молчит (трек второго акта звучит и на карте).
+func _exit_tree() -> void:
+	Audio.set_tension(0.0)
+
+
 func _ready() -> void:
 	db = Game.defs
 	if Game.run == null:
@@ -59,6 +64,8 @@ func _ready() -> void:
 	state = BattleSetup.for_run(db, run, Game.selected)
 
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Слой «напряжение» начинает с тишины; уровень — с первого хода игрока (_compute_threats).
+	Audio.set_tension(0.0)
 	Audio.play_music(Game.battle_music(state))
 	# Фон боя — цвет очистки кадра (Game), отдельный прямоугольник на весь экран не нужен.
 	if Settings.effects_full:
@@ -473,6 +480,7 @@ func _compute_threats() -> void:
 			threatened[u.uid] = true
 	view.threatened = threatened
 	_predict_intents.call_deferred()
+	Audio.set_tension(ThreatMap.tension(state, _enemy_zones))
 	if not threatened.is_empty():
 		Hints.show_hint(&"threat")
 

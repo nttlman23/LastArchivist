@@ -409,12 +409,24 @@ static func sound_for(e: BattleEvent) -> StringName:
 	return EVENT_SOUNDS.get(e.type, &"")
 
 
+## Звук удара по классу атакующего (SPEC_SPRINT9 12, UnitDef.sound_class) или &"" — тогда общий.
+static func hit_sound(p_db: DefsDB, p_state: BattleState, e: BattleEvent) -> StringName:
+	if e.type != BattleEvent.ATTACKED or p_db == null or p_state == null:
+		return &""
+	var attacker := p_state.get_unit(int(e.data.get("attacker", -1)))
+	if attacker == null or not p_db.units.has(attacker.def_id):
+		return &""
+	var cls := p_db.unit(attacker.def_id).sound_class
+	return StringName("hit_" + cls) if cls != &"" else &""
+
+
 func play(events: Array[BattleEvent]) -> void:
 	_playing += 1
 	for e in events:
-		var sound := sound_for(e)
+		var hit := hit_sound(db, state, e)
+		var sound := hit if hit != &"" else sound_for(e)
 		if sound != &"":
-			Audio.play(sound)
+			Audio.play(sound, Audio.HIT_JITTER if hit != &"" else Audio.PITCH_JITTER)
 		match e.type:
 			BattleEvent.MOVED:
 				await _play_move(e.data["uid"], e.data["path"])

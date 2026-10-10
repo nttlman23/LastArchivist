@@ -18,3 +18,4 @@ shots = 10
 is_flying = false
 ability_id = &"mark"
 color = Color(0.85, 0.62, 0.3, 1)
+sound_class = &"shard"

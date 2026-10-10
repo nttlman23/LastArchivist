@@ -19,3 +19,4 @@ is_flying = false
 ability_id = &"cover"
 construct = true
 color = Color(0.7, 0.4, 0.25, 1)
+sound_class = &"metal"

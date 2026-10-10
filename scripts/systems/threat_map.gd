@@ -80,3 +80,26 @@ static func shot_targets(state: BattleState, u: UnitState) -> Dictionary[int, bo
 	for e in state.enemies_of(u):
 		result[e.uid] = HexGrid.distance(u.hex, e.hex) > DamageCalc.LONG_RANGE
 	return result
+
+
+## Напряжение боя 0..1 для слоя музыки (SPEC_SPRINT9 12): доля ОЗ ваших стеков под ударом врага
+## (ближний бой и стрелки) и номер раунда — затянувшийся бой тревожнее. all — зоны врагов (пусто — посчитать).
+const TENSION_THREAT := 0.8
+const TENSION_ROUND := 0.3
+const TENSION_ROUNDS := 8
+
+
+static func tension(state: BattleState, all: Dictionary[int, Zone] = {}) -> float:
+	if all.is_empty():
+		all = zones(state, UnitState.Side.ENEMY)
+	var total := 0
+	var threatened := 0
+	for u in state.alive(UnitState.Side.PLAYER):
+		if u.inert:
+			continue
+		total += u.total_hp()
+		if not attackers_of(state, all, u).is_empty():
+			threatened += u.total_hp()
+	var share := float(threatened) / maxi(1, total)
+	var late := clampf((state.round_number - 1) / float(TENSION_ROUNDS), 0.0, 1.0)
+	return clampf(share * TENSION_THREAT + late * TENSION_ROUND, 0.0, 1.0)

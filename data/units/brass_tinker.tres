@@ -19,3 +19,4 @@ is_flying = false
 ability_id = &"tinker"
 construct = true
 color = Color(0.82, 0.56, 0.3, 1)
+sound_class = &"metal"

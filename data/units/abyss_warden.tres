@@ -18,3 +18,4 @@ shots = 0
 is_flying = false
 ability_id = &"undertow"
 color = Color(0.22, 0.42, 0.52, 1)
+sound_class = &"metal"

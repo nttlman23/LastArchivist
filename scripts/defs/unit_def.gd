@@ -22,3 +22,5 @@ extends Resource
 @export var color := Color.WHITE
 ## Размер фигуры на поле (SPEC_SPRINT9 2): normal или large (крупные существа и боссы).
 @export var size_class: StringName = &"normal"
+## Класс звука удара (SPEC_SPRINT9 12): metal, claw, magic, shard, heavy; пусто — общий звук ближнего боя или выстрела.
+@export var sound_class: StringName

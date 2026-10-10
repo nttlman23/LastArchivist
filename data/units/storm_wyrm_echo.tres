@@ -19,3 +19,4 @@ is_flying = true
 ability_id = &"chain_lightning"
 color = Color(0.55, 0.45, 0.95, 1)
 size_class = &"large"
+sound_class = &"heavy"

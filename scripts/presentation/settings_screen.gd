@@ -8,6 +8,7 @@ func _ready() -> void:
 	box.add_child(UiKit.label(tr("SETTINGS_TITLE"), 44, UiKit.ACCENT))
 	box.add_child(_slider_row(tr("MENU_MUSIC"), Audio.music_volume, Audio.set_music_volume))
 	box.add_child(_slider_row(tr("MENU_SFX"), Audio.sfx_volume, _on_sfx))
+	box.add_child(_slider_row(tr("MENU_AMBIENCE"), Audio.ambience_volume, Audio.set_ambience_volume))
 	box.add_child(_toggle(tr("SETTINGS_DETAILED"), tr("SETTINGS_DETAILED_TIP"), Settings.detailed, Settings.set_detailed))
 	box.add_child(_toggle(tr("SETTINGS_HINTS"), tr("SETTINGS_HINTS_TIP"), Settings.hints, Settings.set_hints))
 	box.add_child(_toggle(tr("SETTINGS_LARGE_ICONS"), tr("SETTINGS_LARGE_ICONS_TIP"), Settings.large_icons, Settings.set_large_icons))

@@ -19,3 +19,4 @@ is_flying = false
 ability_id = &"overclock"
 construct = true
 color = Color(0.72, 0.62, 0.4, 1)
+sound_class = &"shard"

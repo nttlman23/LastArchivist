@@ -18,3 +18,4 @@ shots = 0
 is_flying = false
 ability_id = &"shield_wall"
 color = Color(0.78, 0.82, 0.86, 1)
+sound_class = &"metal"

@@ -18,3 +18,4 @@ shots = 0
 is_flying = false
 ability_id = &"devour"
 color = Color(0.55, 0.5, 0.45, 1)
+sound_class = &"claw"

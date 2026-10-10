@@ -19,3 +19,4 @@ is_flying = false
 ability_id = &"rift_tear"
 color = Color(0.35, 0.2, 0.45, 1)
 size_class = &"large"
+sound_class = &"magic"
