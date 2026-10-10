@@ -116,7 +116,7 @@ static func army_power(db: DefsDB, codex: CodexState) -> float:
 static func encounter_power(db: DefsDB, enc: EncounterDef, difficulty: StringName = Difficulty.NORMAL) -> float:
 	var total := 0.0
 	for i in mini(enc.unit_ids.size(), BattleState.MAX_STACKS):
-		total += stack_power(db.unit(enc.unit_ids[i]), Difficulty.enemy_count(difficulty, enc.counts[i]))
+		total += stack_power(db.unit(enc.unit_ids[i]), Difficulty.enemy_count(difficulty, enc.counts[i], enc))
 	return total
 
 

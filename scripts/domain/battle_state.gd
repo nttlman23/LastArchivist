@@ -113,7 +113,7 @@ static func create(db: DefsDB, encounter: EncounterDef, codex: CodexState, selec
 	var enemy_col := s.grid.width - 1
 	var objectives := Difficulty.objectives_enabled(difficulty) and encounter.objective != ObjectiveRule.ELIMINATE
 	for i in mini(encounter.unit_ids.size(), MAX_STACKS):
-		var count := Difficulty.enemy_count(difficulty, encounter.counts[i])
+		var count := Difficulty.enemy_count(difficulty, encounter.counts[i], encounter)
 		var e := s.add_unit(db.unit(encounter.unit_ids[i]), UnitState.Side.ENEMY, count, Vector2i(enemy_col, START_ROWS[i]))
 		if (encounter.boss and i == 0) or (objectives and encounter.objective == ObjectiveRule.ASSASSINATE and i == encounter.target_index):
 			# Хранитель Разлома или цель «Уничтожить цель»: его гибель — победа.
@@ -129,7 +129,7 @@ static func create(db: DefsDB, encounter: EncounterDef, codex: CodexState, selec
 				s.archive_uid = s.add_unit(db.unit(ObjectiveRule.ARCHIVE_UNIT), UnitState.Side.PLAYER, 1, encounter.archive_hex).uid
 			ObjectiveRule.SURVIVE:
 				for i in encounter.reinforce_ids.size():
-					var count := Difficulty.enemy_count(difficulty, encounter.reinforce_counts[i])
+					var count := Difficulty.enemy_count(difficulty, encounter.reinforce_counts[i], encounter)
 					var r := UnitState.from_def(db.unit(encounter.reinforce_ids[i]), -1, UnitState.Side.ENEMY, count, Vector2i(-1, -1))
 					s.reinforcements.append({"round": encounter.reinforce_rounds[i], "unit": r.to_dict()})
 	if encounter.boss_commander != &"":
@@ -139,7 +139,7 @@ static func create(db: DefsDB, encounter: EncounterDef, codex: CodexState, selec
 		s.commander_id = commander
 		if def.summon_unit != &"":
 			s.summon_template = UnitState.from_def(db.unit(def.summon_unit), -1, UnitState.Side.ENEMY,
-					Difficulty.enemy_count(difficulty, def.summon_count), Vector2i(-1, -1)).to_dict()
+					Difficulty.enemy_count(difficulty, def.summon_count, encounter), Vector2i(-1, -1)).to_dict()
 		for id in def.actions:
 			s.commander_charges[id] = def.charges if encounter.boss_commander != &"" else Difficulty.commander_charges(difficulty, def.charges)
 	return s

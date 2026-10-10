@@ -122,7 +122,7 @@ func test_boss_hp_and_phase() -> void:
 	var eb := b.alive(UnitState.Side.ENEMY)
 	assert_eq(eb[0].hp, ea[0].hp + ceili(ea[0].hp * Trials.BOSS_HP_SHARE))
 	assert_eq(b.boss_phase_share, Trials.PHASE_SHARE)
-	assert_eq(a.boss_phase_share, BossRule.PHASE_SHARE)
+	assert_eq(a.boss_phase_share, Difficulty.HARD_PHASE_SHARE, "«Тяжело» без Испытания — свой порог (SPEC_SPRINT9 13)")
 	assert_eq(BattleState.from_dict(b.to_dict()).boss_phase_share, Trials.PHASE_SHARE, "порог фазы сохраняется")
 
 

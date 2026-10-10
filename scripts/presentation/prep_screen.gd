@@ -38,7 +38,7 @@ func _ready() -> void:
 		box.add_child(UiKit.label(tr("PREP_RIFT_WARNING" if encounter.act == 1 else "PREP_ABYSS_WARNING"), 0, UiKit.DANGER))
 	var enemies: Array[String] = []
 	for i in encounter.unit_ids.size():
-		enemies.append("%d × %s" % [Difficulty.enemy_count(run.difficulty, encounter.counts[i]), UiKit.unit_name(db, encounter.unit_ids[i])])
+		enemies.append("%d × %s" % [Difficulty.enemy_count(run.difficulty, encounter.counts[i], encounter), UiKit.unit_name(db, encounter.unit_ids[i])])
 	var enemy_row := HBoxContainer.new()
 	enemy_row.add_theme_constant_override("separation", 20)
 	enemy_row.add_child(UiKit.label("%s %s" % [tr("PREP_ENEMIES"), ", ".join(enemies)], 0, UiKit.ENEMY_COLOR))

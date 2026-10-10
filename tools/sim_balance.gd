@@ -1,12 +1,13 @@
 extends SceneTree
 ## Балансная симуляция экспедиций: за игрока — AI отрядов, HeroAi в бою и MapAi на карте.
-## Запуск: godot --headless -s res://tools/sim_balance.gd -- [runs] [school_id] [difficulty]
+## Запуск: godot --headless -s res://tools/sim_balance.gd -- [runs] [school_id] [difficulty] [--upgrades=all|half|none|<id>] [--trial=N] [--unlocks=all] [--daily=<модификатор>]
 ## Играет «новичок»: профиль без открытий (закрытые карты и события не выпадают).
 
 const DEFAULT_RUNS := 200
 
 var db: DefsDB
 var stats := {}
+var _profile: ProfileState
 
 
 func _init() -> void:
@@ -21,15 +22,29 @@ func _init() -> void:
 	# Зал Архива и Испытания (SPEC_SPRINT8): --upgrades=all|half|none|<id>, --trial=N.
 	var trial := 0
 	var upgrades_mode := "none"
+	# Этап B Спринта 9: --daily=<модификатор> — ежедневный забег с одним модификатором (SPEC_SPRINT9 13),
+	# --unlocks=all — открытия достижений (карты, реликвии, события).
+	var daily_mod := &""
+	var unlocks := false
 	for arg in args:
 		if arg.begins_with("--upgrades="):
 			upgrades_mode = arg.get_slice("=", 1)
 		elif arg.begins_with("--trial="):
 			trial = int(arg.get_slice("=", 1))
+		elif arg.begins_with("--daily="):
+			daily_mod = StringName(arg.get_slice("=", 1))
+		elif arg == "--unlocks=all":
+			unlocks = true
+	_profile = profile
 	for n: UpgradeNodeDef in db.hall_nodes.values():
 		var take := upgrades_mode == "all" or (upgrades_mode == "half" and n.tier <= 2) or upgrades_mode == String(n.id)
 		if take:
 			profile.upgrades.append(n.id)
+	if unlocks:
+		for a in db.achievements.values():
+			if a.unlock_kind != &"":
+				Achievements.grant(db, profile, a.id)
+		profile.points = 0
 	var won := 0
 	var act2 := 0
 	var layers_sum := 0
@@ -37,6 +52,9 @@ func _init() -> void:
 	var deaths := {}
 	for i in runs:
 		var run := RunState.create(db, i * 7919 + 1, school_id, profile, difficulty, trial)
+		if daily_mod != &"":
+			run.modifiers = [daily_mod] as Array[StringName]
+			DailyRun.apply_start(db, run)
 		var rng := RandomNumberGenerator.new()
 		rng.seed = i
 		var result := _play(run, rng)
@@ -56,6 +74,9 @@ func _init() -> void:
 	for key in stats.keys():
 		var s: Array = stats[key]
 		print("  %-10s побед %d из %d (%.0f%%), средн. раундов %.1f" % [key, s[0], s[1], 100.0 * s[0] / maxi(1, s[1]), float(s[2]) / maxi(1, s[1])])
+	# Строка для сводных таблиц: школа, сложность, улучшения, открытия, Испытание, модификатор, % 2-го акта, % побед.
+	print("RESULT %s %s %s %s %d %s %.1f %.1f" % [school_id, difficulty, upgrades_mode, "unlocks" if unlocks else "-", trial,
+			daily_mod if daily_mod != &"" else &"-", 100.0 * act2 / runs, 100.0 * won / runs])
 	print("Остаток ресурсов в среднем: Ч %.1f · П %.1f · Э %.1f" % [float(res_sum[RunState.INK]) / runs, float(res_sum[RunState.PARCHMENT]) / runs, float(res_sum[RunState.AETHER]) / runs])
 	quit()
 
@@ -80,7 +101,8 @@ func _play(run: RunState, rng: RandomNumberGenerator) -> String:
 					var options := CampOps.options(run)
 					var choice: Dictionary = options[0] if CampOps.reason(db, run, options[0]) == "" else options[3]
 					CampOps.apply(db, run, choice)
-					MapActions.begin_act(db, run, 2)
+					# С профилем, как в игре: закрытые карты не попадают в награды второго акта.
+					MapActions.begin_act(db, run, 2, _profile)
 					continue
 			MapState.NodeType.EVENT:
 				var r := MapAi.event(db, run, id, rng)

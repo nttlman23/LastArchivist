@@ -17,10 +17,21 @@ const HARD_WIN_BONUS := 3
 const HARD_COMMANDER_LAYER := 3
 ## На «Тяжело» цели боя строже: +1 раунд к N/K.
 const HARD_OBJECTIVE_EXTRA := 1
+## «Тяжело», второй акт (SPEC_SPRINT9 13): встречи уровня 5 и элита — численность выше общей.
+const HARD_ACT2_COUNT := 1.6
+## «Тяжело»: Хозяин Глубин переходит во вторую фазу раньше (Испытание 10 — ещё раньше, 0,65).
+const HARD_PHASE_SHARE := 0.55
 
 
-static func enemy_count(difficulty: StringName, count: int) -> int:
-	return maxi(1, roundi(count * float(ENEMY_COUNT.get(difficulty, 1.0))))
+## encounter — встреча (для надбавки второго акта на «Тяжело»); без неё — общий множитель.
+static func enemy_count(difficulty: StringName, count: int, encounter: EncounterDef = null) -> int:
+	return maxi(1, roundi(count * count_factor(difficulty, encounter)))
+
+
+static func count_factor(difficulty: StringName, encounter: EncounterDef = null) -> float:
+	if difficulty == HARD and encounter != null and encounter.act >= 2 and not encounter.boss and (encounter.elite or encounter.tier >= 5):
+		return HARD_ACT2_COUNT
+	return float(ENEMY_COUNT.get(difficulty, 1.0))
 
 
 static func start_resource(difficulty: StringName, amount: int) -> int:
@@ -46,6 +57,12 @@ static func objectives_enabled(difficulty: StringName) -> bool:
 
 static func objective_extra(difficulty: StringName) -> int:
 	return HARD_OBJECTIVE_EXTRA if difficulty == HARD else 0
+
+
+## Правила боя сложности: порог второй фазы босса на «Тяжело» (до Испытаний — их правила строже).
+static func apply_battle(run: RunState, state: BattleState) -> void:
+	if run.difficulty == HARD:
+		state.boss_phase_share = maxf(state.boss_phase_share, HARD_PHASE_SHARE)
 
 
 ## Есть ли командир у боя: «Нормально» — элита и Разлом, «Тяжело» — ещё все бои со слоя 3.

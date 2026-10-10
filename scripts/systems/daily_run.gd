@@ -9,7 +9,7 @@ const OLD_FRIENDS := &"old_friends"          ## старт с реликвией
 const QUICK_QUILLS := &"quick_quills"        ## +1 инициатива вашим отрядам
 const FULL_INKWELLS := &"full_inkwells"      ## первое заклинание забега +2 заряда
 # Минусы
-const HUNGRY_RIFT := &"hungry_rift"          ## боссы +20% ОЗ
+const HUNGRY_RIFT := &"hungry_rift"          ## боссы +12% ОЗ
 const DAMPNESS := &"dampness"                ## все бои — с водой
 const HEAVY_DREAMS := &"heavy_dreams"        ## карты на старте −1 прочности (не ниже 1)
 const EARLY_COMMANDER := &"early_commander"  ## командир во всех боях
@@ -20,7 +20,8 @@ const ALL: Array[StringName] = [GENEROUS_SHOPS, OLD_FRIENDS, QUICK_QUILLS, FULL_
 		HUNGRY_RIFT, DAMPNESS, HEAVY_DREAMS, EARLY_COMMANDER]
 
 const INKWELL_CHARGES := 2
-const BOSS_HP_SHARE := 0.2
+## Подобрано симуляцией (SPEC_SPRINT9 13): при 20 % Машинный Синод терял 11 п.п. побед.
+const BOSS_HP_SHARE := 0.12
 ## «Сырость»: сколько клеток воды в бою без своей воды, в средних колонках поля.
 const DAMP_HEXES := 9
 const DAMP_COLUMNS := Vector2i(3, 7)

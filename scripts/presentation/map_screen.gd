@@ -227,7 +227,7 @@ func _add_node_card(n: MapState.MapNode) -> void:
 		if n.scouted or n.type == MapState.NodeType.RIFT:
 			var enemies: Array[String] = []
 			for i in enc.unit_ids.size():
-				enemies.append("%d × %s" % [Difficulty.enemy_count(run.difficulty, enc.counts[i]), UiKit.unit_name(db, enc.unit_ids[i])])
+				enemies.append("%d × %s" % [Difficulty.enemy_count(run.difficulty, enc.counts[i], enc), UiKit.unit_name(db, enc.unit_ids[i])])
 			_info.add_child(_wrapped("%s %s" % [tr("PREP_ENEMIES"), ", ".join(enemies)], UiKit.ENEMY_COLOR))
 		var rewards := MapActions.battle_rewards(enc)
 		if not rewards.values().all(func(v: int) -> bool: return v == 0):
