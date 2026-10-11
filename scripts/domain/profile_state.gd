@@ -4,7 +4,7 @@ extends RefCounted
 ## Хранится отдельно от сохранения забега.
 
 const DEFAULT_PATH := "user://profile.cfg"
-const VERSION := 4
+const VERSION := 5
 ## Читаются и более старые версии (поля, которых в них нет, пусты).
 const MIN_VERSION := 1
 
@@ -39,6 +39,10 @@ var story_pages: Dictionary[StringName, String] = {}
 var story_seen: Array[StringName] = []
 var story_events: Array[StringName] = []
 var prologue_done := false
+## Учебные забеги (SPEC_SPRINT11 6): сколько первых забегов ещё с ослабленными врагами; второй учебный бой пройден.
+const GENTLE_RUNS := 2
+var gentle_runs_left := GENTLE_RUNS
+var tutorial2_done := false
 
 const CHRONICLE_SIZE := 20
 const DAILY_SIZE := 30
@@ -150,6 +154,8 @@ func save(path: String = DEFAULT_PATH) -> void:
 	cfg.set_value("story", "seen", Array(story_seen).map(func(x: StringName) -> String: return String(x)))
 	cfg.set_value("story", "events", Array(story_events).map(func(x: StringName) -> String: return String(x)))
 	cfg.set_value("story", "prologue_done", prologue_done)
+	cfg.set_value("tutorial", "gentle_runs_left", gentle_runs_left)
+	cfg.set_value("tutorial", "tutorial2_done", tutorial2_done)
 	SafeFile.save_config(cfg, path)
 
 
@@ -203,4 +209,7 @@ static func load_or_new(path: String = DEFAULT_PATH) -> ProfileState:
 	for id in cfg.get_value("story", "events", []):
 		p.story_events.append(StringName(id))
 	p.prologue_done = bool(cfg.get_value("story", "prologue_done", version < 4 and p.runs > 0))
+	# Учебные забеги появились в версии 5: у старого профиля — сколько осталось до двух сыгранных.
+	p.gentle_runs_left = int(cfg.get_value("tutorial", "gentle_runs_left", maxi(0, GENTLE_RUNS - p.runs)))
+	p.tutorial2_done = bool(cfg.get_value("tutorial", "tutorial2_done", false))
 	return p

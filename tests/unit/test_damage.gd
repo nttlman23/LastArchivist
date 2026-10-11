@@ -77,3 +77,54 @@ func test_roll_in_range() -> void:
 	rng.seed = 42
 	for i in 50:
 		assert_between(DamageCalc.roll(a, d, false, rng), 20, 120)
+
+
+# --- Разбор урона (SPEC_SPRINT11 3) ----------------------------------------------
+
+## Разбор даёт тот же итог, что бой: произведение множителей и диапазон.
+func test_breakdown_matches_damage_range() -> void:
+	var cases := [
+		{"atk": 7, "def": 4},
+		{"atk": 4, "def": 9, "defending": true},
+		{"atk": 6, "def": 3, "ranged": true, "far": true},
+		{"atk": 6, "def": 3, "is_ranged": true},
+		{"atk": 5, "def": 5, "mark": true},
+		{"atk": 5, "def": 5, "illusion": true},
+		{"atk": 8, "def": 2, "bonus": 1.5},
+	]
+	for c: Dictionary in cases:
+		var s := TestHelpers.empty_battle()
+		var a := TestHelpers.add(s, 0, Vector2i(0, 0), 12, {"attack": c["atk"], "dmg_min": 2, "dmg_max": 5})
+		var d := TestHelpers.add(s, 1, Vector2i(8, 0) if c.get("far", false) else Vector2i(1, 0), 10, {"defense": c["def"]})
+		a.is_ranged = c.get("ranged", false) or c.get("is_ranged", false)
+		d.defending = c.get("defending", false)
+		d.illusion = c.get("illusion", false)
+		if c.get("mark", false):
+			d.statuses[UnitState.STATUS_MARKED] = 1
+		var ranged: bool = c.get("ranged", false)
+		var bonus: float = c.get("bonus", 1.0)
+		var b := DamageCalc.breakdown(a, d, ranged, bonus)
+		assert_almost_eq(float(b["factor"]), DamageCalc.multiplier(a, d, ranged) * bonus, 0.0001, str(c))
+		assert_eq(b["range"], DamageCalc.damage_range(a, d, ranged, bonus), str(c))
+		assert_eq(b["base_min"], 24)
+		assert_eq(b["base_max"], 60)
+		var kinds: Array = (b["parts"] as Array).map(func(p: Dictionary) -> StringName: return p["kind"])
+		assert_eq(kinds[0], &"attack")
+		assert_eq(kinds.has(&"far"), c.get("far", false), str(c))
+		assert_eq(kinds.has(&"melee_ranged"), c.get("is_ranged", false), str(c))
+		assert_eq(kinds.has(&"mark"), c.get("mark", false), str(c))
+		assert_eq(kinds.has(&"illusion"), c.get("illusion", false), str(c))
+		assert_eq(kinds.has(&"bonus"), c.has("bonus"), str(c))
+
+
+func test_retaliation_range() -> void:
+	var p := _pair(5, 5)
+	var back := DamageCalc.retaliation_range(p[0], p[1], 0)
+	assert_eq(back, DamageCalc.damage_range(p[1], p[0], false), "без потерь — ответ полным стеком")
+	assert_eq(DamageCalc.retaliation_range(p[0], p[1], 10000), Vector2i(-1, -1), "цель погибнет — ответа нет")
+	p[1].retaliated = true
+	assert_eq(DamageCalc.retaliation_range(p[0], p[1], 0), Vector2i(-1, -1), "уже отвечала")
+	p[1].statuses[UnitState.STATUS_SHIELD_WALL] = 1
+	assert_ne(DamageCalc.retaliation_range(p[0], p[1], 0), Vector2i(-1, -1), "«Стена щитов» — отвечает всем")
+	p[1].inert = true
+	assert_eq(DamageCalc.retaliation_range(p[0], p[1], 0), Vector2i(-1, -1), "оцепенела")

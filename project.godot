@@ -22,6 +22,7 @@ IconAtlas="*res://scripts/autoload/icon_atlas.gd"
 Tip="*res://scripts/autoload/tip.gd"
 Hints="*res://scripts/autoload/hints.gd"
 Game="*res://scripts/autoload/game.gd"
+Help="*res://scripts/autoload/help.gd"
 
 [display]
 

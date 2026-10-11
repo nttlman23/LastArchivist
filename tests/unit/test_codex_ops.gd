@@ -121,3 +121,38 @@ func test_battle_gets_hero_spells_and_orders() -> void:
 
 func test_sacrifice_useless_when_all_intact() -> void:
 	assert_eq(CodexOps.unavailable_reason(db, run, 0, CodexOps.Form.SACRIFICE), "REASON_NOTHING_TO_REPAIR")
+
+
+# --- Предпросмотр превращений (SPEC_SPRINT11 4) ---------------------------------
+
+func test_fuse_preview_matches_result() -> void:
+	run.codex.cards[0].durability = 2
+	var effect := ReworkPanel.form_effect(db, run, 0, CodexOps.Form.FUSE)
+	var result := CodexOps.fuse_result(run.codex, 0)
+	CodexOps.apply(db, run, 0, CodexOps.Form.FUSE)
+	var fused: CodexState.Card = null
+	for c in run.codex.cards:
+		if c.memory_id == &"salt_legion":
+			fused = c
+	assert_not_null(fused)
+	assert_eq(fused.level, result[0])
+	assert_eq(fused.durability, result[1])
+	assert_true(effect.contains(str(fused.count(db))), "численность в тексте: " + effect)
+
+
+func test_spell_preview_matches_charges() -> void:
+	run.codex.cards[2].durability = 2
+	var effect := ReworkPanel.form_effect(db, run, 2, CodexOps.Form.SPELL)
+	var spell_id := db.memory(run.codex.cards[2].memory_id).spell_id
+	CodexOps.apply(db, run, 2, CodexOps.Form.SPELL)
+	var slot = run.hero.spells.filter(func(s) -> bool: return s.spell_id == spell_id)[0]
+	assert_eq(slot.charges, 2)
+	assert_true(effect.contains("2"), effect)
+	assert_true(effect.contains(tr(db.spell(spell_id).desc_key)), "описание заклинания")
+
+
+func test_sacrifice_preview_lists_worn_cards() -> void:
+	run.codex.cards[1].durability = 1
+	var effect := ReworkPanel.form_effect(db, run, 0, CodexOps.Form.SACRIFICE)
+	assert_true(effect.contains(tr(db.memory(run.codex.cards[1].memory_id).name_key)), effect)
+	assert_false(effect.contains(tr(db.memory(run.codex.cards[2].memory_id).name_key)), "целые карты не перечисляются")

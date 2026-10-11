@@ -3,7 +3,7 @@ extends RefCounted
 ## Состояние забега. Сохраняется на чекпоинтах — при возврате на карту экспедиции.
 
 ## Версия формата; более старые (от SaveMigrations.MIN_VERSION) переводятся миграциями.
-const SAVE_VERSION := 11
+const SAVE_VERSION := 12
 const REWARD_CHOICES := 3
 ## Награда за элиту с «Широкой полкой» и после обычного боя на Испытании 7.
 const REWARD_CHOICES_WIDE := 4
@@ -67,6 +67,8 @@ var daily_ranked := false
 var inkwell_used := false
 ## Сюжетное событие забега (SPEC_SPRINT10 7): не больше одного за забег; &"" — нет.
 var story_event: StringName
+## Учебный забег (SPEC_SPRINT11 6): на слоях 1–3 первого акта враги слабее, без командиров.
+var gentle := false
 
 
 ## profile — открытия игрока (пулы карт и событий); без профиля доступно всё.
@@ -266,6 +268,7 @@ func to_dict() -> Dictionary:
 		"daily_ranked": daily_ranked,
 		"inkwell_used": inkwell_used,
 		"story_event": String(story_event),
+		"gentle": gentle,
 	}
 
 
@@ -273,7 +276,7 @@ func to_dict() -> Dictionary:
 const REQUIRED_KEYS: Array[String] = ["run_seed", "codex", "hero", "loot_rng_seed", "loot_rng_state", "map", "resources",
 		"pending_node", "pending_battle", "pending_reward_card", "battles_won", "elites_won", "cards_lost",
 		"school_id", "difficulty", "act", "at_camp", "gifts", "relics", "card_pool", "event_pool", "upgrades", "trial", "reroll_act", "free_rework_act",
-		"objectives_won", "reworks", "shop_buys", "node_types", "relic_unlocks", "daily_date", "modifiers", "daily_ranked", "inkwell_used", "story_event"]
+		"objectives_won", "reworks", "shop_buys", "node_types", "relic_unlocks", "daily_date", "modifiers", "daily_ranked", "inkwell_used", "story_event", "gentle"]
 
 
 static func from_dict(d: Dictionary) -> RunState:
@@ -327,4 +330,5 @@ static func from_dict(d: Dictionary) -> RunState:
 	run.daily_ranked = bool(d["daily_ranked"])
 	run.inkwell_used = bool(d["inkwell_used"])
 	run.story_event = StringName(d["story_event"])
+	run.gentle = bool(d["gentle"])
 	return run

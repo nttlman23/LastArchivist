@@ -20,6 +20,8 @@ const SCENE_ACHIEVEMENTS := "res://scenes/achievements/achievements.tscn"
 const SCENE_DAILY := "res://scenes/daily/daily.tscn"
 const SCENE_STORY := "res://scenes/story/story.tscn"
 const SCENE_TUTORIAL := "res://scenes/tutorial/tutorial.tscn"
+const SCENE_TUTORIAL2 := "res://scenes/tutorial/tutorial2.tscn"
+const SCENE_TUTORIAL_MAP := "res://scenes/tutorial/tutorial_map.tscn"
 
 const FONT_SIZE := 22
 
@@ -127,6 +129,8 @@ func new_run(school_id: StringName = DefsDB.DEFAULT_SCHOOL, difficulty: StringNa
 		MetaRewards.abandon_run(profile, old)
 		save_profile()
 	run = RunState.create(defs, rng.seed, school_id, profile, difficulty, trial)
+	GentleRuns.start(run, profile, Settings.gentle)
+	save_profile()
 	Story.place_event(defs, run, profile)
 	SaveService.save_run(run)
 	show_story(Story.pending_scene(profile, &"start", run), SCENE_MAP)
@@ -194,6 +198,29 @@ func start_tutorial() -> void:
 ## Учебный бой пройден или пропущен: первый раз — к выбору школы, из меню — обратно в меню.
 func finish_tutorial() -> void:
 	profile.prologue_done = true
+	save_profile()
+	var to_menu := tutorial_from_menu
+	tutorial_from_menu = false
+	goto(SCENE_MAIN_MENU if to_menu else SCENE_SCHOOL)
+
+
+## Второй урок «Герой и Кодекс» (SPEC_SPRINT11 5) из меню — потом обратно в меню.
+func start_tutorial2() -> void:
+	tutorial_from_menu = true
+	goto(SCENE_TUTORIAL2)
+
+
+## Сразу после пролога: пролог засчитан, дальше — второй урок (после него — как после пролога).
+func continue_to_tutorial2() -> void:
+	profile.prologue_done = true
+	save_profile()
+	goto(SCENE_TUTORIAL2)
+
+
+## Второй урок пройден или пропущен: первый раз — к выбору школы, из меню — в меню.
+func finish_tutorial2() -> void:
+	profile.prologue_done = true
+	profile.tutorial2_done = true
 	save_profile()
 	var to_menu := tutorial_from_menu
 	tutorial_from_menu = false

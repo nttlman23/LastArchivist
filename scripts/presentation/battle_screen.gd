@@ -31,6 +31,9 @@ var _intent_box: HBoxContainer
 var _preview_label: Label
 ## Короткое превью значками (в режиме «подробно» вместо него — текст в _preview_label).
 var _preview_box: HBoxContainer
+## Разбор урона у курсора (SPEC_SPRINT11 3): из чего складывается удар и чем ответит цель.
+var _breakdown: PanelContainer
+var _breakdown_box: VBoxContainer
 var _log: RichTextLabel
 var _log_lines: Array[String] = []
 var _ability_btn: Button
@@ -75,6 +78,7 @@ func _ready() -> void:
 	view.setup(state, db)
 	view.event_label = _event_label
 	_build_hud()
+	_build_breakdown()
 	resized.connect(_layout)
 	_layout()
 
@@ -460,19 +464,28 @@ func _refresh_hero_panel() -> void:
 		var slot: int = _hero_entries[i][1]
 		var text: String
 		var tooltip: String
+		var no_targets := HeroActions.options(state, id, slot).is_empty()
 		if slot < 0:
 			text = tr("HUD_ORDER") % [tr(db.order(id).name_key), i + 1]
-			tooltip = tr(db.order(id).desc_key)
+			tooltip = "%s\n%s" % [tr(db.order(id).desc_key), tr("HUD_ORDER_NOTE")]
 		else:
-			text = tr("HUD_SPELL") % [tr(db.spell(id).name_key), int(state.hero_spells[slot]["charges"]), i + 1]
-			tooltip = tr(db.spell(id).desc_key)
+			var charges := int(state.hero_spells[slot]["charges"])
+			text = tr("HUD_SPELL") % [tr(db.spell(id).name_key), charges, i + 1]
+			tooltip = "%s\n%s" % [tr(db.spell(id).desc_key), tr("HUD_SPELL_NOTE") % charges]
+		# Почему нельзя (SPEC_SPRINT11 4): герой уже действовал, не ваш ход, нет целей.
+		if state.hero_actions_left <= 0:
+			tooltip += "\n" + tr("HUD_HERO_REASON_USED")
+		elif not can_act:
+			tooltip += "\n" + tr("HUD_HERO_REASON_WAIT")
+		elif no_targets:
+			tooltip += "\n" + tr("HUD_HERO_REASON_TARGETS")
 		var b := _small_button(text, _on_hero.bind(i), 0)
 		b.custom_minimum_size.x = 0
 		b.icon = IconAtlas.get_icon(UnitGlyphs.ICON_ORDER if slot < 0 else UnitGlyphs.ICON_SPELL)
 		b.add_theme_constant_override("icon_max_width", 20)
 		Tip.attach(b, tr(db.order(id).name_key) if slot < 0 else tr(db.spell(id).name_key), tooltip,
 				UnitGlyphs.ICON_ORDER if slot < 0 else UnitGlyphs.ICON_SPELL)
-		b.disabled = not can_act or HeroActions.options(state, id, slot).is_empty()
+		b.disabled = not can_act or no_targets
 		if slot >= 0:
 			b.add_theme_color_override("font_color", Color(0.75, 0.6, 1.0))
 		_hero_box.add_child(b)
@@ -630,6 +643,7 @@ func _cancel_targeting() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		_update_hover()
+		_place_breakdown()
 	elif event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_RIGHT:
 			_cancel_targeting()
@@ -805,8 +819,86 @@ func _melee_from_cursor(u: UnitState, target: UnitState, local: Vector2) -> Batt
 	return best
 
 
+func _build_breakdown() -> void:
+	_breakdown = PanelContainer.new()
+	var sb := UiKit.panel_style(Color(UiKit.BG_COLOR, 0.94), UiKit.ACCENT, 1)
+	sb.set_content_margin_all(10)
+	_breakdown.add_theme_stylebox_override("panel", sb)
+	_breakdown.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_breakdown.visible = false
+	add_child(_breakdown)
+	_breakdown_box = VBoxContainer.new()
+	_breakdown_box.add_theme_constant_override("separation", 2)
+	_breakdown.add_child(_breakdown_box)
+
+
+## Разбор удара u по target у курсора: итог, базовый урон, множители; для удара вплотную — ответ цели.
+func _show_breakdown(u: UnitState, target: UnitState, ranged: bool, bonus: float = 1.0, with_retaliation: bool = true) -> void:
+	for child in _breakdown_box.get_children():
+		# Сразу из дерева: иначе старые строки учтутся в размере плашки.
+		_breakdown_box.remove_child(child)
+		child.queue_free()
+	var b := DamageCalc.breakdown(u, target, ranged, bonus)
+	var r: Vector2i = b["range"]
+	_breakdown_line(tr("BREAKDOWN_TOTAL") % [r.x, r.y, DamageCalc.kills(target, r.x), DamageCalc.kills(target, r.y)], UiKit.ACCENT, 20)
+	_breakdown_line(tr("BREAKDOWN_BASE") % [u.count, u.dmg_min, u.dmg_max, b["base_min"], b["base_max"]], Color.WHITE)
+	for p: Dictionary in b["parts"]:
+		_breakdown_line(_breakdown_part(p), Color(0.85, 0.85, 0.9))
+	if with_retaliation and not ranged:
+		var back := DamageCalc.retaliation_range(u, target, roundi((r.x + r.y) * 0.5))
+		if back.x < 0:
+			_breakdown_line(tr("BREAKDOWN_NO_RETALIATION"), Color(0.45, 0.95, 0.5))
+		else:
+			_breakdown_line(tr("BREAKDOWN_RETALIATION") % [back.x, back.y, DamageCalc.kills(u, back.x), DamageCalc.kills(u, back.y)], UiKit.DANGER)
+	elif ranged:
+		_breakdown_line(tr("BREAKDOWN_RANGED_NO_RETALIATION"), Color(0.45, 0.95, 0.5))
+	_breakdown.size = Vector2.ZERO
+	_breakdown.visible = true
+	_place_breakdown()
+
+
+func _breakdown_part(p: Dictionary) -> String:
+	var pct := func(f: float) -> String:
+		var v := roundi((f - 1.0) * 100.0)
+		return ("+%d%%" % v) if v >= 0 else ("−%d%%" % -v)
+	match p["kind"]:
+		&"attack":
+			var defense: float = p["defense"]
+			var def_text := (tr("BREAKDOWN_DEFENDING") % [roundi(defense / DamageCalc.DEFEND_MULTIPLIER), ("%.1f" % defense).replace(".", ",")]) if p["defending"] else str(roundi(defense))
+			return tr("BREAKDOWN_ATTACK") % [p["attack"], def_text, pct.call(float(p["factor"]))]
+		&"far":
+			return tr("BREAKDOWN_FAR") % DamageCalc.LONG_RANGE
+		&"melee_ranged":
+			return tr("BREAKDOWN_MELEE_RANGED")
+		&"mark":
+			return tr("BREAKDOWN_MARK")
+		&"illusion":
+			return tr("BREAKDOWN_ILLUSION")
+	return tr("BREAKDOWN_BONUS") % ("%.2f" % float(p["factor"])).trim_suffix("0").replace(".", ",")
+
+
+func _breakdown_line(text: String, color: Color, size: int = 17) -> void:
+	_breakdown_box.add_child(UiKit.label(text, size, color))
+
+
+## Плашка — справа снизу от курсора, не выходя за экран.
+func _place_breakdown() -> void:
+	if not _breakdown.visible:
+		return
+	var m := get_viewport().get_mouse_position() - global_position
+	var p := m + Vector2(28, 24)
+	var s := _breakdown.get_combined_minimum_size()
+	if p.x + s.x > size.x - 8:
+		p.x = m.x - s.x - 20
+	if p.y + s.y > size.y - 8:
+		p.y = size.y - 8 - s.y
+	_breakdown.position = p
+
+
 ## Превью: в режиме «подробно» — полный текст, иначе короткая подпись и чипы [значок, текст, цвет, подсказка].
 func _set_preview(text: String, chips: Array, short: String = "") -> void:
+	if _breakdown:
+		_breakdown.visible = false
 	for child in _preview_box.get_children():
 		child.queue_free()
 	if Settings.detailed:
@@ -844,6 +936,7 @@ func _show_preview(action: BattleAction) -> void:
 			var key := "BATTLE_PREVIEW_SHOOT" if ranged else "BATTLE_PREVIEW_MELEE"
 			_set_preview(tr(key) % [r.x, r.y, DamageCalc.kills(target, r.x), DamageCalc.kills(target, r.y)],
 					_damage_chips(UnitGlyphs.ICON_RANGED if ranged else UnitGlyphs.ICON_MELEE, r, target))
+			_show_breakdown(u, target, ranged)
 
 
 ## Превью способности/приказа/заклинания: эффект на цель и кого ещё заденет.
@@ -856,6 +949,8 @@ func _show_target_preview(action: BattleAction) -> void:
 	var label: String = _targeting["label"]
 	var text := label
 	var chips: Array = []
+	## Разбор урона для способностей с ударом: [выстрел?, множитель способности].
+	var breakdown: Array = []
 	if action.is_hero() and action.slot >= 0:
 		var power := int(state.hero_spells[action.slot]["power"])
 		match action.ref_id:
@@ -887,6 +982,7 @@ func _show_target_preview(action: BattleAction) -> void:
 				var r := DamageCalc.damage_range(u, target, ranged, bonus)
 				text = tr("PREVIEW_DAMAGE") % [label, r.x, r.y, DamageCalc.kills(target, r.x), DamageCalc.kills(target, r.y)]
 				chips = _damage_chips(UnitGlyphs.ICON_ABILITY, r, target)
+				breakdown = [ranged, bonus]
 			Abilities.RESTORE:
 				var heal := mini(Abilities.RESTORE_AMOUNT, target.start_count * target.hp - target.total_hp())
 				text = tr("PREVIEW_HEAL") % [label, heal]
@@ -898,6 +994,8 @@ func _show_target_preview(action: BattleAction) -> void:
 		text += tr("PREVIEW_ALLIES_HIT") % allies_hit
 		chips.append([UnitGlyphs.ICON_RETALIATION_USED, str(allies_hit), UiKit.DANGER, tr("PREVIEW_TIP_ALLIES")])
 	_set_preview(text, chips, label)
+	if not breakdown.is_empty() and target:
+		_show_breakdown(u, target, breakdown[0], breakdown[1], false)
 
 
 ## Кто потеряет ОЗ от действия (uid -> свой ли), кроме самого действующего стека.

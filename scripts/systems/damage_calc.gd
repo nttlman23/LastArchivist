@@ -41,6 +41,44 @@ static func multiplier(attacker: UnitState, defender: UnitState, ranged: bool) -
 	return m
 
 
+## Из чего складывается удар (SPEC_SPRINT11 3) — для разбора урона: базовый урон стека и множители
+## по порядку. Произведение factor всех множителей равно multiplier() × bonus — карточка и бой не расходятся.
+## kind: &"attack" (attack, defense — с обороной, defending), &"far", &"melee_ranged", &"mark", &"illusion", &"bonus".
+static func breakdown(attacker: UnitState, defender: UnitState, ranged: bool, bonus: float = 1.0) -> Dictionary:
+	var parts: Array[Dictionary] = []
+	var defense := effective_defense(defender)
+	parts.append({"kind": &"attack", "factor": attack_modifier(attacker.attack, defense), "attack": attacker.attack,
+			"defense": defense, "defending": defender.defending})
+	if ranged and HexGrid.distance(attacker.hex, defender.hex) > LONG_RANGE:
+		parts.append({"kind": &"far", "factor": HALF})
+	elif not ranged and attacker.is_ranged:
+		parts.append({"kind": &"melee_ranged", "factor": HALF})
+	if defender.has_status(UnitState.STATUS_MARKED):
+		parts.append({"kind": &"mark", "factor": MARK_BONUS})
+	if defender.illusion:
+		parts.append({"kind": &"illusion", "factor": ILLUSION_DAMAGE})
+	if not is_equal_approx(bonus, 1.0):
+		parts.append({"kind": &"bonus", "factor": bonus})
+	var total := 1.0
+	for p in parts:
+		total *= float(p["factor"])
+	return {"base_min": attacker.count * attacker.dmg_min, "base_max": attacker.count * attacker.dmg_max,
+			"parts": parts, "factor": total, "range": damage_range(attacker, defender, ranged, bonus)}
+
+
+## Ответный удар после удара вплотную на dealt урона: Vector2i(min, max) или (-1, -1), если ответа не будет
+## (цель погибнет, оцепенела или уже отвечала в этом раунде без «Стены щитов»).
+static func retaliation_range(attacker: UnitState, defender: UnitState, dealt: int) -> Vector2i:
+	if defender.inert or (defender.retaliated and not defender.has_status(UnitState.STATUS_SHIELD_WALL)):
+		return Vector2i(-1, -1)
+	var survivors := defender.count - kills(defender, dealt)
+	if survivors <= 0:
+		return Vector2i(-1, -1)
+	var hit := UnitState.from_dict(defender.to_dict())
+	hit.count = survivors
+	return damage_range(hit, attacker, false)
+
+
 ## bonus — множитель способности (таран, залп, рикошет молнии).
 static func roll(attacker: UnitState, defender: UnitState, ranged: bool, rng: RandomNumberGenerator, bonus: float = 1.0) -> int:
 	var base := 0

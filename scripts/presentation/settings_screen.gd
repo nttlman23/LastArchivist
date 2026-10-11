@@ -17,6 +17,7 @@ func _ready() -> void:
 	box.add_child(_toggle(tr("SETTINGS_SHAKE"), tr("SETTINGS_SHAKE_TIP"), Settings.screen_shake, Settings.set_screen_shake))
 	box.add_child(_toggle(tr("SETTINGS_EFFECTS"), tr("SETTINGS_EFFECTS_TIP"), Settings.effects_full, Settings.set_effects_full))
 	box.add_child(_toggle(tr("SETTINGS_WINDOWED"), tr("SETTINGS_WINDOWED_TIP"), Settings.windowed, Settings.set_windowed))
+	box.add_child(_toggle(tr("SETTINGS_GENTLE"), tr("SETTINGS_GENTLE_TIP"), Settings.gentle, Settings.set_gentle))
 	var reset := UiKit.button(tr("SETTINGS_RESET_HINTS"), _reset_hints, 420)
 	box.add_child(reset)
 	box.add_child(Control.new())

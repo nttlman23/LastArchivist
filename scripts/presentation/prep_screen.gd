@@ -38,12 +38,15 @@ func _ready() -> void:
 		box.add_child(UiKit.label(tr("PREP_RIFT_WARNING" if encounter.act == 1 else "PREP_ABYSS_WARNING"), 0, UiKit.DANGER))
 	var enemies: Array[String] = []
 	for i in encounter.unit_ids.size():
-		enemies.append("%d × %s" % [Difficulty.enemy_count(run.difficulty, encounter.counts[i], encounter), UiKit.unit_name(db, encounter.unit_ids[i])])
+		var n := GentleRuns.count(run, run.pending().layer, encounter, Difficulty.enemy_count(run.difficulty, encounter.counts[i], encounter))
+		enemies.append("%d × %s" % [n, UiKit.unit_name(db, encounter.unit_ids[i])])
 	var enemy_row := HBoxContainer.new()
 	enemy_row.add_theme_constant_override("separation", 20)
 	enemy_row.add_child(UiKit.label("%s %s" % [tr("PREP_ENEMIES"), ", ".join(enemies)], 0, UiKit.ENEMY_COLOR))
 	enemy_row.add_child(UiKit.risk_chip(db, run.codex, encounter, run.difficulty))
 	box.add_child(enemy_row)
+	if GentleRuns.active(run, run.pending().layer) and not encounter.boss:
+		box.add_child(UiKit.label(tr("PREP_GENTLE") % Game.profile.gentle_runs_left, 18, UiKit.ACCENT))
 	# Цель боя и командир врага (SPEC_SPRINT5 10–11).
 	var objective := BattleSetup.objective_of(run, encounter)
 	var commander := Difficulty.commander_for(db, run, encounter)

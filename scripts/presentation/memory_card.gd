@@ -238,7 +238,7 @@ func _body(db: DefsDB, mem: MemoryCardDef, dur: int, level: int, win: Rect2, h: 
 			stats.alignment = FlowContainer.ALIGNMENT_CENTER
 			col.add_child(stats)
 	else:
-		line.add_child(UiKit.chip(UnitGlyphs.ICON_ORDER, t.call("CARD_HERO"), INK_ACCENT, "", "", 15))
+		line.add_child(UiKit.chip(UnitGlyphs.ICON_ORDER, t.call("CARD_HERO"), INK_ACCENT, t.call("CARD_HERO"), t.call("CARD_HERO_TIP"), 15))
 		if durability >= 0 and dur <= 1:
 			line.add_child(UiKit.chip(UnitGlyphs.ICON_KILL, "", INK_DANGER, t.call("CARD_WORN"), t.call("CARD_WORN_TIP"), 15))
 		var desc := UiKit.label(t.call("MEM_LAST_KING_SHORT") if mem.id == &"last_king" and not detailed else t.call(mem.desc_key), 13, INK_MUTED)

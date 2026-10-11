@@ -293,12 +293,13 @@ func _add_node_card(n: MapState.MapNode) -> void:
 		if (n.scouted or n.type == MapState.NodeType.RIFT) and objective != ObjectiveRule.ELIMINATE:
 			_info.add_child(UiKit.objective_chip(objective, enc.objective_rounds + Difficulty.objective_extra(run.difficulty), "", 18))
 		var node_layer := n.layer
-		if Difficulty.has_commander(run.difficulty, enc, node_layer) and not db.commanders.is_empty():
+		if Difficulty.has_commander(run.difficulty, enc, node_layer) and not db.commanders.is_empty() and not (GentleRuns.active(run, node_layer) and not enc.boss):
 			_info.add_child(UiKit.chip(UnitGlyphs.ICON_ORDER, tr("COMMANDER_TITLE"), UiKit.DANGER, tr("COMMANDER_TITLE"), tr("COMMANDER_INTENT_TIP"), 18))
 		if n.scouted or n.type == MapState.NodeType.RIFT:
 			var enemies: Array[String] = []
 			for i in enc.unit_ids.size():
-				enemies.append("%d × %s" % [Difficulty.enemy_count(run.difficulty, enc.counts[i], enc), UiKit.unit_name(db, enc.unit_ids[i])])
+				var count := GentleRuns.count(run, n.layer, enc, Difficulty.enemy_count(run.difficulty, enc.counts[i], enc))
+				enemies.append("%d × %s" % [count, UiKit.unit_name(db, enc.unit_ids[i])])
 			_info.add_child(_wrapped("%s %s" % [tr("PREP_ENEMIES"), ", ".join(enemies)], UiKit.ENEMY_COLOR))
 		var rewards := MapActions.battle_rewards(enc)
 		if not rewards.values().all(func(v: int) -> bool: return v == 0):

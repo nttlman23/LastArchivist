@@ -13,6 +13,7 @@ static func for_run(db: DefsDB, run: RunState, selected: Array[int]) -> BattleSt
 	Difficulty.apply_battle(run, s)
 	Trials.apply_battle(run, enc, s)
 	DailyRun.apply_battle(run, enc, s)
+	GentleRuns.apply_battle(run, enc, s)
 	return s
 
 

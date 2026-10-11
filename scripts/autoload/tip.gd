@@ -16,6 +16,8 @@ var _pending: Control
 
 func _ready() -> void:
 	layer = 100
+	# Подсказки работают и в справочнике, пока игра на паузе (SPEC_SPRINT11 2).
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	_panel = PanelContainer.new()
 	_panel.add_theme_stylebox_override("panel", UiKit.panel_style(Color(0.08, 0.09, 0.13, 0.97), UiKit.ACCENT.darkened(0.3), 1, true))
 	_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE

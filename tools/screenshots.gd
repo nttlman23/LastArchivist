@@ -25,6 +25,13 @@ func _run() -> void:
 	Game.run = null
 	Game.goto(Game.SCENE_MAIN_MENU)
 	await _shot("menu")
+	# Справочник (SPEC_SPRINT11 2): несколько разделов поверх меню.
+	for section in [&"resources", &"icons", &"damage"]:
+		Help.open(section)
+		await _shot("help_" + String(section), 0.6)
+	Help.close()
+	Game.goto(Game.SCENE_SETTINGS)
+	await _shot("settings")
 	# История и обучение (SPEC_SPRINT10): сценка пролога (все абзацы), учебный бой, страницы памяти.
 	Game.show_story(Story.PROLOGUE, Game.SCENE_MAIN_MENU)
 	await get_tree().create_timer(0.8).timeout
@@ -38,6 +45,16 @@ func _run() -> void:
 	await _shot("story_finale", 1.0)
 	Game.goto(Game.SCENE_TUTORIAL)
 	await _shot("tutorial", 2.0)
+	# Второй урок (SPEC_SPRINT11 5): бой, превращение после победы, учебная карта.
+	Game.goto(Game.SCENE_TUTORIAL2)
+	await _shot("tutorial2", 2.0)
+	get_tree().current_scene._show_end()
+	get_tree().current_scene._rework.select_card(2)
+	await _shot("tutorial2_rework", 0.6)
+	Game.goto(Game.SCENE_TUTORIAL_MAP)
+	await get_tree().create_timer(0.8).timeout
+	get_tree().current_scene._travel(0)
+	await _shot("tutorial_map", 0.6)
 	Game.profile.story_chapter = 2
 	for id in [&"p1_ash", &"p1_elite", &"p1_scribe", &"p2_diary"]:
 		Game.profile.story_pages[id] = "2026-10-11"
@@ -76,6 +93,14 @@ func _run() -> void:
 	Game.goto(Game.SCENE_BATTLE)
 	await _shot("battle", 2.0)
 	var screen := get_tree().current_scene
+	# Разбор урона (SPEC_SPRINT11 3): выстрел ходящего стрелка по первому врагу, курсор — на цели.
+	var shooter: UnitState = screen.state.active_unit()
+	var victim: UnitState = screen.state.alive(UnitState.Side.ENEMY)[0]
+	if shooter and shooter.is_ranged:
+		get_viewport().warp_mouse(screen.view.get_global_transform_with_canvas() * screen.view.hex_center(victim.hex))
+		screen._show_preview(BattleAction.shoot(victim.uid))
+		await _shot("battle_breakdown", 0.4)
+		screen._set_preview("", [])
 	var t0 := Time.get_ticks_msec()
 	while Time.get_ticks_msec() - t0 < 6000 and screen.state.outcome == BattleState.Outcome.NONE:
 		if not screen._busy and screen._is_player_turn():

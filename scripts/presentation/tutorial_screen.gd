@@ -22,6 +22,12 @@ const ENEMY_COUNT := 10
 
 var step := 0
 var _step_panel: PanelContainer
+
+
+## Шаги урока (второй урок, SPEC_SPRINT11 5, подставляет свои). Шаг может требовать конкретное
+## действие героя: ключ "ref" — id приказа или заклинания.
+func _steps() -> Array:
+	return STEPS
 var _step_label: Label
 var _warn_label: Label
 
@@ -78,12 +84,14 @@ func _player_act(action: BattleAction) -> void:
 
 
 func allowed(action: BattleAction) -> bool:
-	if step >= STEPS.size() - 1:
+	if step >= _steps().size() - 1:
 		return true
-	var s: Dictionary = STEPS[step]
+	var s: Dictionary = _steps()[step]
 	var u := state.active_unit()
 	if u == null or u.def_id != s["unit"]:
 		return true
+	if s.has("ref") and action.ref_id != s["ref"]:
+		return false
 	return (s["types"] as Array).has(action.type)
 
 
@@ -92,9 +100,9 @@ func _execute(action: BattleAction) -> void:
 	var u := state.active_unit()
 	var players := u != null and u.side == UnitState.Side.PLAYER
 	await super._execute(action)
-	if players and step < STEPS.size() - 1 and (STEPS[step]["types"] as Array).has(action.type):
+	if players and step < _steps().size() - 1 and (_steps()[step]["types"] as Array).has(action.type):
 		step += 1
-		if step == STEPS.size() - 1:
+		if step == _steps().size() - 1:
 			_weaken_enemy()
 		_update_step()
 
@@ -127,7 +135,7 @@ func _build_step_panel() -> void:
 	col.add_child(_step_label)
 	_warn_label = UiKit.label("", 16, UiKit.DANGER)
 	col.add_child(_warn_label)
-	var skip := UiKit.button(tr("TUT_SKIP"), Game.finish_tutorial, 260)
+	var skip := UiKit.button(tr("TUT_SKIP"), _skip, 260)
 	skip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(skip)
 	add_child(_step_panel)
@@ -144,7 +152,7 @@ func _build_step_panel() -> void:
 func _update_step() -> void:
 	if _step_label == null:
 		return
-	_step_label.text = "%s %d/%d. %s" % [tr("TUT_STEP"), mini(step + 1, STEPS.size()), STEPS.size(), tr(STEPS[step]["key"])]
+	_step_label.text = "%s %d/%d. %s" % [tr("TUT_STEP"), mini(step + 1, _steps().size()), _steps().size(), tr(_steps()[step]["key"])]
 	_warn_label.text = ""
 
 
@@ -171,5 +179,14 @@ func _show_end() -> void:
 	var go := UiKit.button(tr("TUT_DONE_MENU") if Game.tutorial_from_menu else tr("TUT_DONE_NEXT"), Game.finish_tutorial, 360)
 	go.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	box.add_child(go)
+	# Второй урок (SPEC_SPRINT11 5): герой, превращения, карта.
+	var more := UiKit.button(tr("TUT_MORE"), Game.continue_to_tutorial2, 360)
+	more.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	box.add_child(more)
 	add_child(_end_panel)
 	_end_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER, Control.PRESET_MODE_MINSIZE)
+
+
+## «Пропустить обучение» (второй урок пропускает по-своему).
+func _skip() -> void:
+	Game.finish_tutorial()

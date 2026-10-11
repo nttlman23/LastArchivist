@@ -102,10 +102,7 @@ func select_card(index: int) -> void:
 		if reason == "":
 			var full := form_preview(db, run, index, form)
 			b.text = "%s\n%s" % [tr(FORM_KEYS[form]), full if Settings.detailed else form_change(db, run, index, form)]
-			var tip_body := full
-			if form == CodexOps.Form.SPELL:
-				tip_body += "\n" + tr(db.spell(db.memory(run.codex.cards[index].memory_id).spell_id).desc_key)
-			Tip.attach(b, tr(FORM_KEYS[form]), tip_body, FORM_ICONS[form])
+			Tip.attach(b, tr(FORM_KEYS[form]), "%s\n%s" % [full, form_effect(db, run, index, form)], FORM_ICONS[form])
 			b.pressed.connect(_ask_confirm.bind(form))
 		else:
 			b.text = "%s\n%s" % [tr(FORM_KEYS[form]), tr(reason)]
@@ -168,13 +165,47 @@ static func form_preview(p_db: DefsDB, p_run: RunState, index: int, form: CodexO
 	return ""
 
 
+## Что даст превращение — развёрнуто (SPEC_SPRINT11 4): эффект заклинания и как работают заряды,
+## что именно улучшится, кому прибавится прочность, во что сольются карты.
+static func form_effect(p_db: DefsDB, p_run: RunState, index: int, form: CodexOps.Form) -> String:
+	var card := p_run.codex.cards[index]
+	var mem := p_db.memory(card.memory_id)
+	var t := func(key: String) -> String: return TranslationServer.translate(key)
+	match form:
+		CodexOps.Form.SPELL:
+			var spell := p_db.spell(mem.spell_id)
+			return "%s\n%s" % [t.call(spell.desc_key), t.call("FORM_SPELL_NOTE") % CodexOps.spell_charges(card)]
+		CodexOps.Form.UPGRADE:
+			return t.call("FORM_UPGRADE_NOTE") % t.call(p_db.upgrade(mem.upgrade_id).name_key)
+		CodexOps.Form.SACRIFICE:
+			var names: Array[String] = []
+			for i in p_run.codex.cards.size():
+				var c := p_run.codex.cards[i]
+				if i != index and c.durability < p_db.memory(c.memory_id).max_durability:
+					names.append(t.call(p_db.memory(c.memory_id).name_key))
+			return t.call("FORM_SACRIFICE_NOTE") % (", ".join(names) if not names.is_empty() else t.call("FORM_SACRIFICE_NOBODY"))
+		CodexOps.Form.FUSE:
+			var result := CodexOps.fuse_result(p_run.codex, index)
+			var count := floori(mem.count * (1.0 + 0.5 * (result[0] - 1)))
+			return t.call("FORM_FUSE_NOTE") % [t.call(mem.name_key), result[0], count, result[1]]
+	return ""
+
+
 func _ask_confirm(form: CodexOps.Form) -> void:
 	_clear(_confirm_box)
 	var question := UiKit.label(tr("FORM_CONFIRM") % [tr(db.memory(run.codex.cards[selected_card].memory_id).name_key),
 			form_preview(db, run, selected_card, form)], 20, UiKit.ACCENT)
 	question.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	question.custom_minimum_size = Vector2(520, 0)
-	_confirm_box.add_child(question)
+	# Под вопросом — что именно даст превращение (SPEC_SPRINT11 4).
+	var effect := UiKit.label(form_effect(db, run, selected_card, form), 17, Color(0.85, 0.85, 0.9))
+	effect.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	effect.custom_minimum_size = Vector2(520, 0)
+	var text_col := VBoxContainer.new()
+	text_col.add_theme_constant_override("separation", 4)
+	text_col.add_child(question)
+	text_col.add_child(effect)
+	_confirm_box.add_child(text_col)
 	_confirm_box.add_child(UiKit.button(tr("FORM_APPLY"), _confirm.bind(form), 200))
 	_confirm_box.add_child(UiKit.button(tr("REWARD_CANCEL"), _clear.bind(_confirm_box), 160))
 

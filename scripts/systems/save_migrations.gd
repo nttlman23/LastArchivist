@@ -26,9 +26,17 @@ static func migrate(d: Dictionary) -> Dictionary:
 				out = _v9_to_v10(out)
 			10:
 				out = _v10_to_v11(out)
+			11:
+				out = _v11_to_v12(out)
 		v += 1
 		out["version"] = v
 	return out
+
+
+## v12: учебный забег (SPEC_SPRINT11 6) — старый забег обычный.
+static func _v11_to_v12(d: Dictionary) -> Dictionary:
+	d["gentle"] = false
+	return d
 
 
 ## v11: сюжетное событие забега (SPEC_SPRINT10 7) — у старого забега его нет.

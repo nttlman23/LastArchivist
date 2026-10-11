@@ -82,5 +82,8 @@ static func commander_for(db: DefsDB, run: RunState, encounter: EncounterDef) ->
 	var all_battles := Trials.has(run, Trials.COMMANDERS) or DailyRun.has(run, DailyRun.EARLY_COMMANDER)
 	if not (all_battles or has_commander(run.difficulty, encounter, layer)) or db.commanders.is_empty():
 		return &""
+	# Учебный забег (SPEC_SPRINT11 6): на первых слоях командиров нет (у Разлома — свой).
+	if GentleRuns.active(run, layer) and not encounter.boss:
+		return &""
 	var ids := db.commander_ids()
 	return ids[absi(run.node_seed(run.pending_node, "commander")) % ids.size()]
