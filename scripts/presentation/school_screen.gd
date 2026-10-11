@@ -111,7 +111,7 @@ func _school_card(school: SchoolDef) -> Button:
 	var open := MetaRewards.is_school_open(Game.profile, school)
 	var b := Button.new()
 	var art := ArtDB.school(school.id)
-	b.custom_minimum_size = Vector2(330, 520 if art else 300)
+	b.custom_minimum_size = Vector2(330, 600 if art else 380)
 	b.add_theme_stylebox_override("normal", UiKit.panel_style(UiKit.PANEL_COLOR, school.color.darkened(0.2), 3, true))
 	b.add_theme_stylebox_override("hover", UiKit.panel_style(UiKit.PANEL_COLOR.lightened(0.08), school.color, 3, true))
 	b.add_theme_stylebox_override("disabled", UiKit.panel_style(UiKit.PANEL_COLOR.darkened(0.2), Color(0.3, 0.3, 0.35), 2, true))
@@ -141,6 +141,17 @@ func _school_card(school: SchoolDef) -> Button:
 		start.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		start.custom_minimum_size = Vector2(290, 0)
 		col.add_child(start)
+		# Свои карты школы (SPEC_SPRINT11 9): только они и общие выпадают в наградах.
+		var own: Array[String] = []
+		for id in school.own_memories:
+			if db.memories.has(id):
+				own.append(tr(db.memory(id).name_key))
+		var own_l := UiKit.label(tr("SCHOOL_OWN") % ", ".join(own), 16, school.color.lightened(0.35))
+		own_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		own_l.custom_minimum_size = Vector2(290, 0)
+		Tip.attach(own_l, tr("SCHOOL_OWN_TITLE"), tr("SCHOOL_OWN_TIP"))
+		own_l.mouse_filter = Control.MOUSE_FILTER_PASS
+		col.add_child(own_l)
 		var opened := Game.profile.trial_open(school.id)
 		if opened > 0:
 			col.add_child(UiKit.chip(UnitGlyphs.ICON_KILL, tr("SCHOOL_TRIAL") % opened, UiKit.DIFFICULTY_COLORS[Difficulty.HARD], "", "", 16))

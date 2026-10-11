@@ -157,6 +157,14 @@ func school(id: StringName) -> SchoolDef:
 	return schools[id]
 
 
+## Школа, которой принадлежит карта (SPEC_SPRINT11 9), или &"" — общая карта.
+func memory_school(memory_id: StringName) -> StringName:
+	for id in schools:
+		if schools[id].own_memories.has(memory_id):
+			return id
+	return &""
+
+
 func schools_sorted() -> Array[SchoolDef]:
 	var list: Array[SchoolDef] = []
 	list.assign(schools.values())

@@ -81,7 +81,10 @@ func test_card_pool_respects_unlocks_and_favorites() -> void:
 	assert_eq(pool.count(&"ghoul_pack"), 2, "любимая карта школы — вес ×2")
 	assert_eq(pool.count(&"salt_legion"), 1)
 	p.unlocked.append(&"card_storm_wyrm")
-	assert_has(MetaRewards.card_pool(db, p, ash), &"storm_wyrm")
+	p.unlocked.append(MetaRewards.school_unlock_id(&"tide_order"))
+	assert_has(MetaRewards.card_pool(db, p, ash), &"storm_wyrm", "в пуле — открытые карты всех открытых школ")
+	var run := RunState.create(db, 3, DefsDB.DEFAULT_SCHOOL, p)
+	assert_false(run.school_allows(db, &"storm_wyrm"), "но Змей — карта Ордена Приливов: в наградах Архива его нет")
 
 
 func test_locked_events_never_on_map() -> void:

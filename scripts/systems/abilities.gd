@@ -24,6 +24,7 @@ const STEAL := &"steal"
 const WET_INK := &"wet_ink"
 const INK_CLOUD := &"ink_cloud"
 const SIREN_CALL := &"siren_call"
+const PUMP := &"pump"
 
 const DEFAULT_COOLDOWN := 2
 const DEVOUR_HEAL := 0.5
@@ -55,6 +56,11 @@ const CALL_STEPS := 2
 const CALL_SHOOTER_SCORE := 25.0
 const CALL_SCORE := 8.0
 const INK_PER_SHOOTER := 22.0
+## «Откачка» (Колокольные водолазы, SPEC_SPRINT11 9): вода и течения в радиусе — суша на N раундов, починка конструктов рядом.
+const PUMP_RANGE := 2
+const PUMP_ROUNDS := 3
+const PUMP_HEAL := 20
+const PUMP_HEX_SCORE := 4.0
 ## Способности, которые нельзя украсть.
 const UNSTEALABLE: Array[StringName] = [&"", ECHO, STEAL, RIFT_TEAR]
 
@@ -172,6 +178,8 @@ static func validate(state: BattleState, u: UnitState, action: BattleAction) -> 
 			return state.grid.in_bounds(action.dest) and HexGrid.distance(u.hex, action.dest) <= INK_RANGE
 		SIREN_CALL:
 			return _is_enemy(u, target) and not target.inert and not call_path(state, u, target).is_empty()
+		PUMP:
+			return not pump_hexes(state, u).is_empty() or not pump_repairs(state, u).is_empty()
 	return false
 
 
@@ -260,6 +268,16 @@ static func apply(state: BattleState, u: UnitState, action: BattleAction, events
 				if state.water.get(h, 0) != BattleState.WATER_PERMANENT:
 					state.water[h] = FLOOD_ROUNDS
 			events.append(BattleEvent.new(BattleEvent.OBSTACLE_ADDED, {"hex": action.dest, "rounds": FLOOD_ROUNDS, "water": true}))
+		PUMP:
+			for h in pump_hexes(state, u):
+				# Запоминаем, что было: постоянная вода и течения вернутся, когда суша высохнет обратно.
+				var permanent: bool = state.water.get(h, 0) == BattleState.WATER_PERMANENT
+				state.drained[h] = [PUMP_ROUNDS, BattleState.WATER_PERMANENT if permanent else 0, state.currents.get(h, -1)]
+				state.water.erase(h)
+				state.currents.erase(h)
+				events.append(BattleEvent.new(BattleEvent.OBSTACLE_EXPIRED, {"hex": h, "water": true}))
+			for a in pump_repairs(state, u):
+				BattleResolver.heal(a, PUMP_HEAL, events)
 		OVERCLOCK:
 			# Два выстрела: по цели, второй — по ней же или по ближайшему врагу, если цель пала.
 			for shot in 2:
@@ -573,6 +591,16 @@ static func ai_score(state: BattleState, u: UnitState, action: BattleAction) -> 
 				if o and o.side != u.side and not o.is_flying and not o.is_ranged:
 					caught += 1
 			return DEFENSIVE_SCORE * caught
+		PUMP:
+			var score := 0.0
+			for a in pump_repairs(state, u):
+				score += RESTORE_WEIGHT * minf(PUMP_HEAL, _missing_hp(a))
+			# Суша нужна, когда рядом свои — вода и течения мешают им, а не врагам.
+			for h in pump_hexes(state, u):
+				var o := state.unit_at(h)
+				if o == null or o.side == u.side:
+					score += PUMP_HEX_SCORE
+			return score if not _can_attack(state, u) else score * 0.5
 		OVERCLOCK:
 			return 1.8 * AiController.value(DamageCalc.expected(u, target, true), target)
 		TINKER:
@@ -607,3 +635,21 @@ static func _enemies_near(state: BattleState, u: UnitState, radius: int) -> bool
 		if HexGrid.distance(u.hex, e.hex) <= radius:
 			return true
 	return false
+
+
+## Клетки воды и течений в радиусе «Откачки» (уже осушенные не считаются).
+static func pump_hexes(state: BattleState, u: UnitState) -> Array[Vector2i]:
+	var result: Array[Vector2i] = []
+	for h in state.grid.all_hexes():
+		if HexGrid.distance(u.hex, h) <= PUMP_RANGE and (state.water.has(h) or state.currents.has(h)):
+			result.append(h)
+	return result
+
+
+## Союзные конструкты рядом (и сам водолаз), которых есть что чинить.
+static func pump_repairs(state: BattleState, u: UnitState) -> Array[UnitState]:
+	var result: Array[UnitState] = []
+	for a in state.alive(u.side):
+		if a.construct and not a.inert and _missing_hp(a) > 0 and (a == u or HexGrid.are_adjacent(a.hex, u.hex)):
+			result.append(a)
+	return result

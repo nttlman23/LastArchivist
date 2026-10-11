@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="UnitDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/defs/unit_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"diving_bell"
+name_key = "UNIT_DIVING_BELL"
+hp = 38
+attack = 8
+defense = 11
+dmg_min = 4
+dmg_max = 6
+speed = 3
+initiative = 6
+is_ranged = false
+shots = 0
+is_flying = false
+ability_id = &"pump"
+construct = true
+color = Color(0.72, 0.55, 0.3, 1)
+sound_class = &"metal"

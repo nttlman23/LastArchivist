@@ -78,6 +78,18 @@ static func _tick_statuses(u: UnitState, events: Array[BattleEvent]) -> void:
 
 
 static func _tick_obstacles(state: BattleState, events: Array[BattleEvent]) -> void:
+	# Осушенное «Откачкой» высыхает обратно: возвращаются постоянная вода и течения (SPEC_SPRINT11 9).
+	for hex in state.drained.keys():
+		var d: Array = state.drained[hex]
+		d[0] = int(d[0]) - 1
+		if d[0] > 0:
+			continue
+		state.drained.erase(hex)
+		if int(d[1]) == BattleState.WATER_PERMANENT:
+			state.water[hex] = BattleState.WATER_PERMANENT
+		if int(d[2]) >= 0:
+			state.currents[hex] = int(d[2])
+		events.append(BattleEvent.new(BattleEvent.OBSTACLE_ADDED, {"hex": hex, "rounds": 0, "water": true}))
 	for hex in state.ink.keys():
 		var k: int = state.ink[hex] - 1
 		if k <= 0:

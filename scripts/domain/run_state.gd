@@ -69,6 +69,8 @@ var inkwell_used := false
 var story_event: StringName
 ## Учебный забег (SPEC_SPRINT11 6): на слоях 1–3 первого акта враги слабее, без командиров.
 var gentle := false
+## Подкрепление (SPEC_SPRINT11 11): карта, чей отряд в ближайшем бою получит +20% существ; -1 — нет. Не сохраняется: оплачено на подготовке и тратится этим же боем.
+var reinforce_card := -1
 
 
 ## profile — открытия игрока (пулы карт и событий); без профиля доступно всё.
@@ -205,7 +207,7 @@ func reward_choices(guarantee_hero: bool) -> int:
 ## guarantee_hero — награда за элиту: среди карт будет геройская, если её ещё нет в Кодексе.
 func roll_rewards(db: DefsDB, guarantee_hero: bool = false) -> Array[StringName]:
 	var choices := reward_choices(guarantee_hero)
-	var pool: Array[StringName] = card_pool.duplicate()
+	var pool: Array[StringName] = card_pool.filter(func(id: StringName) -> bool: return school_allows(db, id))
 	var result: Array[StringName] = []
 	if guarantee_hero:
 		for id in pool.duplicate():
@@ -221,6 +223,12 @@ func roll_rewards(db: DefsDB, guarantee_hero: bool = false) -> Array[StringName]
 		while pool.has(id):
 			pool.erase(id)
 	return result
+
+
+## Карта своей школы или общая (SPEC_SPRINT11 9): только такие выпадают в наградах; чужие — в лавке и событиях.
+func school_allows(db: DefsDB, memory_id: StringName) -> bool:
+	var owner := db.memory_school(memory_id)
+	return owner == &"" or owner == school_id
 
 
 func _has_card(memory_id: StringName) -> bool:

@@ -68,7 +68,7 @@ func _rebuild() -> void:
 	_content.add_child(grid)
 	for i in run.codex.cards.size():
 		var b := _row_button(ReworkPanel.card_line(db, run, i), _repair.bind(i))
-		var reason := ShopOps.repair_reason(db, run, i)
+		var reason := ShopOps.repair_reason(db, run, i, visit)
 		if reason != "":
 			b.disabled = true
 			b.tooltip_text = tr(reason)
@@ -125,7 +125,7 @@ func _buy(index: int) -> void:
 
 
 func _repair(index: int) -> void:
-	if ShopOps.repair(db, run, index):
+	if ShopOps.repair(db, run, index, visit):
 		Audio.play(&"heal")
 		_rebuild()
 

@@ -178,6 +178,8 @@ func test_repeat_daily_gives_nothing() -> void:
 
 func test_unlocks_gate_content() -> void:
 	var p := ProfileState.new()
+	# Угри — карта Ордена Приливов (SPEC_SPRINT11 9): открываются вместе со школой.
+	p.unlocked.append(MetaRewards.school_unlock_id(&"tide_order"))
 	var school := db.school(DefsDB.DEFAULT_SCHOOL)
 	assert_false(MetaRewards.card_pool(db, p, school, 1).has(&"ash_keepers"))
 	assert_false(MetaRewards.card_pool(db, p, school, 2).has(&"deep_eels"))

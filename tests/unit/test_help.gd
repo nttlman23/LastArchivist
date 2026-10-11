@@ -70,7 +70,7 @@ func test_resource_prices_come_from_constants() -> void:
 	for id in RunState.RESOURCE_IDS:
 		assert_true(text.contains(tr("RES_" + String(id).to_upper())), String(id))
 	assert_true(text.contains(tr("HELP_RES_PARCHMENT_USE") % [ShopOps.CARD_PRICE, ShopOps.HERO_CARD_PRICE, ShopOps.REWORK_COST]))
-	assert_true(text.contains(tr("HELP_RES_AETHER_USE") % [ShopOps.RECHARGE_COST, MapActions.SCOUT_COST, MapActions.FLIGHT_COST]))
+	assert_true(text.contains(tr("HELP_RES_AETHER_USE") % [ShopOps.RECHARGE_COST, MapActions.SCOUT_COST, MapActions.FLIGHT_COST, roundi(ShopOps.REINFORCE_SHARE * 100), ShopOps.REINFORCE_COST]))
 	col.free()
 
 

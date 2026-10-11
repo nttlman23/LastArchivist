@@ -19,6 +19,8 @@ var water: Dictionary[Vector2i, int] = {}
 const WATER_PERMANENT := -1
 ## Течения (второй акт): клетка -> направление (0..5); в начале раунда сносят стек на клетку.
 var currents: Dictionary[Vector2i, int] = {}
+## Осушено «Откачкой»: клетка -> [раунды, вода до осушения (WATER_PERMANENT или 0), течение до осушения (или -1)].
+var drained: Dictionary[Vector2i, Array] = {}
 ## Чернильное облако: стрелки на этих клетках не стреляют. Клетка -> раунды.
 var ink: Dictionary[Vector2i, int] = {}
 ## Биом поля (палитра): &"archive" или &"flooded".
@@ -281,6 +283,7 @@ func to_dict() -> Dictionary:
 		"currents": _hex_pairs(currents), "ink": _hex_pairs(ink), "biome": String(biome), "boss_phase": boss_phase,
 		"boss_phase_share": boss_phase_share,
 		"hero_first_round_bonus": hero_first_round_bonus, "player_ignores_currents": player_ignores_currents,
+		"drained": Array(drained.keys()).map(func(h: Vector2i) -> Array: return [h.x, h.y, int(drained[h][0]), int(drained[h][1]), int(drained[h][2])]),
 	}
 
 
@@ -354,6 +357,8 @@ static func from_dict(d: Dictionary) -> BattleState:
 		s.reinforcements.append({"round": int(r["round"]), "unit": UnitState.from_dict(r["unit"]).to_dict()})
 	for h: Array in d.get("currents", []):
 		s.currents[Vector2i(int(h[0]), int(h[1]))] = int(h[2])
+	for h: Array in d.get("drained", []):
+		s.drained[Vector2i(int(h[0]), int(h[1]))] = [int(h[2]), int(h[3]), int(h[4])]
 	for h: Array in d.get("ink", []):
 		s.ink[Vector2i(int(h[0]), int(h[1]))] = int(h[2])
 	s.biome = StringName(d.get("biome", "archive"))

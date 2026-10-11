@@ -64,7 +64,7 @@ static func shop(db: DefsDB, run: RunState, visit: ShopOps.Visit) -> void:
 	var order := range(run.codex.cards.size())
 	order.sort_custom(func(a: int, b: int) -> bool: return run.codex.cards[a].durability < run.codex.cards[b].durability)
 	for i: int in order:
-		while ShopOps.repair(db, run, i):
+		while ShopOps.repair(db, run, i, visit):
 			pass
 	for s in run.hero.spells.size():
 		if run.resources[RunState.AETHER] > 2:
@@ -112,3 +112,15 @@ static func post_battle(db: DefsDB, run: RunState, rng: RandomNumberGenerator, g
 	var pick: Array = options[rng.randi_range(0, options.size() - 1)]
 	CodexOps.apply(db, run, pick[0], pick[1])
 	return CodexOps.Form.keys()[pick[1]].to_lower()
+
+
+## Подкрепление перед тяжёлым боем (элита, Разлом), если хватает Эфира: сильнейшему выставленному отряду.
+static func reinforce(db: DefsDB, run: RunState, selected: Array[int], hard: bool) -> void:
+	if not hard or selected.is_empty() or ShopOps.reinforce_reason(run) != "":
+		return
+	var best := selected[0]
+	for i in selected:
+		if CardAdvisor.card_power(db, run.codex.cards[i].memory_id, run.codex.cards[i].level) \
+				> CardAdvisor.card_power(db, run.codex.cards[best].memory_id, run.codex.cards[best].level):
+			best = i
+	ShopOps.reinforce(run, best)

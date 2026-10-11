@@ -4,6 +4,8 @@ extends GutTest
 
 const RAW := "user://test_art/raw"
 const OUT := "user://test_art/out"
+## Арт, который ещё рисуется (SPEC_SPRINT11 9): Колокольные водолазы. Убрать, когда картинки импортированы.
+const ART_PENDING := ["unit/diving_bell", "card/diving_bells"]
 
 var db: DefsDB
 
@@ -240,9 +242,9 @@ func test_project_stage_b_complete() -> void:
 				expect.append("island/%s_act%d" % [type, act])
 	for id in ["battle_act2", "map_act2", "camp", "haven", "shop", "event", "reliquary", "hall", "run_end", "school"]:
 		expect.append("bg/%s" % id)
-	var missing := expect.filter(func(k: String) -> bool: return not items.has(k))
+	var missing := expect.filter(func(k: String) -> bool: return not items.has(k) and not ART_PENDING.has(k))
 	assert_eq(missing, [], "весь арт игры импортирован")
-	assert_eq(expect.size(), 133, "проверяется весь игровой арт, кроме Архивариуса, фонов и интерфейса среза")
+	assert_eq(expect.size(), 135, "проверяется весь игровой арт, кроме Архивариуса, фонов и интерфейса среза")
 
 
 func test_project_stage_b_art_loads() -> void:

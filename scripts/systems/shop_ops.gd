@@ -2,12 +2,19 @@ class_name ShopOps
 extends RefCounted
 ## Архив-лавка и Тихая гавань (SPEC_SPRINT3 5.1–5.2).
 
-const CARD_PRICE := 3
-const HERO_CARD_PRICE := 6
+const CARD_PRICE := 4
+const HERO_CARD_PRICE := 7
 const REPAIR_COST := 1
-const RECHARGE_COST := 1
+const RECHARGE_COST := 2
 const REWORK_COST := 2
+## Ремонт в лавке — не больше стольких единиц прочности за визит (SPEC_SPRINT11 11); в гавани — без ограничения.
+const REPAIR_LIMIT := 3
+## Подкрепление на подготовке к бою: +20% существ одному отряду на этот бой за Эфир.
+const REINFORCE_COST := 2
+const REINFORCE_SHARE := 0.2
 const OFFER_SIZE := 3
+## Доля лавок с картой чужой школы (одна в предложении).
+const FOREIGN_CHANCE := 0.5
 
 enum HavenChoice { REPAIR_ALL, REWRITE, MEDITATE }
 
@@ -17,18 +24,26 @@ class Visit:
 	var offer: Array[StringName] = []
 	var bought: Array[bool] = []
 	var rework_used := false
+	var repairs := 0
 
 
 static func open(db: DefsDB, run: RunState, node_id: int) -> Visit:
 	var v := Visit.new()
 	var rng := RandomNumberGenerator.new()
 	rng.seed = run.node_seed(node_id, "shop")
-	var pool := run.pool_unique()
-	for i in mini(offer_size(run), pool.size()):
+	# Свои и общие карты; карта чужой школы — не больше одной и не всегда (SPEC_SPRINT11 9).
+	var pool := run.pool_unique().filter(func(id: StringName) -> bool: return run.school_allows(db, id))
+	var foreign := run.pool_unique().filter(func(id: StringName) -> bool: return not run.school_allows(db, id))
+	var size := offer_size(run)
+	var with_foreign := not foreign.is_empty() and rng.randf() < FOREIGN_CHANCE
+	for i in mini(size - (1 if with_foreign else 0), pool.size()):
 		var idx := rng.randi_range(0, pool.size() - 1)
 		v.offer.append(pool[idx])
 		v.bought.append(false)
 		pool.remove_at(idx)
+	if with_foreign:
+		v.offer.append(foreign[rng.randi_range(0, foreign.size() - 1)])
+		v.bought.append(false)
 	return v
 
 
@@ -86,20 +101,25 @@ static func rework_cost(run: RunState) -> int:
 	return REWORK_COST
 
 
-static func repair_reason(db: DefsDB, run: RunState, card_index: int) -> String:
+## visit — визит в лавку (лимит ремонта за визит); без него — без лимита.
+static func repair_reason(db: DefsDB, run: RunState, card_index: int, visit: Visit = null) -> String:
 	var card := run.codex.cards[card_index]
 	if card.durability >= db.memory(card.memory_id).max_durability:
 		return "REASON_FULL_DURABILITY"
+	if visit and visit.repairs >= REPAIR_LIMIT:
+		return "REASON_REPAIR_LIMIT"
 	if not run.can_afford(RunState.INK, repair_cost(run)):
 		return "REASON_NO_INK"
 	return ""
 
 
-static func repair(db: DefsDB, run: RunState, card_index: int) -> bool:
-	if repair_reason(db, run, card_index) != "":
+static func repair(db: DefsDB, run: RunState, card_index: int, visit: Visit = null) -> bool:
+	if repair_reason(db, run, card_index, visit) != "":
 		return false
 	run.spend(RunState.INK, repair_cost(run))
 	run.codex.cards[card_index].durability += 1
+	if visit:
+		visit.repairs += 1
 	return true
 
 
@@ -163,3 +183,29 @@ static func haven_repair_all(db: DefsDB, run: RunState) -> void:
 static func haven_meditate(run: RunState) -> void:
 	for s in run.hero.spells:
 		s.charges += 1
+
+
+## Подкрепление на подготовке к бою (SPEC_SPRINT11 11).
+static func reinforce_reason(run: RunState) -> String:
+	if not run.can_afford(RunState.AETHER, REINFORCE_COST):
+		return "REASON_NO_AETHER"
+	return ""
+
+
+static func reinforce(run: RunState, card_index: int) -> bool:
+	if reinforce_reason(run) != "":
+		return false
+	run.spend(RunState.AETHER, REINFORCE_COST)
+	run.reinforce_card = card_index
+	return true
+
+
+## Начало боя: отряд оплаченной карты получает +20% существ (не меньше +1); подкрепление тратится.
+static func apply_reinforcement(run: RunState, state: BattleState) -> void:
+	if run.reinforce_card < 0:
+		return
+	for u in state.alive(UnitState.Side.PLAYER):
+		if u.card_index == run.reinforce_card:
+			u.count += maxi(1, roundi(u.count * REINFORCE_SHARE))
+			u.start_count = u.count
+	run.reinforce_card = -1

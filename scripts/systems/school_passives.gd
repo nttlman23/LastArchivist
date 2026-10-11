@@ -8,7 +8,7 @@ const TIDE_CURRENT := &"tide_current"
 const SYNOD_REPAIR := &"synod_repair"
 const SYNOD_REPAIR_SHARE := 0.1
 const GARDEN_MASKS := &"garden_masks"
-const GARDEN_SHARE := 0.75
+const GARDEN_SHARE := 1.0
 
 
 ## Начало боя: «Маски» — иллюзия случайного стека игрока.

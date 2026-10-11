@@ -210,14 +210,15 @@ static func complete(run: RunState) -> void:
 static func battle_rewards(encounter: EncounterDef) -> Dictionary[StringName, int]:
 	if encounter.boss:
 		return _res(0, 0, 0)
+	# «Меньше и дороже» (SPEC_SPRINT11 11): ресурсов стабильно не хватает на всё сразу.
 	if encounter.elite:
-		return _res(2, 4, 2)
+		return _res(2, 4, 1)
 	match encounter.tier:
 		1:
-			return _res(1, 2, 1)
+			return _res(1, 2, 0)
 		2:
-			return _res(1, 3, 1)
-	return _res(2, 3, 2)
+			return _res(1, 2, 1)
+	return _res(1, 3, 1)
 
 
 static func _res(ink: int, parchment: int, aether: int) -> Dictionary[StringName, int]:

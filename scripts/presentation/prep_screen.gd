@@ -6,6 +6,9 @@ var _selected: Array[int] = []
 var _buttons: Dictionary[int, Button] = {}
 var _start: Button
 var _hero_cards: Array[Control] = []
+## Подкрепление за Эфир (SPEC_SPRINT11 11): выбор отряда; индексы пунктов -> индексы карт (0 — без подкрепления).
+var _reinforce: OptionButton
+var _reinforce_cards: Array[int] = []
 
 
 func _ready() -> void:
@@ -106,6 +109,7 @@ func _ready() -> void:
 	_start = UiKit.button(tr("PREP_START"), _on_start)
 	buttons.add_child(_start)
 	buttons.add_child(UiKit.button(tr("PREP_TO_MAP"), Game.abandon_node))
+	buttons.add_child(_build_reinforce())
 
 	# По умолчанию — сильнейшие карты отрядов (в порядке Кодекса).
 	var units := run.codex.unit_indices(db)
@@ -137,9 +141,44 @@ func _on_card_toggled(pressed: bool, index: int) -> void:
 
 func _refresh() -> void:
 	_start.disabled = _selected.is_empty()
+	_fill_reinforce()
 	for i in _buttons:
 		_buttons[i].modulate = Color.WHITE if _buttons[i].button_pressed else Color(0.6, 0.6, 0.65)
 
 
 func _on_start() -> void:
+	var pick := _reinforce.selected
+	if pick > 0 and pick < _reinforce_cards.size():
+		ShopOps.reinforce(Game.run, _reinforce_cards[pick])
 	Game.start_battle(_selected)
+
+
+## Подкрепление: значок Эфира с ценой и выбор отряда из выставленных.
+func _build_reinforce() -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	var chip := UiKit.chip(UnitGlyphs.ICON_AETHER, tr("PREP_REINFORCE") % ShopOps.REINFORCE_COST, UiKit.RESOURCE_COLORS[RunState.AETHER],
+			tr("PREP_REINFORCE_TITLE"), tr("PREP_REINFORCE_TIP") % [roundi(ShopOps.REINFORCE_SHARE * 100), ShopOps.REINFORCE_COST], 20)
+	chip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(chip)
+	_reinforce = OptionButton.new()
+	_reinforce.custom_minimum_size = Vector2(340, 44)
+	_reinforce.focus_mode = Control.FOCUS_NONE
+	row.add_child(_reinforce)
+	return row
+
+
+func _fill_reinforce() -> void:
+	if _reinforce == null:
+		return
+	var keep := _reinforce_cards[_reinforce.selected] if _reinforce.selected > 0 and _reinforce.selected < _reinforce_cards.size() else -1
+	_reinforce.clear()
+	_reinforce_cards = [-1]
+	_reinforce.add_item(tr("PREP_REINFORCE_NONE"))
+	var reason := ShopOps.reinforce_reason(Game.run)
+	for i in _selected:
+		_reinforce.add_item(tr(Game.defs.memory(Game.run.codex.cards[i].memory_id).name_key))
+		_reinforce_cards.append(i)
+	_reinforce.disabled = reason != ""
+	_reinforce.tooltip_text = tr(reason) if reason != "" else ""
+	_reinforce.select(maxi(0, _reinforce_cards.find(keep)))

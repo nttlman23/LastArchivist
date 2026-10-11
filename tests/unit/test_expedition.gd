@@ -46,7 +46,7 @@ func test_repair_and_recharge() -> void:
 	assert_eq(ShopOps.repair_reason(db, run, 0), "REASON_NO_INK")
 	assert_eq(ShopOps.recharge_reason(run, 0), "REASON_NO_SPELLS")
 	CodexOps.apply(db, run, 2, CodexOps.Form.SPELL)
-	run.resources[RunState.AETHER] = 1
+	run.resources[RunState.AETHER] = ShopOps.RECHARGE_COST
 	var charges := run.hero.spells[0].charges
 	assert_true(ShopOps.recharge(run, 0))
 	assert_eq(run.hero.spells[0].charges, charges + 1)

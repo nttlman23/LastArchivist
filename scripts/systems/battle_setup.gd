@@ -14,6 +14,7 @@ static func for_run(db: DefsDB, run: RunState, selected: Array[int]) -> BattleSt
 	Trials.apply_battle(run, enc, s)
 	DailyRun.apply_battle(run, enc, s)
 	GentleRuns.apply_battle(run, enc, s)
+	ShopOps.apply_reinforcement(run, s)
 	return s
 
 

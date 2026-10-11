@@ -86,9 +86,9 @@ static func _resources(col: VBoxContainer, db: DefsDB) -> void:
 	var t3 := MapActions.battle_rewards(_encounter(db, 3, false))
 	var el := MapActions.battle_rewards(_encounter(db, 3, true))
 	var uses := {
-		RunState.INK: _tr("HELP_RES_INK_USE") % ShopOps.REPAIR_COST,
+		RunState.INK: _tr("HELP_RES_INK_USE") % [ShopOps.REPAIR_COST, ShopOps.REPAIR_LIMIT],
 		RunState.PARCHMENT: _tr("HELP_RES_PARCHMENT_USE") % [ShopOps.CARD_PRICE, ShopOps.HERO_CARD_PRICE, ShopOps.REWORK_COST],
-		RunState.AETHER: _tr("HELP_RES_AETHER_USE") % [ShopOps.RECHARGE_COST, MapActions.SCOUT_COST, MapActions.FLIGHT_COST],
+		RunState.AETHER: _tr("HELP_RES_AETHER_USE") % [ShopOps.RECHARGE_COST, MapActions.SCOUT_COST, MapActions.FLIGHT_COST, roundi(ShopOps.REINFORCE_SHARE * 100), ShopOps.REINFORCE_COST],
 	}
 	for id in RunState.RESOURCE_IDS:
 		var head := HBoxContainer.new()
@@ -175,7 +175,11 @@ static func _schools(col: VBoxContainer, db: DefsDB, profile: ProfileState) -> v
 		if not s.implemented:
 			continue
 		var open := profile == null or MetaRewards.is_school_open(profile, s)
-		var body := _tr(s.desc_key) + ("" if open else "\n" + _tr("HELP_SCHOOL_LOCKED") % s.unlock_cost)
+		var own: Array[String] = []
+		for id in s.own_memories:
+			if db.memories.has(id):
+				own.append(_tr(db.memory(id).name_key))
+		var body := _tr(s.desc_key) + "\n" + _tr("SCHOOL_OWN") % ", ".join(own) + ("" if open else "\n" + _tr("HELP_SCHOOL_LOCKED") % s.unlock_cost)
 		col.add_child(_swatch_row(s.color, _tr(s.name_key), body))
 
 
