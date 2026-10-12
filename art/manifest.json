@@ -440,6 +440,17 @@
 			],
 			"src": "card_deep_jellies.png"
 		},
+		"card/diving_bells": {
+			"file": "res://art/cards/diving_bells.png",
+			"id": "diving_bells",
+			"kind": "card",
+			"md5": "c7474addd1cf5ca85d5a2a1e626ec61a",
+			"size": [
+				512,
+				384
+			],
+			"src": "card_diving_bells.png"
+		},
 		"card/drowned_crown": {
 			"file": "res://art/cards/drowned_crown.png",
 			"id": "drowned_crown",
@@ -1216,8 +1227,8 @@
 			"kind": "scene",
 			"md5": "1ef1f5c5bc1f68e218ce07aaad226f5d",
 			"size": [
-				1920,
-				1080
+				1920.0,
+				1080.0
 			],
 			"src": "scene_chapter_1.png"
 		},
@@ -1227,8 +1238,8 @@
 			"kind": "scene",
 			"md5": "1f4e0e2a67891c28c3adac4d15f53214",
 			"size": [
-				1920,
-				1080
+				1920.0,
+				1080.0
 			],
 			"src": "scene_chapter_2.png"
 		},
@@ -1238,8 +1249,8 @@
 			"kind": "scene",
 			"md5": "fb268e0d59bb141c6018d5bae97a9d75",
 			"size": [
-				1920,
-				1080
+				1920.0,
+				1080.0
 			],
 			"src": "scene_chapter_3.png"
 		},
@@ -1249,8 +1260,8 @@
 			"kind": "scene",
 			"md5": "f57ed205988d930d3596fcc147d23dcc",
 			"size": [
-				1920,
-				1080
+				1920.0,
+				1080.0
 			],
 			"src": "scene_chapter_4.png"
 		},
@@ -1260,8 +1271,8 @@
 			"kind": "scene",
 			"md5": "fe26fc367232210825141fbd003b9559",
 			"size": [
-				1920,
-				1080
+				1920.0,
+				1080.0
 			],
 			"src": "scene_finale_2.png"
 		},
@@ -1271,8 +1282,8 @@
 			"kind": "scene",
 			"md5": "b5038c143bea0837b20b72cafe5903fe",
 			"size": [
-				1920,
-				1080
+				1920.0,
+				1080.0
 			],
 			"src": "scene_finale_3.png"
 		},
@@ -1282,8 +1293,8 @@
 			"kind": "scene",
 			"md5": "0dcd106207916401a52ae279463ae4ca",
 			"size": [
-				1920,
-				1080
+				1920.0,
+				1080.0
 			],
 			"src": "scene_prologue.png"
 		},
@@ -1293,8 +1304,8 @@
 			"kind": "scene",
 			"md5": "5cdc305ad09cc006c459f732764ceeaf",
 			"size": [
-				1920,
-				1080
+				1920.0,
+				1080.0
 			],
 			"src": "scene_rift_1.png"
 		},
@@ -1304,8 +1315,8 @@
 			"kind": "scene",
 			"md5": "78372952ac4c9bf9bdadfb77c3f961a4",
 			"size": [
-				1920,
-				1080
+				1920.0,
+				1080.0
 			],
 			"src": "scene_rift_2.png"
 		},
@@ -1315,8 +1326,8 @@
 			"kind": "scene",
 			"md5": "823a4535879b6effbbd81757051c4436",
 			"size": [
-				1920,
-				1080
+				1920.0,
+				1080.0
 			],
 			"src": "scene_rift_3.png"
 		},
@@ -1326,8 +1337,8 @@
 			"kind": "scene",
 			"md5": "23ebb0636c62159f9847c6a7324bd6a9",
 			"size": [
-				1920,
-				1080
+				1920.0,
+				1080.0
 			],
 			"src": "scene_rift_4.png"
 		},
@@ -1337,8 +1348,8 @@
 			"kind": "scene",
 			"md5": "20fce7c230a49a4ab65fb5f03fb24701",
 			"size": [
-				1920,
-				1080
+				1920.0,
+				1080.0
 			],
 			"src": "scene_true_finale.png"
 		},
@@ -1636,6 +1647,27 @@
 				384.0
 			],
 			"src": "unit_deep_jelly.png"
+		},
+		"unit/diving_bell": {
+			"anchor": [
+				0.453,
+				0.979
+			],
+			"file": "res://art/units/diving_bell.png",
+			"id": "diving_bell",
+			"kind": "unit",
+			"md5": "30dcd02555657ff7ffa974d1965d1838",
+			"portrait": [
+				0.186,
+				0.0,
+				0.543,
+				0.55
+			],
+			"size": [
+				389,
+				384
+			],
+			"src": "unit_diving_bell.png"
 		},
 		"unit/drowned_scribe": {
 			"anchor": [
