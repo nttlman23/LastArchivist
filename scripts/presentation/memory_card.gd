@@ -21,10 +21,10 @@ const INK := Color(0.2, 0.14, 0.09)
 const INK_MUTED := Color(0.4, 0.31, 0.22)
 const INK_ACCENT := Color(0.55, 0.2, 0.1)
 const INK_DANGER := Color(0.72, 0.12, 0.08)
-const INK_HP := Color(0.6, 0.14, 0.12)
+const INK_HP := Color(0.45, 0.08, 0.07)
 const PARCHMENT := Color(0.86, 0.78, 0.62)
 const SOCKET_TEXT := Color(0.97, 0.88, 0.62)
-const DIM := Color(0.5, 0.5, 0.55)
+const DIM := Color(0.68, 0.68, 0.72)
 
 ## Рамка, уменьшенная до ширины карты (9-slice рисует поля 1:1), — одна на все карты.
 static var _frame: Texture2D

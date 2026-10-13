@@ -28,7 +28,11 @@ func _ready() -> void:
 	scroll.add_child(margin)
 	_content = VBoxContainer.new()
 	_content.add_theme_constant_override("separation", 14)
-	margin.add_child(_content)
+	# Подложка: на светлых местах рисованного фона (стол) текст не теряется (SPEC_SPRINT12 7).
+	var plate := UiKit.text_plate()
+	plate.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	margin.add_child(plate)
+	plate.add_child(_content)
 	_rebuild()
 
 
@@ -66,13 +70,21 @@ func _rebuild() -> void:
 	grid.add_theme_constant_override("h_separation", 8)
 	grid.add_theme_constant_override("v_separation", 8)
 	_content.add_child(grid)
+	# Только изношенные карты: целые в ремонте не нуждаются (SPEC_SPRINT12 6).
+	var worn := 0
 	for i in run.codex.cards.size():
+		var c := run.codex.cards[i]
+		if c.durability >= db.memory(c.memory_id).max_durability and not c.cracked:
+			continue
+		worn += 1
 		var b := _row_button(ReworkPanel.card_line(db, run, i), _repair.bind(i))
 		var reason := ShopOps.repair_reason(db, run, i, visit)
 		if reason != "":
 			b.disabled = true
 			b.tooltip_text = tr(reason)
 		grid.add_child(b)
+	if worn == 0:
+		_content.add_child(UiKit.label(tr("CAMP_REASON_NOTHING_TO_REPAIR"), 18, UiKit.MUTED))
 
 	if not run.hero.spells.is_empty():
 		_content.add_child(_section(tr("SHOP_RECHARGE_SHORT"), UnitGlyphs.ICON_AETHER, ShopOps.RECHARGE_COST, RunState.AETHER, tr("SHOP_RECHARGE") % ShopOps.RECHARGE_COST))

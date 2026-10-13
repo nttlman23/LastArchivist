@@ -109,6 +109,8 @@ var enemy_intents: Dictionary[int, Dictionary] = {}
 ## Стрелка намерения: у врага под курсором или у всех (Alt).
 var intent_hover := -1
 var intent_arrows_all := false
+## Стек под курсором: у него — все значки (SPEC_SPRINT12 6); у прочих стрелок, летун и угроза видны по Alt.
+var badge_hover := -1
 ## Стек, подсвеченный из полосы очереди (или -1).
 var highlight_uid := -1
 ## Затемнять клетки, недоступные для хода (во время хода игрока).
@@ -1117,11 +1119,14 @@ func _draw_unit_badges(ci: CanvasItem, u: UnitState, alpha: float) -> void:
 	# Постоянные свойства по бокам: стрелок (с выстрелами) слева, летун справа, способность снизу слева.
 	var badge_r := 11.0 * k
 	var font_size := int(15 * k)
-	if u.is_ranged:
+	# Постоянные свойства (стрелок, летун) и угроза — только у стека под курсором, по Alt или в режиме
+	# «Подробные описания»: по умолчанию у фишки лишь численность, способность и статусы (SPEC_SPRINT12 6).
+	var full := u.uid == badge_hover or intent_arrows_all or Settings.detailed
+	if u.is_ranged and full:
 		var pos := c + Vector2(-UNIT_RADIUS - 2, -6)
 		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_RANGED, pos, badge_r, bg, fg if u.shots_left > 0 else Color(UiKit.MUTED, alpha))
 		_outlined(ci, pos + Vector2(-badge_r - 18 * k, 6 * k), str(u.shots_left), HORIZONTAL_ALIGNMENT_RIGHT, 16 * k, font_size, fg, alpha)
-	if u.is_flying:
+	if u.is_flying and full:
 		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_FLYING, c + Vector2(UNIT_RADIUS + 2, -6), badge_r, bg, fg)
 	if u.ability_id != &"":
 		# Способность: золотая звезда — готова, серая с цифрой — раунды до готовности.
@@ -1134,7 +1139,7 @@ func _draw_unit_badges(ci: CanvasItem, u: UnitState, alpha: float) -> void:
 		# Предполагаемое действие врага — снизу справа.
 		var kind: int = enemy_intents[u.uid]["type"]
 		UnitGlyphs.draw_icon(ci, INTENT_ICONS.get(kind, UnitGlyphs.ICON_MOVE), c + Vector2(UNIT_RADIUS + 2, UNIT_RADIUS - 10), badge_r, bg, Color(THREAT_COLOR.lightened(0.2), alpha))
-	if threatened.has(u.uid):
+	if threatened.has(u.uid) and full:
 		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_THREAT, c + Vector2(UNIT_RADIUS + 2, UNIT_RADIUS - 10), badge_r, bg, Color(UiKit.DANGER, alpha))
 	if u.illusion:
 		UnitGlyphs.draw_icon(ci, UnitGlyphs.ICON_MASK, c + Vector2(UNIT_RADIUS + 2, UNIT_RADIUS - 10 - (2.2 * badge_r if threatened.has(u.uid) else 0.0)),

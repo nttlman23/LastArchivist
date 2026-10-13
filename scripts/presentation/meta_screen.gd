@@ -6,7 +6,7 @@ const NODE_SIZE := Vector2(80, 80)
 const LINK_SIZE := Vector2(4, 16)
 const BOUGHT := Color(0.95, 0.8, 0.4)
 const READY := Color(0.55, 0.8, 1.0)
-const LOCKED := Color(0.4, 0.42, 0.48)
+const LOCKED := Color(0.55, 0.57, 0.63)
 const BRANCH_KEYS := {
 	MetaUpgrades.SUPPLIES: "HALL_BRANCH_SUPPLIES",
 	MetaUpgrades.KNOWLEDGE: "HALL_BRANCH_KNOWLEDGE",
@@ -20,7 +20,7 @@ var _content: VBoxContainer
 func _ready() -> void:
 	db = Game.defs
 	UiKit.add_background(self, false, &"hall")
-	_content = UiKit.centered_column(self, 14)
+	_content = UiKit.centered_column(self, 14, true)
 	_rebuild()
 
 

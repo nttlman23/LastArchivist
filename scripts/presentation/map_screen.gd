@@ -160,8 +160,10 @@ func _refresh() -> void:
 	_layer_label.text = (tr("MAP_LAYER_ACT") % [ROMAN[run.act - 1], run.map.reached_layer(), MapState.LAYERS])
 	view.selected = _selected
 	var risks: Dictionary[int, int] = {}
+	# Череп риска — только у островов, куда можно отправиться сейчас (SPEC_SPRINT12 6).
+	var open := MapActions.reachable(run) + MapActions.flight_targets(run)
 	for n in run.map.nodes:
-		if not run.map.visited.has(n.id):
+		if open.has(n.id) or n.id == run.pending_node:
 			var r := CardAdvisor.node_risk(db, run, n)
 			if r >= 0:
 				risks[n.id] = r
@@ -229,7 +231,8 @@ func _show_info() -> void:
 		_info.add_child(UiKit.button(tr("MAP_RESUME"), Game.resume_node, 380))
 		return
 	if _selected < 0:
-		_info.add_child(_wrapped(tr("MAP_HINT"), UiKit.MUTED))
+		# Длинная подсказка — пока не сыграно ни одного забега, потом короткая (SPEC_SPRINT12 6).
+		_info.add_child(_wrapped(tr("MAP_HINT") if Game.profile.runs == 0 else tr("MAP_HINT_SHORT"), UiKit.MUTED))
 		return
 	var n := run.map.node(_selected)
 	_add_node_card(n)

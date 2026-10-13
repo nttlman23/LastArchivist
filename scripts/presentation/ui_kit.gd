@@ -8,7 +8,7 @@ const ACCENT := Color(0.95, 0.8, 0.4)
 const ACTIVE_BORDER := Color(1.0, 0.85, 0.3)
 const PLAYER_COLOR := Color(0.35, 0.65, 1.0)
 const ENEMY_COLOR := Color(1.0, 0.4, 0.35)
-const MUTED := Color(0.65, 0.67, 0.72)
+const MUTED := Color(0.74, 0.76, 0.8)
 const DANGER := Color(1.0, 0.45, 0.4)
 
 
@@ -28,6 +28,8 @@ static var _baked: Dictionary = {}
 
 ## Яркость рисованных фонов: под картой и интерфейсом фон приглушён, чтобы читался текст.
 ## Экраны с панелями (этап B) — темнее карты: текст лежит прямо на фоне.
+## Подложка под текст на рисованных фонах (SPEC_SPRINT12 7).
+const PLATE_COLOR := Color(0.03, 0.03, 0.05, 0.72)
 const ART_BG_BRIGHTNESS := {&"menu": 0.9, &"map_act1": 0.62, &"map_act2": 0.62, &"camp": 0.55, &"event": 0.5, &"haven": 0.55,
 		&"hall": 0.45, &"reliquary": 0.5, &"run_end": 0.4, &"school": 0.5, &"shop": 0.5}
 
@@ -246,7 +248,9 @@ static func panel_style(bg: Color, border: Color = Color.TRANSPARENT, border_wid
 	return sb
 
 
-static func centered_column(parent: Control, separation: int = 16) -> VBoxContainer:
+## plate — тёмная полупрозрачная подложка под колонкой: на рисованных фонах светлый текст не теряется
+## на светлых местах картинки (SPEC_SPRINT12 7).
+static func centered_column(parent: Control, separation: int = 16, plate: bool = false) -> VBoxContainer:
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -254,8 +258,23 @@ static func centered_column(parent: Control, separation: int = 16) -> VBoxContai
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", separation)
 	box.alignment = BoxContainer.ALIGNMENT_CENTER
-	center.add_child(box)
+	if plate:
+		var panel := text_plate()
+		center.add_child(panel)
+		panel.add_child(box)
+	else:
+		center.add_child(box)
 	return box
+
+
+## Подложка под текст на рисованном фоне.
+static func text_plate(margin: int = 28) -> PanelContainer:
+	var panel := PanelContainer.new()
+	var sb := panel_style(PLATE_COLOR)
+	sb.set_content_margin_all(margin)
+	panel.add_theme_stylebox_override("panel", sb)
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return panel
 
 
 ## «Чернила 2 · Пергамент 3 · Эфир 1»; signed — с плюсом («+2»), нули пропускаются.

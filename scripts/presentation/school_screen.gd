@@ -13,7 +13,7 @@ var _trial_row: HBoxContainer
 func _ready() -> void:
 	db = Game.defs
 	UiKit.add_background(self, false, &"school")
-	var box := UiKit.centered_column(self, 20)
+	var box := UiKit.centered_column(self, 20, true)
 	box.add_child(UiKit.label(tr("SCHOOL_TITLE"), 44, UiKit.ACCENT))
 	box.add_child(_difficulty_row())
 	_trial_row = _make_trial_row()

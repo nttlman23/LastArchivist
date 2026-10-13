@@ -13,7 +13,7 @@ func _ready() -> void:
 	db = Game.defs
 	run = Game.run
 	UiKit.add_background(self, false, &"haven")
-	_content = UiKit.centered_column(self, 18)
+	_content = UiKit.centered_column(self, 18, true)
 	_show_choices()
 	Hints.show_hint(&"haven")
 

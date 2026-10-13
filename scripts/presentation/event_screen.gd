@@ -17,7 +17,7 @@ func _ready() -> void:
 	event = db.event(run.pending().content)
 	Hints.show_hint(&"event")
 	UiKit.add_background(self, false, &"event")
-	_content = UiKit.centered_column(self, 18)
+	_content = UiKit.centered_column(self, 18, true)
 	_show_options()
 
 

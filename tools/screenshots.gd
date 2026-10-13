@@ -165,7 +165,11 @@ func _enter(type: MapState.NodeType) -> void:
 func _shot(name: String, wait: float = 1.2) -> void:
 	await get_tree().create_timer(wait).timeout
 	await RenderingServer.frame_post_draw
-	get_viewport().get_texture().get_image().save_png(ProjectSettings.globalize_path(out_dir.path_join(name + ".png")))
+	var img := get_viewport().get_texture().get_image()
+	img.save_png(ProjectSettings.globalize_path(out_dir.path_join(name + ".png")))
+	if "--contrast" in OS.get_cmdline_user_args() or "--contrast-strict" in OS.get_cmdline_user_args():
+		ContrastAudit.strict = "--contrast-strict" in OS.get_cmdline_user_args()
+		ContrastAudit.report(name, img, get_tree().root)
 
 
 ## Летопись откроется на вкладке страниц памяти.

@@ -15,7 +15,7 @@ func _ready() -> void:
 	db = Game.defs
 	run = Game.run
 	UiKit.add_background(self, false, &"camp")
-	var box := UiKit.centered_column(self, 22)
+	var box := UiKit.centered_column(self, 22, true)
 	var title := UiKit.label(tr("CAMP_TITLE"), 48, UiKit.ACCENT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)

@@ -14,7 +14,7 @@ func _ready() -> void:
 	run = Game.run
 	offer = RelicOps.offer(db, run, run.pending_node)
 	UiKit.add_background(self, false, &"reliquary")
-	var box := UiKit.centered_column(self, 22)
+	var box := UiKit.centered_column(self, 22, true)
 	var title := UiKit.label(tr("RELIQUARY_TITLE"), 44, UiKit.ACCENT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)

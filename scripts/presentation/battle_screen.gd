@@ -31,11 +31,16 @@ var _intent_box: HBoxContainer
 var _preview_label: Label
 ## Короткое превью значками (в режиме «подробно» вместо него — текст в _preview_label).
 var _preview_box: HBoxContainer
+var _preview_plate: PanelContainer
 ## Разбор урона у курсора (SPEC_SPRINT11 3): из чего складывается удар и чем ответит цель.
 var _breakdown: PanelContainer
 var _breakdown_box: VBoxContainer
 var _log: RichTextLabel
 var _log_lines: Array[String] = []
+var _log_toggle: Button
+## Журнал раскрыт целиком; свёрнутый показывает LOG_SHORT последних строк.
+static var log_expanded := false
+const LOG_SHORT := 3
 var _ability_btn: Button
 var _wait_btn: Button
 var _defend_btn: Button
@@ -215,10 +220,13 @@ func _build_hud() -> void:
 	top.position = Vector2(24, 16)
 	top.add_theme_constant_override("separation", 12)
 	add_child(top)
+	# «Раунд» и строка хода — на тёмной подложке: под ними светлый рисованный пол (SPEC_SPRINT12 7).
+	var round_plate := UiKit.text_plate(8)
+	round_plate.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	top.add_child(round_plate)
 	_round_label = UiKit.label("", 28, UiKit.ACCENT)
-	_round_label.custom_minimum_size = Vector2(150, 0)
-	_round_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	top.add_child(_round_label)
+	_round_label.custom_minimum_size = Vector2(130, 0)
+	round_plate.add_child(_round_label)
 	_queue = QueueStrip.new()
 	_queue.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_queue.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -226,9 +234,11 @@ func _build_hud() -> void:
 	_queue.tooltip_text = "queue"
 	top.add_child(_queue)
 
+	var status_plate := UiKit.text_plate(8)
+	status_plate.position = Vector2(24, 98)
+	add_child(status_plate)
 	_status_label = UiKit.label("", 26)
-	_status_label.position = Vector2(24, 98)
-	add_child(_status_label)
+	status_plate.add_child(_status_label)
 
 	var side := VBoxContainer.new()
 	side.set_anchors_and_offsets_preset(Control.PRESET_RIGHT_WIDE)
@@ -265,7 +275,17 @@ func _build_hud() -> void:
 	_log.add_theme_font_size_override("normal_font_size", 16)
 	_log.add_theme_stylebox_override("normal", UiKit.panel_style(UiKit.PANEL_COLOR))
 	_log.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Журнал свёрнут до последних строк (SPEC_SPRINT12 6); кнопка раскрывает весь.
+	_log_toggle = Button.new()
+	_log_toggle.flat = true
+	_log_toggle.focus_mode = Control.FOCUS_NONE
+	_log_toggle.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_log_toggle.add_theme_font_size_override("font_size", 16)
+	_log_toggle.add_theme_color_override("font_color", UiKit.MUTED)
+	_log_toggle.pressed.connect(_toggle_log)
+	side.add_child(_log_toggle)
 	side.add_child(_log)
+	_apply_log_mode()
 
 	var bottom := VBoxContainer.new()
 	bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
@@ -275,9 +295,14 @@ func _build_hud() -> void:
 	bottom.offset_bottom = -12
 	bottom.add_theme_constant_override("separation", 8)
 	add_child(bottom)
+	# Предпросмотр — на тёмной подложке, видна только когда есть что показать (SPEC_SPRINT12 7).
+	_preview_plate = UiKit.text_plate(6)
+	_preview_plate.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	_preview_plate.visible = false
+	bottom.add_child(_preview_plate)
 	var preview_row := HBoxContainer.new()
 	preview_row.add_theme_constant_override("separation", 16)
-	bottom.add_child(preview_row)
+	_preview_plate.add_child(preview_row)
 	_preview_label = UiKit.label("", 22, UiKit.ACCENT)
 	preview_row.add_child(_preview_label)
 	_preview_box = HBoxContainer.new()
@@ -340,9 +365,11 @@ func _refresh_hud() -> void:
 	_refresh_hero_panel()
 	if u == null or state.outcome != BattleState.Outcome.NONE:
 		_status_label.text = ""
+		_status_label.get_parent().visible = false
 		_active_panel.visible = false
 		return
 	var side_color := UiKit.PLAYER_COLOR if player_turn else UiKit.ENEMY_COLOR
+	_status_label.get_parent().visible = true
 	_status_label.text = (tr("BATTLE_YOUR_TURN") if player_turn else tr("BATTLE_ENEMY_TURN")) % UiKit.unit_name(db, u.def_id)
 	_status_label.add_theme_color_override("font_color", side_color)
 	_active_panel.show_unit(db, u, tr("INFO_ACTIVE"), UiKit.ACTIVE_BORDER)
@@ -706,6 +733,7 @@ func _update_hover() -> void:
 	view.affected = {}
 	view.intent_hover = -1
 	view.intent_arrows_all = alt
+	view.badge_hover = hovered.uid if hovered else -1
 	_set_preview("", [])
 	if not _targeting.is_empty():
 		_set_preview(tr("TARGET_PROMPT") % _targeting["label"], [], tr("TARGET_PROMPT_SHORT") % _targeting["label"])
@@ -911,6 +939,7 @@ func _set_preview(text: String, chips: Array, short: String = "") -> void:
 		_breakdown.visible = false
 	for child in _preview_box.get_children():
 		child.queue_free()
+	_preview_plate.visible = (text if Settings.detailed else short) != "" or (not Settings.detailed and not chips.is_empty())
 	if Settings.detailed:
 		_preview_label.text = text
 		return
@@ -1118,7 +1147,7 @@ func _log_events(events: Array[BattleEvent]) -> void:
 			_log_lines.append(line)
 	while _log_lines.size() > LOG_LINES:
 		_log_lines.pop_front()
-	_log.text = "\n".join(_log_lines)
+	_render_log()
 
 
 func _commander_html() -> String:
@@ -1148,3 +1177,22 @@ func _show_end() -> void:
 	add_child(_end_panel)
 	_end_panel.custom_minimum_size = Vector2(520, 240)
 	_end_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER, Control.PRESET_MODE_MINSIZE)
+
+
+func _toggle_log() -> void:
+	log_expanded = not log_expanded
+	_apply_log_mode()
+	Audio.play(&"ui_click")
+
+
+func _apply_log_mode() -> void:
+	_log.size_flags_vertical = Control.SIZE_EXPAND_FILL if log_expanded else Control.SIZE_SHRINK_BEGIN
+	_log.fit_content = not log_expanded
+	_log.custom_minimum_size = Vector2(0, 120 if log_expanded else 0)
+	_log_toggle.text = tr("LOG_COLLAPSE") if log_expanded else tr("LOG_EXPAND")
+	_render_log()
+
+
+func _render_log() -> void:
+	var lines := _log_lines if log_expanded else _log_lines.slice(maxi(0, _log_lines.size() - LOG_SHORT))
+	_log.text = "\n".join(lines)
