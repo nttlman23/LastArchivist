@@ -24,7 +24,7 @@ func test_hard_act2_count_factor() -> void:
 	assert_eq(Difficulty.count_factor(Difficulty.HARD, _enc(2, 4)), base, "уровень 4 — как обычно")
 	assert_eq(Difficulty.count_factor(Difficulty.HARD, _enc(1, 2, true)), base, "элита первого акта — как обычно")
 	assert_eq(Difficulty.count_factor(Difficulty.HARD, _enc(2, 5, false, true)), base, "босс — без надбавки")
-	assert_eq(Difficulty.count_factor(Difficulty.NORMAL, _enc(2, 5)), 1.0, "только на «Тяжело»")
+	assert_eq(Difficulty.count_factor(Difficulty.NORMAL, _enc(2, 5)), float(Difficulty.ENEMY_COUNT[Difficulty.NORMAL]), "только на «Тяжело»")
 	assert_eq(Difficulty.enemy_count(Difficulty.HARD, 10, _enc(2, 5)), roundi(10 * Difficulty.HARD_ACT2_COUNT))
 	assert_eq(Difficulty.enemy_count(Difficulty.HARD, 10), roundi(10 * base), "без встречи — общий множитель")
 

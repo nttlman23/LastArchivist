@@ -157,23 +157,33 @@ func gain(id: StringName, amount: int) -> void:
 	resources[id] = maxi(0, resources.get(id, 0) + amount)
 
 
-## После боя: стёртые разломом карты исчезают (даже при победе), участники и геройские карты угасают.
+## После боя: стёртые разломом карты исчезают (даже при победе), участники угасают по потерям, геройские — на 1.
 ## Возвращает id угасших и стёртых карт.
-func after_battle(db: DefsDB, selected: Array[int], erased: Array[int] = []) -> Array[StringName]:
+func after_battle(db: DefsDB, selected: Array[int], erased: Array[int] = [], results = null) -> Array[StringName]:
 	var to_decay: Array[CodexState.Card] = []
 	var to_erase: Array[CodexState.Card] = []
 	for i in selected:
 		(to_erase if erased.has(i) else to_decay).append(codex.cards[i])
 	for i in codex.hero_indices(db):
 		to_decay.append(codex.cards[i])
+	# Износ от потерь (SPEC_SPRINT12 2): results — Wear.from_battle(бой); без итогов боя — как раньше, −1.
+	var amounts := {}
+	var cracked: Array = []
+	for card in to_decay:
+		amounts[card] = 1
+	if results != null:
+		for i in selected:
+			if erased.has(i) or not results.has(i):
+				continue
+			var r: Dictionary = results[i]
+			amounts[codex.cards[i]] = int(r["wear"])
+			if bool(r["wiped"]):
+				cracked.append(codex.cards[i])
 	var gone: Array[StringName] = []
 	for card in to_erase:
 		gone.append(card.memory_id)
 		codex.cards.erase(card)
-	var indices: Array[int] = []
-	for card in to_decay:
-		indices.append(codex.cards.find(card))
-	gone.append_array(codex.decay(indices))
+	gone.append_array(codex.wear(amounts, cracked))
 	cards_lost += gone.size()
 	RelicOps.after_victory(db, self)
 	return gone

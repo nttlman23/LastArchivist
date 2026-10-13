@@ -189,4 +189,4 @@ func _show_end() -> void:
 
 ## «Пропустить обучение» (второй урок пропускает по-своему).
 func _skip() -> void:
-	Game.finish_tutorial()
+	Game.finish_tutorial(true)

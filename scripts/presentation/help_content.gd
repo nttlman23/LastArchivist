@@ -103,7 +103,7 @@ static func _resources(col: VBoxContainer, db: DefsDB) -> void:
 
 static func _codex(col: VBoxContainer) -> void:
 	_para(col, _tr("HELP_CODEX_1") % CodexState.MAX_CARDS)
-	_para(col, _tr("HELP_CODEX_2"))
+	_para(col, _tr("HELP_CODEX_2") % [roundi(Wear.LIGHT * 100), roundi(Wear.HEAVY * 100)])
 	_para(col, _tr("HELP_CODEX_3"))
 	_para(col, _tr("HELP_CODEX_4"))
 	col.add_child(_icon_row(UnitGlyphs.ICON_KILL, UiKit.DANGER, _tr("CARD_WORN"), _tr("CARD_WORN_TIP")))

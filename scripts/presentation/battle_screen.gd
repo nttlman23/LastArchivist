@@ -850,6 +850,16 @@ func _show_breakdown(u: UnitState, target: UnitState, ranged: bool, bonus: float
 			_breakdown_line(tr("BREAKDOWN_NO_RETALIATION"), Color(0.45, 0.95, 0.5))
 		else:
 			_breakdown_line(tr("BREAKDOWN_RETALIATION") % [back.x, back.y, DamageCalc.kills(u, back.x), DamageCalc.kills(u, back.y)], UiKit.DANGER)
+			# Износ карты (SPEC_SPRINT12 2): доведёт ли ответ до следующего порога.
+			if u.side == UnitState.Side.PLAYER and u.card_index >= 0 and not u.illusion:
+				var now := Wear.amount(u.start_count, u.count)
+				var worst := Wear.amount(u.start_count, u.count - DamageCalc.kills(u, back.y))
+				if worst > now:
+					_breakdown_line(tr("BREAKDOWN_WEAR_UP") % worst, UiKit.DANGER)
+				else:
+					var spare := Wear.free_losses(u.start_count, u.count)
+					if spare >= 0:
+						_breakdown_line(tr("BREAKDOWN_WEAR_SPARE") % spare, UiKit.MUTED)
 	elif ranged:
 		_breakdown_line(tr("BREAKDOWN_RANGED_NO_RETALIATION"), Color(0.45, 0.95, 0.5))
 	_breakdown.size = Vector2.ZERO

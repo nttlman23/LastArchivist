@@ -11,6 +11,8 @@ class Card:
 	var durability: int
 	## Уровень слияния: численность = базовая × (1 + 0.5 × (level − 1)).
 	var level := 1
+	## «Надломлена» (SPEC_SPRINT12 2): стек погиб целиком — прочность не выше 1, пока карту не починят.
+	var cracked := false
 
 	func _init(id: StringName = &"", dur: int = 0, p_level: int = 1) -> void:
 		memory_id = id
@@ -19,6 +21,11 @@ class Card:
 
 	func count(db: DefsDB) -> int:
 		return floori(db.memory(memory_id).count * (1.0 + 0.5 * (level - 1)))
+
+	## Ремонт на amount (не выше максимума): снимает «надломлена».
+	func repair(db: DefsDB, amount: int) -> void:
+		cracked = false
+		durability = mini(db.memory(memory_id).max_durability, durability + amount)
 
 
 var cards: Array[Card] = []
@@ -82,12 +89,29 @@ func decay(indices: Array[int]) -> Array[StringName]:
 func to_array() -> Array:
 	var result: Array = []
 	for c in cards:
-		result.append({"memory_id": String(c.memory_id), "durability": c.durability, "level": c.level})
+		result.append({"memory_id": String(c.memory_id), "durability": c.durability, "level": c.level, "cracked": c.cracked})
 	return result
 
 
 static func from_array(arr: Array) -> CodexState:
 	var codex := CodexState.new()
 	for d: Dictionary in arr:
-		codex.cards.append(Card.new(StringName(d["memory_id"]), int(d["durability"]), int(d.get("level", 1))))
+		var card := Card.new(StringName(d["memory_id"]), int(d["durability"]), int(d.get("level", 1)))
+		card.cracked = bool(d.get("cracked", false))
+		codex.cards.append(card)
 	return codex
+
+
+## Износ по итогам боя (SPEC_SPRINT12 2): карта -> на сколько угасает; надломленные — прочность не выше 1.
+## Возвращает id угасших карт.
+func wear(amounts: Dictionary, cracked_cards: Array) -> Array[StringName]:
+	var faded: Array[StringName] = []
+	for card: Card in amounts:
+		card.durability -= int(amounts[card])
+		if card.durability > 0 and cracked_cards.has(card):
+			card.cracked = true
+			card.durability = mini(card.durability, 1)
+		if card.durability <= 0:
+			faded.append(card.memory_id)
+			cards.erase(card)
+	return faded

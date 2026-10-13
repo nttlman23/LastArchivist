@@ -54,7 +54,8 @@ func test_risk_levels() -> void:
 	assert_gt(army, 0.0)
 	var enc := EncounterDef.new()
 	enc.unit_ids = [&"ash_ghoul"] as Array[StringName]
-	var per_ghoul := CardAdvisor.stack_power(db.unit(&"ash_ghoul"), 1)
+	# Численность встречи умножается на множитель сложности (Спринт 12: «Нормально» — ×1,3).
+	var per_ghoul := CardAdvisor.stack_power(db.unit(&"ash_ghoul"), 1) * Difficulty.count_factor(Difficulty.NORMAL)
 	enc.counts = [int(army * 0.3 / per_ghoul)] as Array[int]
 	assert_eq(CardAdvisor.risk(db, codex, enc), CardAdvisor.Risk.LOW)
 	enc.counts = [int(army * 0.6 / per_ghoul)] as Array[int]

@@ -94,7 +94,7 @@ static func apply(db: DefsDB, run: RunState, index: int, form: Form) -> void:
 		Form.SACRIFICE:
 			codex.remove_at(index)
 			for c in codex.cards:
-				c.durability = mini(db.memory(c.memory_id).max_durability, c.durability + 1)
+				c.repair(db, 1)
 		Form.FUSE:
 			var partner := fuse_partner(codex, index)
 			var result := fuse_result(codex, index)

@@ -2,6 +2,7 @@ extends SceneTree
 ## Балансная симуляция экспедиций: за игрока — AI отрядов, HeroAi в бою и MapAi на карте.
 ## Запуск: godot --headless -s res://tools/sim_balance.gd -- [runs] [school_id] [difficulty] [--upgrades=all|half|none|<id>] [--trial=N] [--unlocks=all] [--daily=<модификатор>]
 ## Играет «новичок»: профиль без открытий (закрытые карты и события не выпадают).
+## --careful — отряды игрока бьют с оглядкой на ответ и износ (SPEC_SPRINT12 3).
 ## --cards — сила карт (SPEC_SPRINT11 10): доля побед в боях с картой и доля полных забегов, где карта побывала в Кодексе.
 
 const DEFAULT_RUNS := 200
@@ -13,6 +14,9 @@ var _profile: ProfileState
 var card_battles := {}
 var card_runs := {}
 var _run_cards := {}
+## Износ (SPEC_SPRINT12): сколько раз карта после боя получила 0 / −1 / −2 / погибла целиком; доли потерь.
+var wear_hist := [0, 0, 0, 0]
+var loss_hist := [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 
 func _init() -> void:
@@ -32,6 +36,8 @@ func _init() -> void:
 	var daily_mod := &""
 	var unlocks := false
 	var cards := args.has("--cards")
+	# --careful — «осторожный» игрок (SPEC_SPRINT12 3).
+	AiController.careful_player = args.has("--careful")
 	for arg in args:
 		if arg.begins_with("--upgrades="):
 			upgrades_mode = arg.get_slice("=", 1)
@@ -88,9 +94,10 @@ func _init() -> void:
 		var s: Array = stats[key]
 		print("  %-10s побед %d из %d (%.0f%%), средн. раундов %.1f" % [key, s[0], s[1], 100.0 * s[0] / maxi(1, s[1]), float(s[2]) / maxi(1, s[1])])
 	# Строка для сводных таблиц: школа, сложность, улучшения, открытия, Испытание, модификатор, % 2-го акта, % побед.
-	print("RESULT %s %s %s %s %d %s %.1f %.1f" % [school_id, difficulty, upgrades_mode, "unlocks" if unlocks else "-", trial,
+	print("RESULT %s %s%s %s %s %d %s %.1f %.1f" % [school_id, difficulty, "+careful" if AiController.careful_player else "", upgrades_mode, "unlocks" if unlocks else "-", trial,
 			daily_mod if daily_mod != &"" else &"-", 100.0 * act2 / runs, 100.0 * won / runs])
 	print("Остаток ресурсов в среднем: Ч %.1f · П %.1f · Э %.1f" % [float(res_sum[RunState.INK]) / runs, float(res_sum[RunState.PARCHMENT]) / runs, float(res_sum[RunState.AETHER]) / runs])
+	print("Износ после побед (0 / −1 / −2 / погиб): %s, потери по десяткам %%: %s" % [wear_hist, loss_hist])
 	if cards:
 		_print_cards(won, runs)
 	quit()
@@ -171,7 +178,12 @@ func _battle(run: RunState, rng: RandomNumberGenerator, key: String, elite: bool
 	stats[okey][0] += 1
 	run.battles_won += 1
 	run.apply_spell_charges(s.spell_charges())
-	run.after_battle(db, selected, s.erased_cards)
+	var wear_results := Wear.from_battle(s)
+	for i in wear_results:
+		var w: Dictionary = wear_results[i]
+		wear_hist[3 if w["wiped"] else int(w["wear"])] += 1
+		loss_hist[clampi(roundi(10.0 * (int(w["start"]) - int(w["left"])) / maxi(1, int(w["start"]))), 0, 10)] += 1
+	run.after_battle(db, selected, s.erased_cards, wear_results)
 	if enc.boss:
 		return true
 	var rewards := MapActions.battle_rewards(enc)

@@ -16,6 +16,11 @@ const HOLD_STAY_SCORE := 60.0
 const HOLD_MOVE_SCORE := 50.0
 ## Удар с клетки течения, которое унесёт стек от цели (SPEC_SPRINT7 4).
 const CURRENT_DRIFT_PENALTY := 5.0
+## «Осторожный» игрок для симуляций (SPEC_SPRINT12 3): отряды игрока бьют с оглядкой на ответ и износ карты.
+static var careful_player := false
+const CAREFUL_RETALIATION_WEIGHT := 1.5
+## Штраф за удар, после ответа на который карта перейдёт порог износа.
+const WEAR_STEP_PENALTY := 40.0
 
 
 static func choose_action(state: BattleState, uid: int) -> BattleAction:
@@ -120,7 +125,7 @@ static func _best_melee(state: BattleState, u: UnitState, enemies: Array[UnitSta
 		var retaliates := not e.retaliated or e.has_status(UnitState.STATUS_SHIELD_WALL)
 		if retaliates and dealt < e.total_hp():
 			retaliation = retaliation_estimate(e, u, dealt)
-		var score := value(dealt, e) - RETALIATION_WEIGHT * retaliation
+		var score := value(dealt, e) - _retaliation_cost(u, retaliation)
 		for origin in origins:
 			if not HexGrid.are_adjacent(origin, e.hex):
 				continue
@@ -245,3 +250,14 @@ static func _nearest_enemy_distance(hex: Vector2i, enemies: Array[UnitState]) ->
 	for e in enemies:
 		best = mini(best, HexGrid.distance(hex, e.hex))
 	return best
+
+
+## Цена ответного удара: обычно — половина ожидаемого урона; «осторожному» игроку — втрое дороже и
+## со штрафом, если ответ переведёт карту через порог износа.
+static func _retaliation_cost(u: UnitState, retaliation: float) -> float:
+	if not (careful_player and u.side == UnitState.Side.PLAYER and u.card_index >= 0):
+		return RETALIATION_WEIGHT * retaliation
+	var cost := CAREFUL_RETALIATION_WEIGHT * retaliation
+	if retaliation > 0.0 and Wear.amount(u.start_count, u.count - DamageCalc.kills(u, roundi(retaliation))) > Wear.amount(u.start_count, u.count):
+		cost += WEAR_STEP_PENALTY
+	return cost

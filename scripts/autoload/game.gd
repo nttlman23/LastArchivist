@@ -31,6 +31,8 @@ var run: RunState
 var selected: Array[int] = []
 ## Карты, угасшие или стёртые после последнего боя (для экрана награды).
 var last_faded: Array[StringName] = []
+## Износ последнего боя по картам (SPEC_SPRINT12 2): [{memory_id, start, left, wear, wiped}] — для экрана после боя.
+var last_wear: Array = []
 ## Ресурсы, полученные за последний бой.
 var last_rewards: Dictionary[StringName, int] = {}
 var run_won := false
@@ -48,6 +50,8 @@ var story_next := ""
 var run_end_chapter := 1
 ## Учебный бой запущен из меню (повтор), а не перед первым забегом.
 var tutorial_from_menu := false
+## Выбор на экране школы: этот забег учебный (пока учебные забеги остались, SPEC_SPRINT12 4).
+var gentle_choice := true
 var _toast: AchievementToast
 
 
@@ -129,7 +133,7 @@ func new_run(school_id: StringName = DefsDB.DEFAULT_SCHOOL, difficulty: StringNa
 		MetaRewards.abandon_run(profile, old)
 		save_profile()
 	run = RunState.create(defs, rng.seed, school_id, profile, difficulty, trial)
-	GentleRuns.start(run, profile, Settings.gentle)
+	GentleRuns.start(run, profile, Settings.gentle and gentle_choice)
 	save_profile()
 	Story.place_event(defs, run, profile)
 	SaveService.save_run(run)
@@ -196,7 +200,10 @@ func start_tutorial() -> void:
 
 
 ## Учебный бой пройден или пропущен: первый раз — к выбору школы, из меню — обратно в меню.
-func finish_tutorial() -> void:
+## skipped — пролог пропущен: учебные забеги не нужны (SPEC_SPRINT12 4).
+func finish_tutorial(skipped: bool = false) -> void:
+	if skipped and not profile.prologue_done:
+		profile.gentle_runs_left = 0
 	profile.prologue_done = true
 	save_profile()
 	var to_menu := tutorial_from_menu
@@ -356,7 +363,14 @@ func finish_battle(outcome: BattleState.Outcome, spell_charges: Array[int] = [],
 	var objective := StringName(ctx["objective"])
 	if objective != ObjectiveRule.ELIMINATE and not run.objectives_won.has(objective):
 		run.objectives_won.append(objective)
-	last_faded = run.after_battle(defs, selected, erased)
+	var results = Wear.from_battle(state) if state else null
+	last_wear = []
+	if results != null:
+		for i in selected:
+			if results.has(i) and not erased.has(i):
+				var r: Dictionary = results[i]
+				last_wear.append({"memory_id": run.codex.cards[i].memory_id, "start": r["start"], "left": r["left"], "wear": r["wear"], "wiped": r["wiped"]})
+	last_faded = run.after_battle(defs, selected, erased, results)
 	achievement_event(Achievements.Event.BATTLE_WON, ctx)
 	story_event(Story.Event.BATTLE_WON, ctx)
 	if not last_faded.is_empty():

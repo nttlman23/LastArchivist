@@ -112,6 +112,13 @@ func _run() -> void:
 	Game.run.pending_battle = &"rift"
 	Game.goto(Game.SCENE_BATTLE)
 	await _shot("battle_boss", 2.0)
+	# Износ по картам после боя (SPEC_SPRINT12 2): пример всех исходов.
+	Game.last_wear = [
+		{"memory_id": &"salt_legion", "start": 12, "left": 12, "wear": 0, "wiped": false},
+		{"memory_id": &"ghoul_pack", "start": 10, "left": 6, "wear": 1, "wiped": false},
+		{"memory_id": &"ash_chroniclers", "start": 10, "left": 3, "wear": 2, "wiped": false},
+		{"memory_id": &"shard_archers", "start": 12, "left": 0, "wear": 2, "wiped": true},
+	]
 	Game.goto(Game.SCENE_REWARD)
 	await _shot("reward")
 	# Экраны этапа B (SPEC_SPRINT9 18): школы, Зал Архива, лавка, привал, второй акт, реликварий, итог.

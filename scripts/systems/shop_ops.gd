@@ -117,7 +117,7 @@ static func repair(db: DefsDB, run: RunState, card_index: int, visit: Visit = nu
 	if repair_reason(db, run, card_index, visit) != "":
 		return false
 	run.spend(RunState.INK, repair_cost(run))
-	run.codex.cards[card_index].durability += 1
+	run.codex.cards[card_index].repair(db, 1)
 	if visit:
 		visit.repairs += 1
 	return true
@@ -177,7 +177,7 @@ static func haven_repair_amount(run: RunState) -> int:
 
 static func haven_repair_all(db: DefsDB, run: RunState) -> void:
 	for c in run.codex.cards:
-		c.durability = mini(db.memory(c.memory_id).max_durability, c.durability + haven_repair_amount(run))
+		c.repair(db, haven_repair_amount(run))
 
 
 static func haven_meditate(run: RunState) -> void:

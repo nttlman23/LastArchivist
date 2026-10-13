@@ -119,7 +119,7 @@ static func after_victory(db: DefsDB, run: RunState) -> void:
 		if c.durability < db.memory(c.memory_id).max_durability and (worst == null or c.durability < worst.durability):
 			worst = c
 	if worst:
-		worst.durability += 1
+		worst.repair(db, 1)
 
 
 ## Пергамент за победу в бою (Жемчужина памяти).

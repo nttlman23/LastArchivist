@@ -1179,6 +1179,19 @@ func _draw_unit_badges(ci: CanvasItem, u: UnitState, alpha: float) -> void:
 	var bar := Rect2(top + Vector2(0, bh + tip + 1), Vector2(bw, 4))
 	ci.draw_rect(bar, Color(0.1, 0.1, 0.1, alpha))
 	ci.draw_rect(Rect2(bar.position, Vector2(bar.size.x * hp_ratio, bar.size.y)), Color(Color(0.4, 0.85, 0.4).lerp(UiKit.DANGER, 1.0 - hp_ratio), alpha))
+	if is_player and u.card_index >= 0 and not u.illusion and u.start_count > 0:
+		# Износ карты (SPEC_SPRINT12 2): доля уцелевших от стартовой численности, отметки порогов 2/3 и 1/3;
+		# цвет — износ, если бой кончится сейчас (зелёный — цела, золотой — −1, красный — −2).
+		var alive_now: int = _count.get(u.uid, u.count)
+		var left := clampf(float(alive_now) / u.start_count, 0.0, 1.0)
+		var wear := Wear.amount(u.start_count, alive_now)
+		var wear_color: Color = [Color(0.45, 0.95, 0.5), UiKit.ACCENT, UiKit.DANGER][mini(wear, 2)]
+		var wbar := Rect2(bar.position + Vector2(0, bar.size.y + 1), Vector2(bw, 3))
+		ci.draw_rect(wbar, Color(0.1, 0.1, 0.1, alpha))
+		ci.draw_rect(Rect2(wbar.position, Vector2(wbar.size.x * left, wbar.size.y)), Color(wear_color, alpha))
+		for t: float in [1.0 - Wear.HEAVY, 1.0 - Wear.LIGHT]:
+			var x := wbar.position.x + wbar.size.x * t
+			ci.draw_line(Vector2(x, wbar.position.y - 1), Vector2(x, wbar.end.y + 1), Color(1, 1, 1, 0.8 * alpha), 1.5)
 
 
 ## Круг с объёмом: светлее сверху-слева, темнее снизу-справа, блик.

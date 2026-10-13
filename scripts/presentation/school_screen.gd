@@ -19,6 +19,16 @@ func _ready() -> void:
 	_trial_row = _make_trial_row()
 	box.add_child(_trial_row)
 	_trial_row.visible = Trials.allowed(difficulty)
+	# Учебный забег (SPEC_SPRINT12 4): пока остались — можно отказаться для этого забега.
+	if Settings.gentle and Game.profile.gentle_runs_left > 0:
+		var gentle := CheckButton.new()
+		gentle.text = tr("SCHOOL_GENTLE") % Game.profile.gentle_runs_left
+		gentle.button_pressed = Game.gentle_choice
+		gentle.focus_mode = Control.FOCUS_NONE
+		gentle.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		gentle.toggled.connect(func(on: bool) -> void: Game.gentle_choice = on)
+		Tip.attach(gentle, tr("SETTINGS_GENTLE"), tr("SETTINGS_GENTLE_TIP"))
+		box.add_child(gentle)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 18)
 	box.add_child(row)

@@ -75,6 +75,8 @@ static func card_line(p_db: DefsDB, p_run: RunState, i: int) -> String:
 		text += " " + TranslationServer.translate("CARD_LEVEL") % card.level
 	if not mem.is_unit():
 		text += " · " + TranslationServer.translate("CARD_HERO")
+	if card.cracked:
+		text += " · " + TranslationServer.translate("CARD_CRACKED")
 	return "%s · %s" % [text, TranslationServer.translate("CARD_DURABILITY") % [card.durability, mem.max_durability]]
 
 

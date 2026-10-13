@@ -115,4 +115,7 @@ static func _apply_effect(db: DefsDB, run: RunState, e: EventEffect, chosen: Cod
 static func _change_durability(db: DefsDB, card: CodexState.Card, amount: int) -> void:
 	if card == null:
 		return
-	card.durability = mini(db.memory(card.memory_id).max_durability, card.durability + amount)
+	if amount > 0:
+		card.repair(db, amount)
+	else:
+		card.durability = mini(db.memory(card.memory_id).max_durability, card.durability + amount)

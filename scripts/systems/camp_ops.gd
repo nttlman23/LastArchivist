@@ -49,7 +49,7 @@ static func apply(db: DefsDB, run: RunState, option: Dictionary) -> void:
 	match option["kind"]:
 		REPAIR:
 			for card in run.codex.cards:
-				card.durability = db.memory(card.memory_id).max_durability
+				card.repair(db, db.memory(card.memory_id).max_durability)
 		HERO, UNIT:
 			run.gain_card(db, option["id"])
 		GIFT:

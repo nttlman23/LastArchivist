@@ -8,7 +8,7 @@ const NORMAL := &"normal"
 const HARD := &"hard"
 const ALL: Array[StringName] = [EASY, NORMAL, HARD]
 
-const ENEMY_COUNT := {EASY: 0.7, NORMAL: 1.0, HARD: 1.25}
+const ENEMY_COUNT := {EASY: 1.1, NORMAL: 1.3, HARD: 1.45}
 const START_RESOURCES := {EASY: 1.5, NORMAL: 1.0, HARD: 1.0}
 const POINTS := {EASY: 0.5, NORMAL: 1.0, HARD: 1.5}
 ## Бонус очков за победу на «Тяжело».

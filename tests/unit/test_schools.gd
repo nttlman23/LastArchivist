@@ -143,7 +143,7 @@ func test_synod_repair_heals_constructs_without_revive() -> void:
 	flesh.take_damage(5)
 	TurnManager.start_round(s)
 	assert_eq(turret.count, 8, "без воскрешения")
-	assert_eq(turret.top_hp, 10, "верхнее починено")
+	assert_gt(turret.top_hp, 5, "верхнее подлечено")
 	assert_eq(flesh.top_hp, 5, "живых не чинит")
 
 

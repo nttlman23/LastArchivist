@@ -60,6 +60,7 @@ func _show_main() -> void:
 		for id in Game.last_faded:
 			names.append(tr(db.memory(id).name_key))
 		_content.add_child(UiKit.label(tr("REWARD_FADED") % ", ".join(names), 0, UiKit.DANGER))
+	_add_wear_rows()
 	if Settings.detailed:
 		_content.add_child(UiKit.label(tr("MEMORY_ONE_ACTION"), 0, UiKit.MUTED))
 
@@ -156,3 +157,22 @@ func _on_discard(index: int) -> void:
 	run.codex.remove_at(index)
 	run.gain_card(db, _chosen)
 	Game.complete_node()
+
+
+## Износ по картам (SPEC_SPRINT12 2): потери стека и что стало с картой — видно, чего стоил бой.
+func _add_wear_rows() -> void:
+	if Game.last_wear.is_empty():
+		return
+	var flow := UiKit.flow(22)
+	for e: Dictionary in Game.last_wear:
+		var wear := int(e["wear"])
+		var lost := int(e["start"]) - int(e["left"])
+		var key := "WEAR_ROW_WIPED" if e["wiped"] else ("WEAR_ROW_KEPT" if wear == 0 else "WEAR_ROW")
+		var color := UiKit.DANGER if e["wiped"] or wear >= 2 else (UiKit.ACCENT if wear == 1 else Color(0.45, 0.95, 0.5))
+		var args := [tr(db.memory(e["memory_id"]).name_key), lost, int(e["start"])]
+		if wear > 0:
+			args.append(wear)
+		var text: String = tr(key) % args
+		flow.add_child(UiKit.chip(UnitGlyphs.ICON_KILL if wear > 0 else UnitGlyphs.ICON_HEAL, text, color, tr("WEAR_TITLE"),
+				tr("WEAR_TIP") % [roundi(Wear.LIGHT * 100), roundi(Wear.HEAVY * 100)], 18))
+	_content.add_child(flow)
